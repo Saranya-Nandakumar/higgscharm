@@ -95,6 +95,46 @@ if __name__ == "__main__":
         default="/cvmfs/unpacked.cern.ch/registry.hub.docker.com/coffeateam/coffea-base-almalinux9:0.7.30-py3.10",
     )
     parser.add_argument("--jobflavor", dest="jobflavor", type=str, default="longlunch")
+    parser.add_argument(
+        "--use_6class",
+        action="store_true",
+        help="Use 6-class MVA labels (separate gg->ZZ and qq->ZZ). Default is 5-class (combined).",
+    )
+    parser.add_argument(
+        "--mva_model_path",
+        type=str,
+        default=None,
+        help="Path to ONNX or PyTorch model for MVA inference. If not provided, MVA scores are not computed.",
+    )
+    parser.add_argument(
+        "--use_pytorch",
+        action="store_true",
+        help="Use PyTorch model instead of ONNX for MVA inference.",
+    )
+    parser.add_argument(
+        "--mva_hidden_dim",
+        type=int,
+        default=64,
+        help="Hidden dimension for PyTorch MVA model (default: 64).",
+    )
+    parser.add_argument(
+        "--mva_num_layers",
+        type=int,
+        default=2,
+        help="Number of layers for PyTorch MVA model (default: 2).",
+    )
+    parser.add_argument(
+        "--model_type",
+        type=str,
+        default="mlp",
+        choices=["mlp", "part"],
+        help="MVA model type: 'mlp' for MLP_HcZZ_MW_Deep, 'part' for ParticleTransformer2_HcZZ (default: mlp).",
+    )
+    parser.add_argument(
+        "--mass_window",
+        action="store_true",
+        help="Apply Higgs mass window cut (100 < m4l < 150 GeV) before MVA inference.",
+    )
     args = parser.parse_args()
 
     # check if the fileset for the given year exists, generate it otherwise

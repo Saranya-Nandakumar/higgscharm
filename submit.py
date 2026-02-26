@@ -76,6 +76,46 @@ if __name__ == "__main__":
         type=str,
         help="User name",
     )
+    parser.add_argument(
+        "--use_6class",
+        action="store_true",
+        help="Use 6-class MVA labels (separate gg->ZZ and qq->ZZ). Default is 5-class (combined).",
+    )
+    parser.add_argument(
+        "--mva_model_path",
+        type=str,
+        default=None,
+        help="Path to ONNX or PyTorch model for MVA inference. If not provided, MVA scores are not computed.",
+    )
+    parser.add_argument(
+        "--use_pytorch",
+        action="store_true",
+        help="Use PyTorch model instead of ONNX for MVA inference.",
+    )
+    parser.add_argument(
+        "--mva_hidden_dim",
+        type=int,
+        default=64,
+        help="Hidden dimension for PyTorch MVA model (default: 64).",
+    )
+    parser.add_argument(
+        "--mva_num_layers",
+        type=int,
+        default=2,
+        help="Number of layers for PyTorch MVA model (default: 2).",
+    )
+    parser.add_argument(
+        "--model_type",
+        type=str,
+        default="mlp",
+        choices=["mlp", "part"],
+        help="MVA model type: 'mlp' for MLP_HcZZ_MW_Deep, 'part' for ParticleTransformer2_HcZZ (default: mlp).",
+    )
+    parser.add_argument(
+        "--mass_window",
+        action="store_true",
+        help="Apply Higgs mass window cut (100 < m4l < 150 GeV) before MVA inference.",
+    )
     args = parser.parse_args()
 
     # set output location (used when --output_format parquet)
@@ -97,6 +137,13 @@ if __name__ == "__main__":
             year=args.year,
             output_format=args.output_format,
             output_location=output_location,
+            use_6class=args.use_6class,
+            mva_model_path=args.mva_model_path,
+            use_pytorch=args.use_pytorch,
+            mva_hidden_dim=args.mva_hidden_dim,
+            mva_num_layers=args.mva_num_layers,
+            model_type=args.model_type,
+            mass_window=args.mass_window,
         ),
         executor=processor.futures_executor,
         executor_args={"schema": NanoAODSchema, "workers": 4},

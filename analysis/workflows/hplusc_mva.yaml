@@ -1,3 +1,21 @@
+# H+c workflow with MVA-based c-tagging boundaries
+#
+# This workflow uses MVA-derived c-tagging boundaries from the HcZZ training:
+#   law run TrainingTask --config hc_zzto4l_mw_training_enhanced
+#                        --dataset-version hcZZ_2era_new60
+#                        --model-name MLP_HcZZ_MW_Deep
+#
+# MVA boundaries define jet categories in 2D space (pBplusC, pBvsC):
+#   Charm categories: C0 (very loose) -> C4 (high purity)
+#   B-tag categories: B0 (loose) -> B4 (tight)
+#   Light category:   L0
+#
+# To switch back to standard working points, change:
+#   use_mva_boundaries=True  ->  remove the parameter (defaults to False)
+#
+# For specific MVA categories only (e.g., high-purity C3, C4):
+#   working_points.jet_ctagging(events, 'medium', year, use_mva_boundaries=True, mva_categories=['C3', 'C4'])
+
 datasets:
   data:
     - muon
@@ -31,7 +49,7 @@ object_selection:
         - events.Muon.isPFcand | ((events.Muon.highPtId > 0) & (events.Muon.pt > 200))
   electrons:
     field: events.Electron
-    add_cut: 
+    add_cut:
       is_loose:
         - events.Electron.pt > 7
         - np.abs(events.Electron.eta) < 2.5
@@ -55,14 +73,14 @@ object_selection:
   leptons:
     field: select_zzto4l_leptons
   zcandidates:
-    field: select_zcandidates 
+    field: select_zcandidates
     add_cut:
       is_ossf:
         - objects['zcandidates'].l1.pdgId == -objects['zcandidates'].l2.pdgId
       is_sr:
         - objects['zcandidates'].is_ossf
         - objects['zcandidates'].l1.is_tight & objects['zcandidates'].l2.is_tight
-    cuts: 
+    cuts:
       - (objects['zcandidates'].p4.mass > 12) & (objects['zcandidates'].p4.mass < 120)
   zzcandidates:
     field: select_zzcandidates
@@ -86,6 +104,8 @@ object_selection:
       - np.abs(events.Jet.eta) < 2.5
       - working_points.jet_id(events, year, 'tightlepveto')
       - delta_r_higher(events.Jet, objects['leptons'], 0.4)
+  # c-jets using MVA boundaries (all charm categories C0-C4)
+  # This replaces the standard working point approach
   cjets:
     field: events.Jet
     cuts:
@@ -93,7 +113,7 @@ object_selection:
       - np.abs(events.Jet.eta) < 2.5
       - working_points.jet_id(events, year, 'tightlepveto')
       - delta_r_higher(events.Jet, objects['leptons'], 0.4)
-      - working_points.jet_ctagging(events, 'medium', year)
+      - working_points.jet_ctagging(events, 'medium', year, use_mva_boundaries=True)
   zzcandidate_cjet_dphi_inclusive:
     field: select_dphi_inclusive
   zzcandidate_cjet_dphi_4e:
@@ -142,8 +162,10 @@ corrections:
       - id: false
       - reco: true
       - trigger: false
-    ctagging: 
-      - wp: medium
+    # Note: c-tagging scale factors are not applied when using MVA boundaries
+    # as the MVA-based selection doesn't use standard working points
+    # ctagging:
+    #   - wp: medium
 histogram_config:
   add_syst_axis: true
   add_weight: true
@@ -338,21 +360,21 @@ histogram_config:
       bins: 50
       start: 20
       stop: 500
-      label: c-Jet $p_T$ [GeV]
+      label: MVA c-Jet $p_T$ [GeV]
       expression: objects['cjets'].pt
     cjets_eta:
       type: Regular
       bins: 50
       start: -2.4
       stop: 2.4
-      label: c-Jet $\eta$
+      label: MVA c-Jet $\eta$
       expression: objects['cjets'].eta
     cjets_phi:
       type: Regular
       bins: 50
       start: -3.14159
       stop: 3.14159
-      label: c-Jet $\phi$
+      label: MVA c-Jet $\phi$
       expression: objects['cjets'].phi
     cjets_h_dphi_inclusive:
       type: Regular

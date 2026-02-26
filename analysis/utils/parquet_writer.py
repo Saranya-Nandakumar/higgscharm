@@ -33,15 +33,27 @@ def dump_pa_table(
         if xrootd
         else os.path.join(location, os.path.join(merged_subdirs, fname))
     )
-    out = {}
-    for variable, array in arrays.items():
-        if array.ndim == 2:
-            out[variable] = ak.firsts(array)
-        else:
-            out[variable] = array
-
     import pyarrow as pa
     import pyarrow.parquet as pq
+    import numpy as np
+
+    out = {}
+    for variable, array in arrays.items():
+        # Check if array has ndim attribute and is 2D
+        if hasattr(array, 'ndim') and array.ndim == 2:
+            # Convert any 2D array to list format for PyArrow (preserves jagged structure)
+            if isinstance(array, np.ndarray):
+                out[variable] = array.tolist()
+            elif isinstance(array, ak.Array):
+                # For jagged awkward arrays, preserve all elements
+                out[variable] = ak.to_list(array)
+            else:
+                out[variable] = list(array)
+        elif isinstance(array, ak.Array):
+            # For 1D awkward arrays, convert to numpy with fill_none
+            out[variable] = ak.to_numpy(ak.fill_none(array, 0))
+        else:
+            out[variable] = array
 
     table = pa.Table.from_pydict(out)
     if len(table) != 0:  # skip dataframes with empty entries

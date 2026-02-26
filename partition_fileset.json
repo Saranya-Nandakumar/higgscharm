@@ -1,0 +1,19 @@
+{
+    "MuonE_4": [
+        "root://skynet013.crc.nd.edu//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/5f2f7777-b43c-4d56-9a53-65e161619c4b.root",
+        "root://cmsdcache-kit-disk.gridka.de:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/6106ff20-9939-4dd0-a46a-9f090c9fad16.root",
+        "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/62dc0542-a613-43bb-b893-2f664ffe6c30.root",
+        "root://t3se01.psi.ch:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/695c6864-5bdd-4b8a-82d6-1b98342f85f8.root",
+        "root://t3se01.psi.ch:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/69662fd6-79a3-45c2-9723-1b047ff8a94c.root",
+        "root://gaexrdoor.ciemat.es:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/6b334a70-77c0-4a04-b4c6-3f6646913fec.root",
+        "root://k8s-redir.ultralight.org:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/6c0758d3-4f92-460c-80f7-93e09c5bb416.root",
+        "root://gaexrdoor.ciemat.es:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/6f3314a0-deb1-41f6-b153-6688d68ab45a.root",
+        "root://cmsio2.rc.ufl.edu:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/7484b7ff-ec06-4aba-b078-bb126936c214.root",
+        "root://cmsdcache-kit-disk.gridka.de:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/7821b499-bc49-48b0-baea-4c475be492f6.root",
+        "root://grid-cms-xrootd.physik.rwth-aachen.de:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/7b69c004-1e73-4bc8-a714-f759a9f95f0b.root",
+        "root://cmsio2.rc.ufl.edu:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/7b74c8f1-23f0-43f5-8bba-26acdd60fc7b.root",
+        "root://t3se01.psi.ch:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/7e94e8d4-70a0-4715-89a4-9211b34505ae.root",
+        "root://t3se01.psi.ch:1094//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/7f777375-6b04-4bb1-8cb9-485676ac7328.root",
+        "root://ruhex-osgce.rutgers.edu//store/data/Run2022E/Muon/NANOAOD/22Sep2023-v1/2540000/7fbacda4-3c2c-421b-bf63-577cadb65933.root"
+    ]
+}

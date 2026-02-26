@@ -1,7 +1,14 @@
 import numpy as np
 import awkward as ak
 from analysis.filesets.utils import get_nano_version
-from analysis.working_points.utils import get_ctag_mask
+from analysis.working_points.utils import (
+    get_ctag_mask,
+    get_mva_ctag_mask,
+    get_mva_ctag_category_mask,
+    MVA_CHARM_CATEGORIES,
+    MVA_BTAG_CATEGORIES,
+    MVA_LIGHT_CATEGORIES,
+)
 
     
 class WorkingPoints:
@@ -239,5 +246,41 @@ class WorkingPoints:
         else:
             return np.ones_like(events.Jet.pt, dtype=bool)
 
-    def jet_ctagging(self, events, wp, year):
-        return get_ctag_mask(events.Jet, year, wp)
+    def jet_ctagging(self, events, wp, year, use_mva_boundaries=False, mva_categories=None):
+        """
+        Apply c-tagging selection to jets.
+
+        Parameters:
+        -----------
+          events: Event collection
+          wp: Working point (loose, medium, tight) - ignored if use_mva_boundaries=True
+          year: Year string
+          use_mva_boundaries: If True, use MVA-derived boundaries instead of standard WPs
+          mva_categories: List of MVA categories to include when use_mva_boundaries=True
+                          Default: all charm categories (C0-C4)
+                          Options: C0, C1, C2, C3, C4 (charm), B0-B4 (b-tag), L0 (light)
+
+        Returns:
+        --------
+          Boolean mask for c-tagged jets
+        """
+        if use_mva_boundaries:
+            return get_mva_ctag_mask(events.Jet, year, categories=mva_categories)
+        else:
+            return get_ctag_mask(events.Jet, year, wp)
+
+    def jet_mva_category(self, events, year, category):
+        """
+        Get mask for jets in a specific MVA tagging category.
+
+        Parameters:
+        -----------
+          events: Event collection
+          year: Year string
+          category: MVA category (C0-C4, B0-B4, L0)
+
+        Returns:
+        --------
+          Boolean mask for jets in the specified category
+        """
+        return get_mva_ctag_category_mask(events.Jet, year, category)

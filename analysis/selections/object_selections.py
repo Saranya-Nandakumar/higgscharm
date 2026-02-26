@@ -84,7 +84,14 @@ class ObjectSelector:
     def select_zzto4l_leptons(self, obj_name):
         muons = self.objects["muons"]
         muons["lostHits"] = ak.zeros_like(muons.pt)
+        # Add placeholder mvaHZZIso for muons (electrons use this for tight ID)
+        muons["mvaHZZIso"] = ak.ones_like(muons.pt) * -999
+        # muons already have isPFcand and highPtId from NanoAOD
         electrons = self.objects["electrons"]
+        # electrons already have mvaHZZIso from NanoAOD
+        # Add placeholder isPFcand and highPtId for electrons (muons use these for tight ID)
+        electrons["isPFcand"] = ak.ones_like(electrons.pt, dtype=bool)
+        electrons["highPtId"] = ak.zeros_like(electrons.pt, dtype=int)
         # leptons before FSR recovery/iso correction
         helper_leptons = ak.concatenate([muons, electrons], axis=1)
         helper_leptons["idx"] = ak.local_index(helper_leptons, axis=1)
@@ -101,6 +108,11 @@ class ObjectSelector:
                 "is_relaxed": helper_leptons.is_relaxed,
                 "is_tight": helper_leptons.is_tight,
                 "lostHits": helper_leptons.lostHits,
+                "sip3d": helper_leptons.sip3d,
+                "pfRelIso03_all": helper_leptons.pfRelIso03_all,
+                "mvaHZZIso": helper_leptons.mvaHZZIso,
+                "isPFcand": helper_leptons.isPFcand,
+                "highPtId": helper_leptons.highPtId,
             },
             with_name="PtEtaPhiMCandidate",
             behavior=candidate.behavior,
@@ -181,6 +193,10 @@ class ObjectSelector:
                 "is_relaxed": leptons.is_relaxed,
                 "is_tight": leptons.is_tight,
                 "lostHits": leptons.lostHits,
+                "sip3d": leptons.sip3d,
+                "mvaHZZIso": leptons.mvaHZZIso,
+                "isPFcand": leptons.isPFcand,
+                "highPtId": leptons.highPtId,
             },
             with_name="PtEtaPhiMCandidate",
             behavior=candidate.behavior,

@@ -350,3 +350,17 @@ ZHto2Zto4L:
   process: H(125) 
   key: higgs
   xsec: 0.000775
+# H+c signal samples for MVA
+SomeSMSignal:
+  era: signal
+  query: 2023preBPix_signal
+  key: smsignal
+  process: smsignal
+  xsec: 0.000026381
+# H+b background samples
+2023preBPixHB:
+  era: signal
+  query: 2023preBPixHB
+  key: hb
+  process: hb
+  xsec: 0.000173299

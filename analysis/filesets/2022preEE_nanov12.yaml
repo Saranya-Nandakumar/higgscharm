@@ -401,6 +401,20 @@ WplusH_Hto2Zto4L:
 ZHto2Zto4L:
   era: mc
   query: ZHto2Zto4L_M125_TuneCP5_13p6TeV_powheg2-minlo-HZJ-JHUGenV752-pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM
-  process: H(125) 
+  process: H(125)
   key: higgs
   xsec: 0.000775
+# H+c signal samples for MVA
+SomeSMSignal:
+  era: signal
+  query: 2022preEE_signal
+  key: smsignal
+  process: smsignal
+  xsec: 0.000026381
+# H+b background samples
+2022preEEHB:
+  era: signal
+  query: 2022preEEHB
+  key: hb
+  process: hb
+  xsec: 0.000173299

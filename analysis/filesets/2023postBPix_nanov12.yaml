@@ -287,6 +287,20 @@ WplusH_Hto2Zto4L:
 ZHto2Zto4L:
   era: mc
   query: ZH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM
-  process: H(125) 
+  process: H(125)
   key: higgs
   xsec: 0.000775
+# H+c signal samples for MVA
+SomeSMSignal:
+  era: signal
+  query: 2023postBPix_signal
+  key: smsignal
+  process: smsignal
+  xsec: 0.000026381
+# H+b background samples
+2023postBPixHB:
+  era: signal
+  query: 2023postBPixHB
+  key: hb
+  process: hb
+  xsec: 0.000173299

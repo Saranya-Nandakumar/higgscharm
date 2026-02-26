@@ -1,0 +1,26 @@
+{
+  "SomeSMSignal": [
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145215200_1771064019.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j1452152010_1771118442.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j1452152011_1771120002.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j1452152012_1771122162.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j1452152013_1771122462.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j1452152014_1771122522.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145215201_1771064078.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145215202_1771064377.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145215203_1771067330.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145215204_1771067812.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145215205_1771068532.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145215206_1771073965.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145215207_1771103039.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145215208_1771113100.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145215209_1771115080.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145338460_1771228685.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j1453384613_1771250937.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145338461_1771230486.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145338462_1771231746.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145338464_1771244341.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145338466_1771245781.root",
+    "root://eosuser.cern.ch///eos/user/s/snandaku/Analysis/Signal_samples/2023preBPix/Run3SMnano_j145338468_1771246081.root"
+  ]
+}
