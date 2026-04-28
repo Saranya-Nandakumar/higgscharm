@@ -232,18 +232,6 @@ Barrel: $|\eta| < 1.5$; Endcap: $1.5 < |\eta| < 2.5$.
 
 ---
 
-## Expected Yields (Run 3, OS method)
-
-| Era | Net Z+X |
-|---|---|
-| 2022 preEE | 1,149 |
-| 2022 postEE | 3,137 |
-| 2023 preBPix | 2,181 |
-| 2023 postBPix | 1,283 |
-| **Total** | **7,751** |
-
-~96% classified as gg→ZZ by the MVA.
-
 ---
 
 ## Script Reference
