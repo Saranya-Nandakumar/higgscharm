@@ -115,9 +115,16 @@ Run for each era.
 
 ### Cross-check: AN-18-340 Eq. 11 (SS method)
 
-An independent cross-check using same-sign 2P2F events:
+An independent cross-check using same-sign 2P2F events from `CR_2P2F_SS`
+(Z1(tight,tight) + Z2(same-sign, both loose-failing)):
 
 $$N_{Z+X} = \left(\frac{N_{OS}}{N_{SS}}\right)^{MC} \times \sum_{\text{DATA, SS}} f_1 \times f_2$$
+
+- **(OS/SS)^MC**: lumi-weighted ratio of reducible MC (DY+WZ+tt̄) in OS vs SS 2P2F CRs.
+  Corrects for any charge-asymmetric fake topologies. Typically 1.01–1.19 across eras.
+- **Σ f₁×f₂**: sum over SS DATA events in the signal m4l window [100, 150] GeV,
+  each event weighted by the product of the two Z2 fake rates.
+- The SS region is free of genuine ZZ contamination by construction (real Z cannot decay to same-sign).
 
 ```bash
 python scripts/compute_an_ss_yield.py \
@@ -126,8 +133,48 @@ python scripts/compute_an_ss_yield.py \
     --output     docs/zx_an_ss_yield.txt
 ```
 
-The OS/SS ratio should be close to 1 per final state; deviations indicate
-real-lepton contamination or charge-asymmetric fake topologies.
+**Results — AN Eq. 11, signal region m4ℓ ∈ [100, 150] GeV:**
+
+| Era | N_SS^DATA | (OS/SS)^MC | Σ f₁f₂ | Z2→ee | Z2→μμ | Total |
+|---|---|---|---|---|---|---|
+| 2022 preEE | 1552 | 1.194 | 3.67 | 1.00 ± 0.04 | 3.38 ± 0.29 | **4.38 ± 0.29** |
+| 2022 postEE | 4099 | 1.013 | 11.52 | 4.75 ± 0.09 | 6.91 ± 0.36 | **11.67 ± 0.37** |
+| 2023 preBPix | 3417 | 1.082 | 8.46 | 4.38 ± 0.09 | 4.77 ± 0.30 | **9.15 ± 0.32** |
+| 2023 postBPix | 1934 | 1.081 | 5.15 | 2.08 ± 0.06 | 3.49 ± 0.28 | **5.57 ± 0.28** |
+| **Total** | **10002** | — | **28.80** | **12.22 ± 0.15** | **18.55 ± 0.61** | **30.77 ± 0.64** |
+
+- Uncertainty: CR statistical only, σ = √(Σ(f₁f₂)ᵢ²)
+- Z2→μμ contributes ~60% of total yield (higher muon fake rate)
+- 2022 postEE is the largest era (26.7 fb⁻¹)
+
+**Comparison: Eq. 10 (OS SS-based) vs AN Eq. 11:**
+
+| Era | Eq. 10 SS | AN Eq. 11 |
+|---|---|---|
+| 2022 preEE | 7.0 ± 1.3 | 4.4 ± 0.3 |
+| 2022 postEE | 18.6 ± 2.0 | 11.7 ± 0.4 |
+| 2023 preBPix | 15.0 ± 1.9 | 9.2 ± 0.3 |
+| 2023 postBPix | 7.5 ± 1.5 | 5.6 ± 0.3 |
+| **Total** | **48.1 ± 3.4** | **30.8 ± 0.6** |
+
+AN Eq. 11 is lower because it uses only the SS 2P2F events (no 3P1F term),
+while Eq. 10 includes the 3P1F contribution which adds the larger positive term.
+
+### OS vs SS cross-check by final state
+
+Computed for 2022 postEE without mass window (m4ℓ > 70 GeV) using `estimate_zx_background.py`
+for OS and `compute_an_ss_yield.py` for SS. Combination = (OS + SS) / 2.
+
+| | 4μ | 4e | 2e2μ | 2μ2e |
+|---|---|---|---|---|
+| OS | 17.58 ± 2.07 | 8.38 ± 0.66 | 15.85 ± 1.86 | 7.38 ± 0.64 |
+| SS | 13.46 ± 2.50 | 10.43 ± 1.02 | 14.40 ± 2.47 | 8.30 ± 1.01 |
+| Combination | 15.52 ± 1.62 | 9.41 ± 0.61 | 15.13 ± 1.55 | 7.84 ± 0.60 |
+| OS/SS | 1.306 ± 0.287 | 0.803 ± 0.101 | 1.101 ± 0.229 | 0.889 ± 0.133 |
+
+OS/SS close to 1 across all final states confirms consistency of the two methods.
+Deviations at the 20–30% level are within statistical uncertainties and consistent
+with HIG-24-013 findings.
 
 ---
 
@@ -231,6 +278,8 @@ Fake rates are binned in 7 $p_T$ bins × 5 $|\eta|$ bins, separately for electro
 Barrel: $|\eta| < 1.5$; Endcap: $1.5 < |\eta| < 2.5$.
 
 ---
+
+~96% classified as gg→ZZ by the MVA.
 
 ---
 
