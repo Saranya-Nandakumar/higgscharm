@@ -1,0 +1,240 @@
+# =============================================================================
+# ParticleTransformer config for H+c -> ZZ* -> 4 leptons MVA
+# 4-class classification version
+# =============================================================================
+# Structure:
+#   - Global: n_cjet, cjet_HT, jet_multiplicity, jet_ht, deltaR_ZZ (event-level)
+#   - CPF (Jets): up to 5 jets with kinematics + 11 tag categories
+#   - VTX (Z bosons): 2 Z candidates with full 4-vector (pt, eta, phi)
+#   - NPF (Leptons): 4 leptons with kinematics + ID + isolation
+#   - LT (Higgs/ZZ): 1 Higgs candidate with full 4-vector (pt, eta, phi, mass)
+#
+# NOTE: Using ALL jets (not just c-jets) allows the model to:
+#   - See b-jets (B3/B4 categories) for H+b discrimination
+#   - See light jets (L0) for VBF/qqZZ discrimination
+#   - Full jet composition of the event
+# =============================================================================
+
+bins_pt:  # Bins for cjet_HT (sum of c-jet pT in GeV)
+- 0
+- 50
+- 100
+- 200
+- 500
+bins_eta:
+- -6
+- -2
+- 0
+- 2
+- 6
+pt_key: cjet_HT    # Using cjet_HT since m4l is not in any feature group
+eta_key: eta_4l
+processor: LZ4HcZZProcessor
+treename: Events
+
+# =============================================================================
+# GLOBAL FEATURES (event-level summary)
+# Note: m4l and eta_4l are required for pt_key/eta_key binning and selections
+# They also appear in lt_candidates (Higgs 4-vector) - duplication is OK
+# =============================================================================
+global_features:
+- n_cjet
+- cjet_HT
+- jet_multiplicity
+- jet_ht
+- m4l          # Required for pt_key and selections
+- eta_4l       # Required for eta_key and selections
+- deltaR_ZZ
+- cjets_h_dphi_inclusive
+- in_mass_window
+
+# =============================================================================
+# CPF CANDIDATES = ALL JETS (not just c-tagged)
+# Features: kinematics + 11 jet tag categories (MVA-based boundaries)
+# Categories: C0-C4 (charm), B0-B4 (bottom), L0 (light)
+# Computed from jet_btagPNet* scores
+#
+# Using all jets allows discrimination of:
+#   - H+c: jets in C2/C3/C4 (true c-jets)
+#   - H+b: jets in B3/B4 (true b-jets)
+#   - ttH: multiple jets in B2/B3/B4
+#   - VBF/qqZZ: light jets in L0
+# =============================================================================
+cpf_candidates:
+- jet_pt
+- jet_eta
+- jet_phi
+# - jet_mass
+- jet_is_C0
+- jet_is_C1
+- jet_is_C2
+- jet_is_C3
+- jet_is_C4
+- jet_is_B0
+- jet_is_B1
+- jet_is_B2
+- jet_is_B3
+- jet_is_B4
+- jet_is_L0
+
+# =============================================================================
+# VTX CANDIDATES = Z BOSONS (2 Z candidates)
+# Features: full 4-vector (pt, eta, phi, mass) as length-2 arrays
+# =============================================================================
+vtx_features:
+- z_pt
+- z_eta
+- z_phi
+# - z_mass
+
+# =============================================================================
+# NPF CANDIDATES = LEPTONS (4 leptons from Z1 and Z2)
+# Features: kinematics + ID + isolation (all as length-4 arrays)
+# =============================================================================
+npf_candidates:
+- lepton_pt
+- lepton_eta
+- lepton_phi
+# - lepton_mass
+- lepton_charge
+- lepton_pfRelIso03_all
+- lepton_sip3d
+- lepton_is_tight
+- lepton_mvaHZZIso
+- lepton_isPFcand
+- lepton_highPtId
+
+# =============================================================================
+# LT CANDIDATES = HIGGS (ZZ system, 1 candidate)
+# Features: full 4-vector available
+# =============================================================================
+lt_candidates:
+- pT_4l
+- eta_4l
+- phi_4l
+- m4l
+
+# =============================================================================
+# NUMBER OF CANDIDATES
+# =============================================================================
+n_cpf_candidates: 3   # Jets (increased from 3 to capture more jets per event)
+n_vtx_candidates: 2   # Z bosons (z_pt, z_eta, z_phi as length-2 arrays)
+n_npf_candidates: 4   # Leptons
+n_lt_candidates: 1    # Higgs
+
+# =============================================================================
+# TRUTH LABELS (4-class classification)
+# Classes:
+#   - is_qqZZ: qq->ZZ (ZZto4L)
+#   - is_ggZZ: gg->ZZ continuum (GluGluToContinto*)
+#   - is_Signal: H+c (SomeSMSignal/HPlusCharm)
+#   - is_Other_Higgs: HPlusB + ggH + VBF + VH + ttH + bbH
+# =============================================================================
+truths:
+  - is_qqZZ
+  - is_ggZZ
+  - is_Signal
+  - is_Other_Higgs
+reference_flavour: is_Signal
+
+# Class names for MVA inference output (order matches truths)
+class_names:
+  - qqZZ
+  - ggZZ
+  - Signal
+  - Other_Higgs
+  
+  
+  
+# =============================================================================
+# HIERARCHICAL LOSS CONFIGURATION
+# =============================================================================
+# L = L_global + lambda_sig * log(B)
+#
+# Kappa modes for log(B) significance loss:
+#   - "confusion" (recommended): κ_j = EMA of P(signal | class=j)
+#     Directly measures classification confusion. Higher κ for harder backgrounds.
+#   - "cosine" (legacy): κ_j = (1 + cos_sim(W_signal, W_j)) / 2
+#     Based on weight similarity, may not reflect actual difficulty.
+# =============================================================================
+hierarchical_loss:
+  global_groups:
+    ZZ: ["is_qqZZ", "is_ggZZ"]
+    Higgs: ["is_Signal", "is_Other_Higgs"]
+  fine_groups:
+    ZZ: 3.0     # Separate qqZZ from ggZZ
+    Higgs: 8.0  # Increased from 5.0 for stronger Signal vs Other_Higgs separation
+  fine_weight_boosts:
+    is_Signal: 2.0  # Reduced from 3.0 to prevent over-prediction
+  max_weight_ratio: 3.0  # Cap inverse-frequency weight ratio
+  significance:
+    signal_class: "is_Signal"
+    mode: "logB"
+    lam: 0.0  # Disabled logB - pure hierarchical CE
+    # logB disabled to let CE loss fully control discrimination
+
+# Reweighting mode: "class" = inverse-frequency weighting (recommended for imbalanced classes)
+reweighting_mode: "class"
+
+# =============================================================================
+# EVENT SELECTIONS
+# =============================================================================
+selections:
+  and:
+#  - n_lepton==4
+  - m4l>=90
+  - m4l<160
+  - eta_4l>=-6
+  - eta_4l<6
+#   - m_Z1>40
+#   - m_Z1<120
+#   - m_Z2>12
+#   - m_Z2<120
+data_precision: float32
+
+# Mass window configuration for MASS WINDOW ONLY training
+mass_window:
+  feature: m4l
+  min: 90
+  max: 160
+  filter_training: true
+  filter_inference: true
+
+# =============================================================================
+# PROCESS NAMES
+# =============================================================================
+processes:
+- GluGluHtoZZto4L
+- ZZto4L
+- GluGlutoContinto2Zto4E
+- GluGlutoContinto2Zto4Mu
+- GluGlutoContinto2Zto4Tau
+- GluGluToContinto2Zto2E2Mu
+- GluGluToContinto2Zto2E2Tau
+- GluGluToContinto2Zto2Mu2Tau
+- SomeSMSignal
+- HPlusCharm
+- HPlusBottom
+- 2023postBPixHB
+- 2023preBPixHB
+- 2022postEEHB
+- 2022preEEHB
+- VBFHto2Zto4L
+- ZHto2Zto4L
+- WminusH_Hto2Zto4L
+- WplusH_Hto2Zto4L
+- TTH_Hto2Z
+- bbH_Hto2Zto4L
+
+# =============================================================================
+# PROCESS WEIGHTS - Now computed dynamically with --dynamic-process-weights
+# Use: law run TrainingTask ... --dynamic-process-weights True
+# Weights are calculated as: max_class_count / class_count (inside mass window)
+# =============================================================================
+# process_weights:  # Commented out - use dynamic computation instead
+
+# =============================================================================
+# CROSS-SECTION WEIGHTING - DISABLED
+# =============================================================================
+xsec_weighting:
+  enabled: false
