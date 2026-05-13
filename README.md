@@ -181,3 +181,9 @@ This script:
 * Runs all steps of `run_postprocess.py` depending on the workflow type.
 * Adds special configurations (e.g. `--group_by` for the $Z\rightarrow \ell\ell$ workflows and `--pass_axis` for the `zplusl_X` workflows).
 * Automatically produces plots and merged results for multi-campaign years (e.g. 2022, 2023).
+
+#### MVA inference
+
+python3 run_postprocess.py --workflow hplusc_mva_4class --year 2022preEE --postprocess --plot --log --mva-inference --mva-config /path/to/hc_zzto4l_config.yml --mva-model /path/to/best_model.pt
+
+model and config is stored in the folder models/
