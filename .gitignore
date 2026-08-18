@@ -37,3 +37,10 @@ x509up*
 .DS_Store
 partition_fileset.json
 dataset_discovery_*.json
+
+# ctag2d combine pipeline (combine/): built CMSSW area -- ~560MB of
+# scram-compiled, architecture-specific binaries plus a nested git clone of
+# the standard upstream HiggsAnalysis-CombinedLimit repo, not custom code.
+# Reconstruct with combine/setup_cmssw.sh, never commit the built tree.
+# (combine/outputs/ is already covered by the outputs//*.root rules above.)
+combine/CMSSW_14_1_0_pre4/
