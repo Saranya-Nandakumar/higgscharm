@@ -86,9 +86,14 @@ SYSTEMATICS = {
     "CMS_ctag2d":     {"col": "weight_CMS_ctag2d",    "era_dep": False},
 }
 
+# lhe_alphaS EXCLUDED EVERYWHERE, 2026-08-19 (under investigation, not yet
+# fixed) -- analysis/corrections/lhepdf.py's abs() bug forces Up/Down to
+# always move the same direction for every process. See
+# create_datacards_ctag2d_100150.py's USABLE_SYST comment / README_HcZZ.md
+# for the full writeup.
 USABLE_SYST = {
-    "qqZZ":        set(SYSTEMATICS.keys()),
-    "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF"},
+    "qqZZ":        set(SYSTEMATICS.keys()) - {"lhe_alphaS"},
+    "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF", "lhe_alphaS"},
     "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d"},
     "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d"},
 }
@@ -416,6 +421,12 @@ def write_datacard(histograms, root_filename, output_dir, mass_window, stat_only
                 if not vals:
                     continue
                 dc.write(syst_row(syst, "shape", vals))
+
+            # autoMCStats, added 2026-08-18 -- see create_datacards_ctag2d.py for
+            # the sparse-binning caveat (same underlying histograms/binning risk
+            # applies here too, arguably more so given the 3-ratio joint binning
+            # is sparser per-cell than the 1D plain-score binning).
+            dc.write(f"\nhczz autoMCStats 10\n")
 
     print(f"  Datacard:  {dc_path}")
     return dc_path

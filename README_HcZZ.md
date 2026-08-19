@@ -391,10 +391,10 @@ Declared in `create_datacards.py`'s `SYSTEMATICS`/`USABLE_SYST` dicts
 | kind | examples | notes |
 |---|---|---|
 | weight shapes | `lhe_pdf`, `lhe_alphaS`, `scalevar_muR`, `scalevar_muF`, `ps_isr`, `ps_fsr`, `CMS_pileup`, `CMS_ctag_b`, `CMS_ctag_c` | per-process usable subset, not uniform — see `USABLE_SYST` and Known traps |
-| object shifts | **none** | `hww-analysis` has `CMS_scale_j/e/m`, `CMS_res_j/e/m` from JES/JER/lepton-scale shift directories; this pipeline doesn't produce those directories yet |
+| object shifts | `CMS_scale_j`/`CMS_res_j` **in progress**, `CMS_scale_m`/`CMS_res_m` **in progress** (both 2026-08-19, `jec_shifts` workflow — see "Object-shift systematics" update below); electron/muon SF shifts still none | `hww-analysis` has `CMS_scale_j/e/m`, `CMS_res_j/e/m` from JES/JER/lepton-scale shift directories |
 | lnN | `lumi_Run3` (1.4%), `pdf_gg`/`pdf_qq`, `QCDscale_ggZZ`/`QCDscale_qqZZ`, `ZX_norm` (30%) | see `b-hive_ttcc/combine/README.md` |
 | rateParam | `ZX_rate` | Z+X floats freely from data, same pattern as `hww-analysis`'s `tt` |
-| MC stat | **not yet `autoMCStats`** | `hww-analysis` runs `autoMCStats 10` per channel; not currently in this datacard |
+| MC stat | `autoMCStats <threshold>`, **added 2026-08-18**, default threshold 10 | `--automcstats-threshold` CLI flag added 2026-08-19 to both `create_datacards_ctag2d.py`/`_100150.py` for testing higher cutoffs against the sparse-bin degeneracy noted below |
 
 `CMS_ctag_light` is **excluded entirely**, not just per-process-gated — see
 Known traps.
@@ -405,9 +405,13 @@ Known traps.
 > 0.0054 vs 0.0043 at `[90,160]`). `combine/run_pipeline.sh` with no args now
 > builds `[100,150]` by default (`--window 90160` for the older window). **Z+X
 > (fake-rate background) is deliberately excluded from scope for now** (decision
-> 2026-08-18) — the production default at this window is MC-only (r=311.5
-> full-syst / 279.0 stat-only). `[90,160]`'s own with-ZX number (r=329.0, from
-> the OS/featmajor production) remains available via `--window 90160 --with-zx`.
+> 2026-08-18) — the production default at this window is MC-only. `[90,160]`'s
+> own with-ZX number (r=329.0, from the OS/featmajor production) remains
+> available via `--window 90160 --with-zx`. **`lhe_alphaS` removed 2026-08-19
+> pending a bug fix (see the dated update below) — current number: r=309.5
+> full-syst / 279.0 stat-only, 15 systematics.** (r=311.5/16-systematics was
+> the number with the buggy `lhe_alphaS` still included; superseded, not a
+> live reference anymore.)
 
 Scripts: `combine/scripts/create_datacards_ctag2d.py` ([90,160] GeV, canonical),
 `create_datacards_ctag2d_100150.py` ([100,150] GeV copy, `MASS_WINDOW` hardcoded
@@ -417,7 +421,8 @@ All three share the same `SYSTEMATICS`/`USABLE_SYST` dicts and sumw/xs-scaling
 logic as `create_datacards_ctag2d.py` — edit all three together when changing
 the systematics model.
 
-**16 systematics total** (up from 11, 2026-08-17): 5 `lnN` + 11 shape.
+**15 systematics total** (16 as of 2026-08-17, minus `lhe_alphaS` removed
+2026-08-19 pending a bug fix — see the dated update below): 5 `lnN` + 10 shape.
 
 | kind | name | size/processes | notes |
 |---|---|---|---|
@@ -426,7 +431,8 @@ the systematics model.
 | lnN | `QCDscale_ggZZ` | 10%, ggZZ | placeholder |
 | lnN | `BR_HZZ4l` | 2%, Signal+Other_Higgs | **added 2026-08-17**, sourced from Felix Heyen thesis Appendix D; no per-event weight column exists, pure rate lnN |
 | lnN | `QCDscale_qqZZ` | 4%, qqZZ | **added 2026-08-17**, same source; separate from `QCDscale_ggZZ`, not a duplicate |
-| shape | `lhe_pdf`/`lhe_alphaS`/`scalevar_muR`/`scalevar_muF` | qqZZ only (+`lhe_alphaS` for Other_Higgs) | excluded for Signal/ggZZ/most of Other_Higgs — see per-process reasons below |
+| shape | `lhe_pdf`/`scalevar_muR`/`scalevar_muF` | qqZZ only | excluded for Signal/ggZZ/most of Other_Higgs — see per-process reasons below |
+| shape | ~~`lhe_alphaS`~~ | **removed everywhere, 2026-08-19** | not a per-process exclusion — a genuine bug in the weight-computation code itself, see the dated update below |
 | shape | `ps_isr`/`ps_fsr`/`CMS_pileup`/`CMS_ctag2d` | all 4 processes | |
 | shape | `CMS_eff_e_reco_20to75`/`above75`/`below20` | all 4 processes | **added 2026-08-17** — already computed and stored in the scored parquets (`weight_CMS_eff_e_reco_*_<year>Up/Down`), never wired into `USABLE_SYST` before. Verified sane (≤6%, symmetric) for every process incl. Signal/HPlusBottom via direct per-event ratio check — a detector-level correction, unaffected by the private-LHE-sample bugs below. |
 
@@ -449,9 +455,12 @@ the script; summarized here for discoverability):
   identical two bugs — `lhe_pdf` blown up to +857%/−657%, `scalevar_muR`/`muF`
   same-direction Up/Down. HPlusBottom is only ~4% of the yield but dominates
   the shape variation — this is what caused an earlier Combine "Bogus norm"
-  crash once a masking clip was removed. `lhe_alphaS` is kept: larger for
-  HPlusBottom than the official samples, but not pathological (no sign flip,
-  no same-direction Up/Down).
+  crash once a masking clip was removed. **`lhe_alphaS`'s "not pathological,
+  no same-direction Up/Down" note here was itself wrong — corrected
+  2026-08-19, see the dated update below: same-direction Up/Down for
+  `lhe_alphaS` is universal (a code bug affecting every process with
+  LHEPdfWeight members), not a property that happened to distinguish
+  HPlusBottom from the official samples.**
 
 **Not added (checked, deliberately skipped as redundant)**: `weight_scalevar_muR_muF`
 and `weight_lhe_pdf_alphaS` (combined variants) exist in the parquets too, but
@@ -463,6 +472,284 @@ exist anywhere in the scored parquets (checked directly across Signal/ggZZ/
 Other_Higgs schemas) — needs new production, not a datacard-script change.
 JES/JER object-shift systematics also need new shift-directory production
 (see Open items #4).
+
+### Update 2026-08-19: `jec_shifts` bug fixed, muon scale/resolution shift production added, `higgsHFWeight` smoke-tested, `autoMCStats` threshold made configurable
+
+Picked back up after a laptop crash killed the prior shell mid-session — **nothing
+was lost**: all edits from that session (`higgsHFWeight` wiring, `higgs_hf.py`,
+`muon_ss.py`) were already on disk in the EOS checkout, just uncommitted. Confirmed
+directly (`git status`) before doing anything else.
+
+**Bug found and fixed: `object_corrector_manager`'s `"jec_shifts"` branch used to
+`return apply_jerc_shifts(...)` immediately**, silently skipping `muon_ss`/
+`electon_ss` entirely for `hplusc_mva_4class_ctag2d_jecshifts.yaml` even though the
+workflow yaml lists both under `corrections.objects` — every event in that
+workflow's output was missing the muon scale/smearing correction and (for
+2022–2023) the electron scale/smearing correction, silently. Caught while wiring
+in muon shift production (needed a place to hook `apply_muon_ss_shifts` into).
+**Fixed**: `muon_ss`/`electon_ss` nominal corrections now run *before* JES/JER
+shift production, not skipped. Order doesn't matter physically —
+`apply_jerc_shifts` reads `events[met_field_key]` fresh at call time (confirmed by
+reading `get_corrected_jets_with_shifts`), and independent MET deltas (Type-1 JEC,
+muon SS) commute under addition — so every JES/JER variant automatically inherits
+the nominal muon/electron correction too, with no extra plumbing.
+Every workflow run through this path **before** 2026-08-19 is missing muon SS
+(and, for 2022/2023, electron SS) — re-run before trusting any yield/shape from
+`hplusc_mva_4class_ctag2d_jecshifts.yaml` dated earlier.
+
+**Muon scale/resolution shift production added** (`CMS_scale_m_<year>`,
+`CMS_res_m_<year>`, MC only) — `analysis/corrections/muon_ss.py::
+apply_muon_ss_shifts()`, mirroring `jerc.py::apply_jerc_shifts`'s
+`(collections, shift_name)` list contract. Reuses the file's existing
+`pt_scale_var`/`pt_resol_var` functions (already implemented, previously unused)
+for the Up/Down math. MET propagation reuses `met.py::update_met`'s own tested
+px/py-delta formula via a throwaway array rather than re-deriving that algebra —
+deliberate, to avoid adding a second, independently-drifting copy of a formula
+after this project's history of exactly that kind of bug (ratio-clip/sign-bug
+precedents elsewhere in `analysis/corrections/`).
+
+`object_corrector_manager` now assembles JES/JER and muon-scale/res variants into
+one combined list, **explicitly carrying `Jet`/`MET`/`Muon` in every entry even
+where unchanged from nominal** — required because `base.py`'s shift loop mutates
+`events` cumulatively across iterations rather than resetting to nominal each
+time; an entry that omitted a key would silently inherit whatever the previous
+loop iteration left behind. `base.py` extended to apply a `"Muon"` override the
+same way it already applies `"Jet"`/`"MET"`.
+
+**Smoke-tested for real** (`apptainer exec` into the production coffea image,
+one real `GluGluHtoZZto4L`/2023postBPix file, `hplusc_mva_4class_ctag2d_jecshifts`
+workflow — needed `--bind /eos --bind /afs --bind /run/user/<uid> --bind /cvmfs`
+plus `X509_USER_PROXY` pointed at a real voms proxy; none of those binds are
+automatic in this environment, unlike a real lxplus node). Ran clean, exit 0, all
+9 shift directories written (`base` nominal + `CMS_scale_j/res_j_2023{Up,Down}` +
+`CMS_scale_m/res_m_2023{Up,Down}`). Verified from the actual parquet output, not
+just "no crash":
+- JES/JER variants: event count changes sensibly (183–201 vs nominal 193 — jet-
+  dependent selection responding to shifted jet kinematics), `jet_pt` shifts,
+  `lepton_pt` stays close to nominal.
+- Muon variants: `jet_pt` is **bit-identical** to nominal across all 4 muon
+  variants (44.575, confirms `Jet` correctly stays pinned to nominal in every
+  muon-shift entry — the "no stale state across loop iterations" design works).
+  `lepton_pt` shows the expected small (sub-percent) shift. Event count unchanged
+  (193 in all 4 — muon momentum shifts here are small enough to essentially never
+  cross a selection threshold, unlike JES/JER).
+- `weight_higgs_plus_c` / `weight_nominal` ratio is exactly **1.5 (Up) / 0.5
+  (Down)** for the 13/1728 events carrying a genuine c-flavour GEN jet, exactly
+  1.0 for every other event and for the nominal weight itself — matches the
+  documented ±50% design exactly, correctly scoped.
+
+**Not yet done**: `weight_higgs_plus_c` is computed in the parquet but **not yet
+wired into `create_datacards_ctag2d*.py`'s `SYSTEMATICS`/`USABLE_SYST` dicts** —
+next concrete step once a real (non-smoke-test) `jecshifts` production run exists.
+JES/JER and muon-scale/res shift *production* is code-complete and validated;
+building a datacard that actually USES these as shape systematics (reading from
+the new per-shift subdirectories) is separate, not-yet-started work.
+
+**AFS synced 2026-08-19**: per user instruction ("we need the exact copy in afs
+as well because we will be submitting jobs from afs" — EOS runs postprocess/
+inference/combine, AFS is what condor submission actually uses), copied the
+full correction chain + `base.py` + both `ctag2d` workflow yamls from EOS to
+AFS: `correction_manager.py`, `ctag.py`, `ctag2d.py`, `higgs_hf.py`, `jerc.py`,
+`jec_params_correctionlib.yaml`, `lhepdf.py`, `muon_ss.py`, `utils.py`,
+`processors/base.py`, `hplusc_mva_4class_ctag2d.yaml`,
+`hplusc_mva_4class_ctag2d_jecshifts.yaml`. Verified `py_compile`-clean on AFS
+after copying. **Deliberately did NOT touch** other outstanding EOS/AFS drift
+(filesets, postprocess, CR workflows, production `hplusc_mva_4class.yaml`) —
+out of scope for this sync, still diverged, still needs its own resolution per
+the standing two-checkout warning at the top of this file.
+
+**`autoMCStats` threshold made a CLI flag** (`--automcstats-threshold`, default
+10, unchanged behavior) in both `create_datacards_ctag2d.py` and `_100150.py` —
+to test whether raising it past the current sparse-bin degeneracy (several bins
+have MC-stat errors 10–90× the bin content, noted 2026-08-18) stabilizes the fit.
+Rationale: `autoMCStats <threshold>` compares each bin's *effective* MC event
+count (`n_eff = (Σw)²/Σw²`, not raw entry count) against the threshold — above it,
+Combine uses the cheap merged Barlow-Beeston-**lite** Gaussian nuisance per bin;
+below it, the exact per-process Poisson/gamma treatment. Default 10 is standard
+combine practice, but this analysis's Signal/HPlusBottom carry ~25% negative-
+weight MC events (documented private-LHE-generator issue), which makes `n_eff` a
+noisier estimate of real statistical power than in a normal positively-weighted
+sample — bins that nominally clear `n_eff≥10` may still sit on very few raw
+events, right where the lite Gaussian approximation is weakest. Raising the
+cutoff routes more of those marginal bins to the exact treatment instead.
+**Result not yet in hand** — a threshold=10 baseline reproduction (same
+`--merge-bin-ranges "2-4,7-10" --skip-zx` production recipe) was still running
+past 19+ minutes at last check (started 2026-08-19 ~16:38, PID 3003391 in that
+shell — PID won't survive a machine reboot, but the log path below will), well
+beyond this pipeline's normal <2-minute `AsymptoticLimits` runtime — itself
+informative (the sparse-bin degeneracy is a real fit-performance cost, not just
+a theoretical concern) but not yet a comparable number for the 50/100 tests.
+Session ended before it finished (by choice, not a crash) — **resume here**:
+
+```bash
+# 1. Check whether the threshold=10 baseline finished:
+tail -60 /tmp/snandaku/automcstats_thr10.log
+# (built into $HOME/.../combine/outputs/automcstats_test_thr10/ -- if it's not
+#  there or the log looks incomplete, it may have been killed by a shell/session
+#  restart; just relaunch it, same command as below with 10.)
+
+# 2. Once 10 has a result (or after relaunching it), run 50 and 100 the same way,
+#    each into its own --output dir so they don't collide:
+cd /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine
+./run_pipeline.sh --merge-bin-ranges "2-4,7-10" --skip-zx \
+  --automcstats-threshold 50 --output "$PWD/outputs/automcstats_test_thr50" \
+  > /tmp/snandaku/automcstats_thr50.log 2>&1 &
+
+./run_pipeline.sh --merge-bin-ranges "2-4,7-10" --skip-zx \
+  --automcstats-threshold 100 --output "$PWD/outputs/automcstats_test_thr100" \
+  > /tmp/snandaku/automcstats_thr100.log 2>&1 &
+
+# 3. Compare median r (and total runtime / whether it converged cleanly at all)
+#    across 10/50/100 -- runtime and convergence behavior matter here as much
+#    as the r value itself, since the whole point is testing fit STABILITY,
+#    not just getting a number.
+```
+
+**Result, 2026-08-19: definitive non-convergence at all three thresholds, sweep
+abandoned.** Relaunched all three (10/50/100) fresh — the prior session's `/tmp`
+logs didn't survive the laptop crash. Let them run **11.5 hours** (Aug 18 23:04 →
+Aug 19 10:34), confirmed genuinely CPU-bound the whole time (`ps` CPU-time tracked
+wall-clock 1:1 at ~99.6% CPU, not sleeping/deadlocked) via two checks roughly 25
+minutes apart plus the final one. **None of the three produced even a first
+`Expected N%: r < ...` quantile line** — not "slow", genuinely non-converging,
+and critically, **raising the threshold did not help**: threshold=100 (which
+should route almost every bin to the exact per-process treatment instead of the
+fragile Barlow-Beeston-lite Gaussian) was exactly as stuck as threshold=10. This
+rules out the sweep's own hypothesis (marginal bins near a low threshold being
+the culprit) — the degeneracy isn't about *which* bins get the lite treatment,
+it runs deeper, plausibly in how `autoMCStats`'s Gaussian nuisances interact with
+this analysis's ~25% negative-weight Signal/HPlusBottom MC regardless of the
+threshold. Killed all three (`kill -TERM`, confirmed clean) rather than let them
+burn CPU indefinitely. **Conclusion: raising the threshold alone does not fix
+it — that specific idea is closed, not the underlying problem.** `autoMCStats`
+stays out of the production datacard for now, but **this is a real, unresolved
+gap, not an accepted permanent state**: per-bin MC statistical uncertainty on
+the templates currently has no nuisance covering it at all. A CMS analysis note
+needs some accounting for this; "omit it because it doesn't converge" is a
+documented workaround, not a resolution. **Candidate next steps, not yet
+started, roughly in order of expected effort-to-payoff**:
+1. Identify exactly which bins have the 10–90× error/content ratio and merge
+   just those further (the pipeline already merges some ranges for the
+   negative-bin issue) — if `n_eff` clears the threshold everywhere, plain
+   `autoMCStats` may converge normally without needing any threshold games.
+2. Attack the root cause directly: Signal/HPlusBottom's ~25% negative-weight
+   MC fraction (same likely root cause as the already-diagnosed `lhe_pdf`/
+   `scalevar_muR/muF` blowups) makes `n_eff` an unreliable proxy for real
+   statistical power — fixing how negative weights are summed/handled could
+   resolve several problems at once, not just this one.
+3. Manual per-bin `shapeN`/gamma nuisances for just the worst offending
+   bins/processes instead of the automatic whole-channel treatment.
+4. Debug the fit itself before assuming it's structural — untried:
+   `--cminDefaultMinimizerStrategy 0`, `--X-rtd MINIMIZER_analytic`, looser
+   `--rAbsAcc`/`--rRelAcc`, or plain `MultiDimFit` instead of the full
+   `AsymptoticLimits` CLs scan, to isolate whether the CLs scan itself is the
+   bottleneck versus the underlying likelihood being genuinely broken. The
+   11.5-hour test only ruled out "threshold alone fixes it."
+
+### Update 2026-08-19: `lhe_alphaS` sign bug found — same-direction Up/Down was
+never real physics, removed from every datacard pending a fix
+
+While investigating why `lhe_alphaS` ranked an unexpectedly high #3 in the
+16-systematic Impacts (impact_r=17.6 — see the rebuild in the previous
+section), checked the actual templates directly rather than trusting the fit:
+both `qqZZ` (±1.5%) and `Other_Higgs` (±2.7%) move in the **same direction**
+together — Up always raises both, Down always lowers both, smoothly and
+without spikes across all 20 bins. That's the tell: a real, independent physics
+effect on two different production processes shouldn't be forced into lockstep
+like that.
+
+**Root cause, found in `analysis/corrections/lhepdf.py:60`**:
+```python
+delta_alpha = 0.5 * np.abs(w_as_high - w_as_low)
+w_up_alpha = 1 + delta_alpha
+w_down_alpha = 1 - delta_alpha
+```
+The `np.abs()` destroys the *sign* of the difference between the two αs
+members (`w_as_high` = LHEPdfWeight member 102, αs=0.120; `w_as_low` = member
+101, αs=0.116) before symmetrizing. Since `delta_alpha` is forced non-negative,
+`w_up_alpha >= 1` and `w_down_alpha <= 1` for **every event of every process,
+unconditionally** — "Up" is mathematically guaranteed to raise the yield and
+"Down" to lower it, regardless of which direction the real αs variation
+pushes that event's weight. This is why `qqZZ` and `Other_Higgs` were seen
+moving together: not a shared physics effect, an artifact of the formula. Any
+other process with a 103-member `LHEPdfWeight` (Signal/ggZZ don't have one —
+separately degenerate, unaffected) would show the identical manufactured
+pattern.
+
+Contrast with `lhe_pdf` immediately above it in the same function (lines
+43-55): that one is *supposed* to be a symmetric envelope —
+`sqrt(Σ(w_k-w0)²)` is the correct PDF4LHC treatment for ~100 Hessian-eigenvector
+replica members, where "symmetric uncertainty, direction not physically
+meaningful" is the right convention. αs has only **2** members, not 100 — the
+physically correct treatment is a genuinely *signed* shift (higher αs → member
+102's actual weight, lower αs → member 101's), not an absolute-value envelope.
+The two-members case wrongly reused the many-eigenvectors convention.
+
+**This also retroactively corrects a wrong conclusion recorded earlier in this
+file** (the `USABLE_SYST` per-process reasoning above): `lhe_alphaS` was
+described as "kept for Other_Higgs: larger for HPlusBottom than the official
+samples, but not pathological (no sign flip, no same-direction Up/Down)" — that
+comparison was never meaningful, since same-direction Up/Down turns out to be
+universal, not something distinguishing HPlusBottom from the official samples.
+
+**Not yet fixed, deliberately** — excluded from `USABLE_SYST` instead
+(`create_datacards_ctag2d.py`, `create_datacards_ctag2d_100150.py`,
+`create_datacards_ctag2d_3ratio.py`, all three kept in sync) pending
+verification that a signed fix (drop the `np.abs()`) genuinely changes
+direction for some events rather than just relabeling the same magnitude —
+that check wasn't done before documenting, to avoid publishing an unverified
+"fixed" number.
+
+**Updated production limit, 15 systematics, `lhe_alphaS` excluded**: median
+r=309.5 full-syst, no-ZX, `[100,150]` (was r=311.5 with the buggy systematic
+included — a small, expected shift since removing one shape systematic
+slightly changes the fit, not a sign the old number was wildly wrong, just
+built on an incorrect nuisance). Converged cleanly in <2 minutes (confirms this
+whole investigation was never about `autoMCStats`/convergence — that's a
+separate, still-open issue, see above).
+
+**Impact ranking rebuilt, 15 systematics** (same real `combineTool.py -M
+Impacts` profile-likelihood method as before, not the cheap approximation):
+
+| Rank | Nuisance | impact on r |
+|---|---|---|
+| 1 | `CMS_ctag2d` | 71.2 |
+| 2 | `CMS_eff_e_reco_below20` | 28.2 |
+| 3 | `BR_HZZ4l` | 12.0 |
+| 4 | `lumi_Run3` | 9.6 |
+| 5 | `CMS_eff_e_reco_20to75` | 7.3 |
+| 6 | `CMS_pileup` | 6.5 |
+| 7 | `ps_fsr` | 5.4 |
+| 8 | `QCDscale_qqZZ` | 4.0 |
+| 9 | `ps_isr` | 3.0 |
+| 10 | `scalevar_muF` | 2.7 |
+| 11 | `scalevar_muR` | 1.3 |
+| 12 | `QCDscale_ggZZ` | 0.7 |
+| 13 | `lhe_pdf` | 0.4 |
+| 14 | `pdf_gg` | 0.3 |
+| 15 | `CMS_eff_e_reco_above75` | 0.2 |
+
+`CMS_ctag2d` remains the dominant nuisance by a wide margin — unaffected by
+this fix, reinforcing that resolving its Down-variation asymmetry (kept as a
+documented caveat, see the Known traps entry) is the highest-value remaining
+systematics work. Output:
+`combine_run3_100150_ctag2d_pipeline_run/impacts_100150_15syst_noalphaS.{json,pdf}`.
+
+**Also caught and fixed while rebuilding, unrelated regression**: the
+`autoMCStats` code from the section above turned out to default to **on**
+(`hczz autoMCStats 10` silently written into every datacard unless a value is
+explicitly passed) — directly contradicting the standing decision to keep it
+out, and confirmed by watching a freshly-rebuilt production datacard hang
+again during this same session. Fixed: `--automcstats-threshold` now defaults
+to `None` (no line written at all) in both `create_datacards_ctag2d.py` and
+`create_datacards_ctag2d_100150.py`; pass an explicit value to opt back in for
+testing.
+
+**Next step, not started**: verify the signed fix (`delta_alpha = 0.5 *
+(w_as_high - w_as_low)`, dropping `np.abs()`) actually flips direction for a
+real subset of events before re-including `lhe_alphaS` and rebuilding again.
+
+---
 
 **3-ratio discriminant variant** (`create_datacards_ctag2d_3ratio.py`): joint
 $(r_1,r_2,r_3) = (P_s/(P_s{+}P_{qqZZ}), P_s/(P_s{+}P_{ggZZ}), P_s/(P_s{+}P_{OH}))$,
@@ -495,9 +782,16 @@ symmetric ± pattern for a shape systematic (qqZZ: Up=1.088/Down=1.0001; ggZZ:
 1.089/1.002; Signal: 1.249/1.028; Other_Higgs: 1.132/0.999). Looks like
 `weight_CMS_ctag2d_*Down` may not be applying a real down-shift. Matters
 because `CMS_ctag2d` ranks #2–3 of the nuisances in the impact-ranking plots —
-that ranking may be affected. Needs digging into the upstream
-`analysis/corrections/ctag2d.py` correction code; out of scope for the
-datacard-script work that found it.
+that ranking may be affected. **Root-caused 2026-08-18**: the Up/Down weight-combination
+logic itself is standard/correct — the real source is placeholder calibration values
+(`central=1.000, up_Total=3.000, down_Total=0.300`) in statistically-empty (flavor, WP)
+corners of the official `flavTaggingSF_<year>.json.gz`, amplified by `CTag2DCorrector`
+taking `ak.prod` across every selected jet rather than one. **Decision (2026-08-18,
+user sign-off): keep the all-jets `ak.prod` scope** — it matches the 1D `CTagCorrector`
+this replaces, keeping pre/post-migration yields directly comparable, so the asymmetry
+stays a documented caveat rather than triggering a scope change. Restricting to one jet
+would likely smooth it out but was explicitly rejected as a bigger, separate
+validation task that changes what the corrector represents.
 
 ---
 
@@ -506,6 +800,7 @@ datacard-script work that found it.
 | trap | detail |
 |---|---|
 | **No merge step (historical)** | §2 above describes the old split path — superseded 2026-08-14 for new workflows by the consolidated `--postprocess --mva-inference` flow, which had never been run successfully before that date. |
+| **Local `apptainer exec` smoke tests need explicit binds, not automatic** | Found 2026-08-19 running a local single-file smoke test outside condor: `/eos`, `/afs`, `/cvmfs`, and the Kerberos ticket cache dir (`/run/user/<uid>`) are **not** auto-mounted into the container in this environment the way they are on a real condor worker / lxplus node. Symptoms in order as each missing bind was found: `/eos` missing → `FileNotFoundError` on `submit.py` itself; ticket cache missing → EOS `Permission denied` even with `/eos` bound (klist inside the container shows no cache until `/run/user/<uid>` is also bound); `/cvmfs` missing → correctionlib files under `/cvmfs/cms-griddata.cern.ch/...` not found even though the image itself lives on `/cvmfs` (loading the image doesn't imply the whole `/cvmfs` tree is bound). Full working invocation: `apptainer exec --bind /eos --bind /afs --bind /run/user/<uid> --bind /cvmfs <image> bash -c 'export HOME=<scratch>; export PYTHONNOUSERSITE=1; export X509_USER_PROXY=<path to a valid voms proxy>; ...'` — also needs a genuinely valid (non-expired) X509 proxy for xrootd reads (Kerberos alone isn't enough for CMS xrootd doors), separate from the EOS-filesystem Kerberos requirement above. |
 | **`merge_parquets()` required identical schemas, crashed on real data** | Fixed 2026-08-14: rewrote to `pa.concat_tables(tables, promote=True)` (schema union) instead of `dask.dataframe.read_parquet(glob).compute()` (strict schema). Real mismatch found in `EGamma0v1D`/`DYJetsToLL_50` (data/DY, not analysis processes) — some files predate the workflow yaml adding `nSV`/`jet_btagUParTAK4*`/`jet_h_dphi_inclusive`. Signal/qqZZ/ggZZ/Other_Higgs directories confirmed schema-clean. Also fixed: empty-partition crash (`pa.concat_tables([])`) for datasets with zero legitimate rows. |
 | **Unregistered private datasets crash multiple postprocess functions** | `2023postBPixHB`-style private datasets (condor-run directly, never added to `<era>_nanov<n>.yaml`) crash `filesets/utils.py::get_process_sample_map`, `postprocess/postprocessor.py::fill_histograms_from_parquets`, and `postprocess/postprocessor.py::save_histograms_by_sample`'s `get_lumi_weight` call, all with a bare `KeyError`. All three fixed 2026-08-14 to skip/degrade gracefully instead of crashing (the last one skips the whole sample's histogram build — no safe default xsec exists). A fourth instance, in the final cutflow-summary print (`key_process_map[key]` for `SomeSMSignal`), has no code fix — **use `--nocutflow`** (see below) instead, since that whole block is optional reporting output, not something `--mva-inference` needs. The real underlying gap (these datasets were never registered at all) is still open. |
 | **`--nocutflow` required for `hplusc_mva_4class` + `--mva-inference`** | Without it, `run_postprocess.py` crashes in the final cutflow-summary print (see above) one step before MVA inference ever starts. Always include it for this workflow. |
@@ -546,8 +841,9 @@ Priority order set 2026-08-14; update as items land.
    **Scope decision made during porting**: `hww-analysis` applies this to one
    "candidate c-jet"; this port instead multiplies a per-jet SF across every
    jet in `events.selected_jets` (`ak.prod`), matching the scope of the 1D
-   `CTagCorrector` it's meant to replace. Flagged in the module docstring for
-   review.
+   `CTagCorrector` it's meant to replace. **Reviewed and confirmed 2026-08-18**
+   after root-causing the CMS_ctag2d Down-variation asymmetry to this scope (see
+   Known traps above) — user sign-off to keep all-jets, not a bug.
 
    **Update 2026-08-14 (later): comparison workflow + datacard variant
    built.** `analysis/workflows/hplusc_mva_4class_ctag2d.yaml` (both
@@ -642,30 +938,41 @@ Priority order set 2026-08-14; update as items land.
    `Signal`/`HPlusBottom` instead. Worth trying before assuming it's
    unnecessary — this is the leading unresolved-bug candidate for the
    excluded `lhe_pdf`/`scalevar_muR/muF` rows in `USABLE_SYST`.
-3. **`autoMCStats`** — cheap, no architecture change, not yet in the datacard.
+3. **`autoMCStats`** — **added to the datacard 2026-08-18** (threshold 10).
    Update 2026-08 (separate investigation, `ctag2d` pipeline): found
    numerically degenerate with the current binning (several bins have MC-stat
-   *errors* 10–90x the bin *content*) — both this note's "cheap" framing and
-   that finding are true, not a contradiction; the degeneracy is real but
-   specific to today's binning, not evidence `autoMCStats` is a bad idea in
-   general.
+   *errors* 10–90x the bin *content*). **Update 2026-08-19**: threshold made a
+   CLI flag (`--automcstats-threshold`) to test raising it past this
+   degeneracy — see the dated update in the Systematics section above for the
+   full rationale and in-progress result.
 4. **Object-shift (JES/JER/lepton scale+res) systematics** — bigger lift,
    needs new shift-directory production in `runner.py` plus inference
-   re-coverage (§4); not started. **Update 2026-08-17**: electron reco is
-   actually *not* blocked — `weight_CMS_eff_e_reco_{20to75,above75,below20}_
-   <year>Up/Down` already exist in the `ctag2d` scored parquets (presumably
-   from an earlier, unrelated production step) and are now wired into
-   `create_datacards_ctag2d*.py`'s `USABLE_SYST` (16 systematics total, see
-   the `ctag2d` variant subsection under Systematics above). Muon
-   ID/isolation/reco remains genuinely blocked — no such weight columns
-   exist anywhere in the scored parquets, checked directly. JES/JER still
-   not started, still needs the shift-directory production described here.
+   re-coverage (§4). **Update 2026-08-17**: electron reco is actually *not*
+   blocked — `weight_CMS_eff_e_reco_{20to75,above75,below20}_<year>Up/Down`
+   already exist in the `ctag2d` scored parquets (presumably from an earlier,
+   unrelated production step) and are now wired into `create_datacards_
+   ctag2d*.py`'s `USABLE_SYST` (16 systematics total, see the `ctag2d`
+   variant subsection under Systematics above). **Update 2026-08-19**:
+   JES/JER (`CMS_scale_j`/`CMS_res_j`) and muon scale/resolution
+   (`CMS_scale_m`/`CMS_res_m`) shift *production* is now code-complete and
+   smoke-tested (`jec_shifts` workflow, `hplusc_mva_4class_ctag2d_
+   jecshifts.yaml`) — see the dated update in the Systematics section above.
+   Building a datacard that actually reads these shift directories as shape
+   systematics is separate, not-yet-started work. Muon ID/isolation/reco
+   (efficiency SF, different from scale/resolution) remains genuinely
+   blocked — no such weight columns exist anywhere in the scored parquets,
+   checked directly, and no `muon:` block exists in the `ctag2d` workflow
+   yamls' `event_weights` at all.
 5. **Per-event HF-composition-style weight** — `hww-analysis`'s
    `higgs_hf.py` replaces a mis-scoped flat lnN on a pooled background group
    with a per-event GEN-jet-flavour weight. Same shape of problem as our
    `Other_Higgs`/`HPlusBottom` pooling (see the `lhe_pdf`/`scalevar`
-   exclusion above) — worth revisiting now that `ctag2d` has landed (item 1
-   is done, this was gated on it).
+   exclusion above). **Update 2026-08-19**: ported (`analysis/corrections/
+   higgs_hf.py`, `higgsHFWeight: true` in both `ctag2d` workflow yamls),
+   wired into `weight_manager()`, and smoke-tested — see the dated update in
+   the Systematics section above. **Not yet wired into `create_datacards_
+   ctag2d*.py`'s `SYSTEMATICS`/`USABLE_SYST` dicts** — the column exists in
+   the parquet, the datacard doesn't use it yet.
 6. **`BR_HZZ4l`/`QCDscale_qqZZ` lnN rows** — **done 2026-08-17**, see the
    `ctag2d` variant subsection under Systematics above.
 

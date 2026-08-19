@@ -187,10 +187,25 @@ SYSTEMATICS = {
 # the same underlying private-sample production bug. lhe_alphaS and
 # CMS_ctag_b are larger for HPlusBottom than the official samples but not
 # pathological (no sign flip, no same-direction Up/Down) -- kept.
+# lhe_alphaS EXCLUDED EVERYWHERE, 2026-08-19 (under investigation, not yet
+# fixed): analysis/corrections/lhepdf.py's delta_alpha = 0.5 * np.abs(w_as_high
+# - w_as_low) takes an absolute value before symmetrizing, which forces
+# w_up_alpha = 1 + delta_alpha >= 1 and w_down_alpha = 1 - delta_alpha <= 1 for
+# EVERY event of EVERY process unconditionally -- the true sign of the alphaS
+# variation is destroyed, so "Up" is mathematically guaranteed to raise every
+# process's yield and "Down" to lower it, regardless of actual physics. This
+# is why qqZZ and Other_Higgs were seen moving in lockstep (rank #3 impact,
+# 17.6) -- not a real correlated physics effect, an artifact of the abs().
+# lhe_pdf's use of a symmetric envelope (sqrt(sum of squared diffs)) is
+# correct for its 100-eigenvector PDF4LHC convention; alphaS has only 2
+# members and needs a genuinely signed shift instead -- different case, same
+# function, only alphaS is broken. See README_HcZZ.md's 2026-08-19 dated
+# update under Systematics for the full writeup. Re-include once
+# lhepdf.py's delta_alpha is fixed (drop the np.abs()) and re-verified.
 EFF_E_RECO = {"CMS_eff_e_reco_20to75", "CMS_eff_e_reco_above75", "CMS_eff_e_reco_below20"}
 USABLE_SYST = {
-    "qqZZ":        set(SYSTEMATICS.keys()),
-    "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF"},
+    "qqZZ":        set(SYSTEMATICS.keys()) - {"lhe_alphaS"},
+    "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF", "lhe_alphaS"},
     "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d"} | EFF_E_RECO,
     "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d"} | EFF_E_RECO,
 }
@@ -590,7 +605,7 @@ def write_root_file(histograms, output_dir, filename="histograms_mva_with_zx.roo
 # Write datacard
 # ---------------------------------------------------------------------------
 
-def write_datacard(histograms, root_filename, output_dir, include_zx=True):
+def write_datacard(histograms, root_filename, output_dir, include_zx=True, automcstats_threshold=None):
     dc_path = os.path.join(output_dir, "datacard_mva_with_zx.txt" if include_zx else "datacard_no_zx.txt")
 
     procs    = ["Signal", "ggZZ", "qqZZ", "Other_Higgs"] + (["ZX"] if include_zx else [])
@@ -658,6 +673,23 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True):
         if include_zx:
             dc.write(f"\n# ZX normalization floats freely in the fit (data-driven)\n")
             dc.write(f"ZX_rate  rateParam  hczz  ZX  1.0  [0.1,10.0]\n")
+
+        # autoMCStats, added 2026-08-18 (threshold 10, matching standard combine
+        # convention). CAVEAT, checked this session: several bins in the current
+        # quantile binning have MC-stat errors 10-90x the bin content -- this is
+        # numerically degenerate with such sparse bins (Barlow-Beeston-lite will
+        # add a nuisance per affected bin, not just "cheap" as usually assumed).
+        #
+        # OFF BY DEFAULT since 2026-08-19 (was silently on-by-default 2026-08-18/19,
+        # a real regression -- caught and fixed same day). The --automcstats-threshold
+        # sweep (10/50/100) this flag was built to test is done: NONE of the three
+        # converge (11.5h each, zero quantiles produced) -- raising the threshold
+        # does not help. This is NOT a resolved gap -- per-bin MC-stat uncertainty
+        # currently has no coverage at all; see README_HcZZ.md's 2026-08-19 dated
+        # update under Systematics for the open follow-up items. Pass
+        # --automcstats-threshold <n> explicitly to opt back in for testing.
+        if automcstats_threshold is not None:
+            dc.write(f"\nhczz autoMCStats {automcstats_threshold}\n")
 
     print(f"  Datacard:  {dc_path}")
     return dc_path
@@ -789,6 +821,14 @@ def main():
              "ZX process/row/rateParam in the datacard. Writes datacard_no_zx.txt "
              "instead of datacard_mva_with_zx.txt.",
     )
+    parser.add_argument(
+        "--automcstats-threshold", type=int, default=None,
+        help="autoMCStats effective-event-count cutoff. OFF by default (2026-08-19) "
+             "-- confirmed non-convergent at every threshold tested (10/50/100, "
+             "11.5h each, zero quantiles produced), see the datacard's own inline "
+             "comment above the autoMCStats line and README_HcZZ.md. Pass a value "
+             "to opt back in for testing.",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.output, exist_ok=True)
@@ -841,7 +881,7 @@ def main():
     print("\n[4] Writing output")
     root_filename = "histograms_mva_with_zx.root" if not args.skip_zx else "histograms_no_zx.root"
     root_file = write_root_file(histograms, args.output, filename=root_filename, include_zx=not args.skip_zx)
-    dc_path = write_datacard(histograms, os.path.basename(root_file), args.output, include_zx=not args.skip_zx)
+    dc_path = write_datacard(histograms, os.path.basename(root_file), args.output, include_zx=not args.skip_zx, automcstats_threshold=args.automcstats_threshold)
 
     print_summary(histograms, include_zx=not args.skip_zx)
     scan_negative_bins(histograms, include_zx=not args.skip_zx)
