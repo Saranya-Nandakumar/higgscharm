@@ -484,44 +484,109 @@ if __name__ == "__main__":
             bhive_config_path=args.mva_config,
             bhive_model_path=args.mva_model,
             apply_mass_window=args.mva_mass_window,
+            era=args.year,
         )
         processor._load_model()
 
         import hist as hist_lib
 
-        def _build_mva_histograms(class_names):
-            """Build one histogram per MVA score column (signal + per-class)."""
+        # Added 2026-08-14: histogram every MVA input feature (global + jagged
+        # candidate features), not just the score outputs -- for post-scoring
+        # data/MC-style validation plots of exactly what the model saw.
+        # Range heuristics are name-pattern-based since features span very different
+        # scales (pt in [0,300], eta in [-6,6], flags in {0,1}, ...); anything outside
+        # its assigned range lands in flow (over/underflow), it is not silently dropped.
+        def _feature_axis(col):
+            name = col.lower()
+            if name.startswith("jet_is_") or name.startswith("lepton_is_") or "_flag" in name \
+                    or name in ("in_mass_window", "lepton_isPFcand".lower()):
+                return hist_lib.axis.Regular(2, -0.5, 1.5, name=col, label=col, flow=True)
+            if "eta" in name:
+                return hist_lib.axis.Regular(50, -6, 6, name=col, label=col, flow=True)
+            if "phi" in name:
+                return hist_lib.axis.Regular(50, -3.2, 3.2, name=col, label=col, flow=True)
+            if name in ("m4l",) or name.endswith("_mass") or name == "mass":
+                return hist_lib.axis.Regular(50, 60, 200, name=col, label=col, flow=True)
+            if "deltar" in name or "dphi" in name:
+                return hist_lib.axis.Regular(50, 0, 6, name=col, label=col, flow=True)
+            if name in ("n_cjet", "nsv", "jet_multiplicity", "n_lepton") or "multiplicity" in name:
+                return hist_lib.axis.Regular(15, 0, 15, name=col, label=col, flow=True)
+            if "charge" in name:
+                return hist_lib.axis.Regular(5, -2.5, 2.5, name=col, label=col, flow=True)
+            if "iso" in name or "sip3d" in name or "mva" in name:
+                return hist_lib.axis.Regular(50, 0, 5, name=col, label=col, flow=True)
+            if "pt" in name or "ht" in name:
+                return hist_lib.axis.Regular(50, 0, 300, name=col, label=col, flow=True)
+            # generic fallback for anything unrecognized (still gets a histogram, just a
+            # wide default range with flow catching outliers)
+            return hist_lib.axis.Regular(50, -10, 10, name=col, label=col, flow=True)
+
+        def _build_mva_histograms(class_names, processor):
+            """Build one histogram per MVA score column (signal + per-class) PLUS one
+            per MVA input feature: global_features/lt_candidates (scalar, one value per
+            event) and cpf_candidates/vtx_features/npf_candidates (jagged -- one value
+            per jet/Z/lepton, flattened across candidates at fill time)."""
             hists = {}
             score_cols = ["mva_signal_score"] + [f"mva_score_{c}" for c in class_names]
-            for col in score_cols:
+            scalar_cols = list(dict.fromkeys(
+                score_cols
+                + processor.config.get("global_features", [])
+                + processor.config.get("lt_candidates", [])
+            ))
+            jagged_cols = list(dict.fromkeys(
+                processor.config.get("cpf_candidates", [])
+                + processor.config.get("vtx_features", [])
+                + processor.config.get("npf_candidates", [])
+            ))
+            for col in scalar_cols:
+                axis = (hist_lib.axis.Regular(50, 0, 1, name=col, label=col) if col in score_cols
+                        else _feature_axis(col))
                 hists[col] = hist_lib.Hist(
-                    hist_lib.axis.Regular(50, 0, 1, name=col, label=col),
+                    axis,
                     hist_lib.axis.StrCategory([], name="process", growth=True),
                     hist_lib.axis.StrCategory([], name="variation", growth=True),
                     hist_lib.storage.Weight(),
                 )
-            return hists
+            for col in jagged_cols:
+                hists[col] = hist_lib.Hist(
+                    _feature_axis(col),
+                    hist_lib.axis.StrCategory([], name="process", growth=True),
+                    hist_lib.axis.StrCategory([], name="variation", growth=True),
+                    hist_lib.storage.Weight(),
+                )
+            return hists, set(jagged_cols)
 
-        def _fill_mva_histograms(hists, df, process_name, weight_col="weight_nominal"):
-            """Fill MVA score histograms from a scored DataFrame."""
+        def _fill_mva_histograms(hists, jagged_cols, df, process_name, weight_col="weight_nominal"):
+            """Fill score/feature histograms from a scored DataFrame. Scalar columns fill
+            directly; jagged (list-valued) columns are exploded so every jet/Z/lepton
+            entry gets its own fill, with the event weight repeated per entry (a jet-level
+            histogram, not an event-level one -- an event with 3 jets contributes 3
+            entries, each carrying that event's full weight, same convention coffea's
+            fill_histograms uses for jagged axes elsewhere in this codebase)."""
             # Only fill events with valid scores (apply_mass_window sets -1 outside window)
             mask = df["mva_signal_score"] >= 0
             df_valid = df[mask]
             if df_valid.empty:
                 return
-            weights = (
-                df_valid[weight_col].fillna(1.0).values
+            event_weights = (
+                df_valid[weight_col].fillna(1.0)
                 if weight_col in df_valid.columns
-                else np.ones(len(df_valid))
+                else pd.Series(np.ones(len(df_valid)), index=df_valid.index)
             )
             for col, h in hists.items():
-                if col in df_valid.columns:
-                    h.fill(
-                        **{col: df_valid[col].values},
-                        process=process_name,
-                        variation="nominal",
-                        weight=weights,
-                    )
+                if col not in df_valid.columns:
+                    continue
+                if col in jagged_cols:
+                    exploded = df_valid[col].explode()
+                    exploded = exploded.dropna()
+                    if exploded.empty:
+                        continue
+                    w = event_weights.loc[exploded.index].values
+                    h.fill(**{col: exploded.astype(float).values}, process=process_name,
+                           variation="nominal", weight=w)
+                else:
+                    h.fill(**{col: df_valid[col].values}, process=process_name,
+                           variation="nominal", weight=event_weights.values)
 
         # Run on merged parquets (parquets_<sample>/ dirs created by merge step)
         merged_dirs = sorted(output_dir.glob("parquets_*"))
@@ -532,7 +597,7 @@ if __name__ == "__main__":
             )
         for merged_dir in merged_dirs:
             sample_name = merged_dir.name.replace("parquets_", "")
-            sample_hists = _build_mva_histograms(processor.class_names)
+            sample_hists, jagged_cols = _build_mva_histograms(processor.class_names, processor)
 
             for pq_file in sorted(merged_dir.rglob("*.parquet")):
                 df = pd.read_parquet(pq_file)
@@ -552,7 +617,7 @@ if __name__ == "__main__":
                 df.to_parquet(out_file, index=False)
 
                 # Accumulate into histograms
-                _fill_mva_histograms(sample_hists, df, sample_name)
+                _fill_mva_histograms(sample_hists, jagged_cols, df, sample_name)
                 logging.info(
                     f"  {sample_name}/{rel}: {len(df)} events, "
                     f"mean signal score={df['mva_signal_score'].mean():.4f}"

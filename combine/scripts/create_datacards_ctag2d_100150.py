@@ -142,6 +142,11 @@ SYSTEMATICS = {
     "CMS_eff_e_reco_20to75":  {"col": "weight_CMS_eff_e_reco_20to75",  "era_dep": True},
     "CMS_eff_e_reco_above75": {"col": "weight_CMS_eff_e_reco_above75", "era_dep": True},
     "CMS_eff_e_reco_below20": {"col": "weight_CMS_eff_e_reco_below20", "era_dep": True},
+    # Muon ID efficiency SF (loose WP, see hplusc_mva_4class_ctag2d.yaml's
+    # `muon:` block, wired 2026-08-21). Detector-level correction like
+    # CMS_eff_e_reco above, not an LHE-generator weight -- unaffected by the
+    # private-sample lhe_pdf/scalevar bugs, usable for every process.
+    "CMS_eff_m_id":           {"col": "weight_CMS_eff_m_id",           "era_dep": True},
 }
 
 # Per-process usable systematics, based on empirical sanity checks (2026-08-03/04):
@@ -201,8 +206,8 @@ EFF_E_RECO = {"CMS_eff_e_reco_20to75", "CMS_eff_e_reco_above75", "CMS_eff_e_reco
 USABLE_SYST = {
     "qqZZ":        set(SYSTEMATICS.keys()) - {"lhe_alphaS"},
     "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF", "lhe_alphaS"},
-    "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d"} | EFF_E_RECO,
-    "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d"} | EFF_E_RECO,
+    "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"} | EFF_E_RECO,
+    "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"} | EFF_E_RECO,
 }
 
 
@@ -637,16 +642,32 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
             return line + "\n"
 
         dc.write(syst_row("lumi_Run3",     "lnN", {p: "1.014" for p in procs}))
-        # pdf_gg / QCDscale_ggZZ: crude placeholders retained only where a
+        # QCDscale_gg / pdf_gg / kfactor_ggZZ: rate lnN's retained only where a
         # real per-event shape systematic isn't available (Signal's LHE
         # weights are anomalous -- see analysis/corrections/lhepdf.py note;
-        # ggZZ has no LHEScaleWeight branch at all).
-        dc.write(syst_row("pdf_gg",        "lnN", {"ggZZ": "1.05", "Signal": "1.05"}))
-        dc.write(syst_row("QCDscale_ggZZ", "lnN", {"ggZZ": "1.10"}))
+        # ggZZ has no LHEScaleWeight branch at all). Values matched to
+        # HIG-24-013 (AN2023_157_v10) Table 15 2026-08-28: QCD scale (gg)
+        # 3.9%, PDF set (gg) 3.2%, gg->ZZ k-factor 10% -- three separate
+        # nuisances in the official analysis, previously collapsed into one
+        # 5% pdf_gg placeholder plus a mislabeled "QCDscale_ggZZ" (that 10%
+        # value was already correct, just named after the wrong physics --
+        # it's the k-factor uncertainty, not a QCD-scale uncertainty).
+        dc.write(syst_row("QCDscale_gg",   "lnN", {"ggZZ": "1.039", "Signal": "1.039"}))
+        dc.write(syst_row("pdf_gg",        "lnN", {"ggZZ": "1.032", "Signal": "1.032"}))
+        dc.write(syst_row("kfactor_ggZZ",  "lnN", {"ggZZ": "1.10"}))
         # Added 2026-08-17, sourced from Felix Heyen thesis Appendix D (no
         # per-event weight column exists for either -- pure rate lnN):
         dc.write(syst_row("BR_HZZ4l",      "lnN", {"Signal": "1.02", "Other_Higgs": "1.02"}))
         dc.write(syst_row("QCDscale_qqZZ", "lnN", {"qqZZ": "1.04"}))
+        # NOTE (checked 2026-08-21, no code change): HIG-24-013 (AN2023_157_v10,
+        # Table 15) quotes a separate "PDF set (qq->ZZ): +3.1/-3.4%" rate
+        # uncertainty alongside pdf_gg above -- but unlike ggZZ/Signal (whose
+        # lhe_pdf is excluded from USABLE_SYST, hence the pdf_gg lnN
+        # placeholder), qqZZ DOES have a real, validated per-event lhe_pdf
+        # shape systematic already wired in below (USABLE_SYST["qqZZ"]
+        # includes lhe_pdf, measured ~2.8% -- see hczz_combine_systematics
+        # memory). Adding a pdf_qq lnN on top would double-count the same
+        # PDF uncertainty via two different nuisances. No gap here.
         if include_zx:
             dc.write(syst_row("ZX_norm", "lnN", {"ZX": "1.30"}))
 
@@ -735,11 +756,14 @@ def main():
     )
     parser.add_argument(
         "--scored-dir",
-        default="/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d_scored",
+        default="/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d_scored_v2",
         help="Directory with MVA-scored parquets from the ctag2d WORKFLOW VARIANT "
              "(hplusc_mva_4class_ctag2d.yaml) -- NOT the production hplusc_mva_4class "
              "scored dir, which never has a weight_CMS_ctag2d_* column. Does not exist "
-             "until that workflow has been run + scored.",
+             "until that workflow has been run + scored. _v2 (default since 2026-08-28) "
+             "is the rebuild that also carries weight_CMS_eff_m_id_<year>Up/Down "
+             "(muon efficiency SF); the old _scored dir predates that column and "
+             "silently reproduces the stale pre-muon-SF r=309.5 result.",
     )
     parser.add_argument(
         "--sumw-dir",

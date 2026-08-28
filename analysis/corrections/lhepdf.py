@@ -43,15 +43,27 @@ def add_lhepdf_weight(events, weights_container):
             w0 = pdfweights[:, 0]  # central (mem=0)
             w_all = pdfweights[:, 1:101]  # mem=1..100
             diffs = (w_all - w0[:, None]) ** 2
-            delta_pdf = np.sqrt(ak.sum(diffs, axis=1))
+            # NNPDF Monte-Carlo-replica prescription: sample std. dev. of the
+            # N=100 replicas around the central value, i.e. divide the sum of
+            # squared deviations by (N-1) before taking the sqrt. The
+            # unnormalized quadrature sum (correct only for Hessian-eigenvector
+            # PDF sets) was found to inflate delta_pdf by ~sqrt(99)=9.95x for
+            # at least one private sample (confirmed 2026-08-03).
+            delta_pdf = np.sqrt(ak.sum(diffs, axis=1) / 99)
 
             w_up_pdf = 1 + delta_pdf
             w_down_pdf = 1 - delta_pdf
 
-            # αs
+            # αs: genuinely SIGNED shift, unlike the ~100-member PDF envelope
+            # above. Taking np.abs() here (as an earlier version did) forces
+            # w_up_alpha >= 1 and w_down_alpha <= 1 for every event of every
+            # process unconditionally, destroying the true per-event sign of
+            # the alphaS variation -- confirmed 2026-08-19 via qqZZ/Other_Higgs
+            # templates moving in lockstep (Up always up, Down always down),
+            # which a genuine independent-process physics effect would not do.
             w_as_low = pdfweights[:, 101]
             w_as_high = pdfweights[:, 102]
-            delta_alpha = 0.5 * np.abs(w_as_high - w_as_low)
+            delta_alpha = 0.5 * (w_as_high - w_as_low)
             w_up_alpha = 1 + delta_alpha
             w_down_alpha = 1 - delta_alpha
 
@@ -65,7 +77,13 @@ def add_lhepdf_weight(events, weights_container):
             w0 = pdfweights[:, 0]
             w_all = pdfweights[:, 1:101]
             diffs = (w_all - w0[:, None]) ** 2
-            delta_pdf = np.sqrt(ak.sum(diffs, axis=1))
+            # NNPDF Monte-Carlo-replica prescription: sample std. dev. of the
+            # N=100 replicas around the central value, i.e. divide the sum of
+            # squared deviations by (N-1) before taking the sqrt. The
+            # unnormalized quadrature sum (correct only for Hessian-eigenvector
+            # PDF sets) was found to inflate delta_pdf by ~sqrt(99)=9.95x for
+            # at least one private sample (confirmed 2026-08-03).
+            delta_pdf = np.sqrt(ak.sum(diffs, axis=1) / 99)
 
             w_up_pdf = 1 + delta_pdf
             w_down_pdf = 1 - delta_pdf

@@ -390,11 +390,13 @@ Declared in `create_datacards.py`'s `SYSTEMATICS`/`USABLE_SYST` dicts
 
 | kind | examples | notes |
 |---|---|---|
-| weight shapes | `lhe_pdf`, `lhe_alphaS`, `scalevar_muR`, `scalevar_muF`, `ps_isr`, `ps_fsr`, `CMS_pileup`, `CMS_ctag_b`, `CMS_ctag_c` | per-process usable subset, not uniform — see `USABLE_SYST` and Known traps |
-| object shifts | `CMS_scale_j`/`CMS_res_j` **in progress**, `CMS_scale_m`/`CMS_res_m` **in progress** (both 2026-08-19, `jec_shifts` workflow — see "Object-shift systematics" update below); electron/muon SF shifts still none | `hww-analysis` has `CMS_scale_j/e/m`, `CMS_res_j/e/m` from JES/JER/lepton-scale shift directories |
-| lnN | `lumi_Run3` (1.4%), `pdf_gg`/`pdf_qq`, `QCDscale_ggZZ`/`QCDscale_qqZZ`, `ZX_norm` (30%) | see `b-hive_ttcc/combine/README.md` |
+| weight shapes | `lhe_pdf`, `lhe_alphaS` (excluded, sign bug fixed at source 2026-08-21 but non-retrofittable onto existing parquets — see update below), `scalevar_muR`, `scalevar_muF`, `ps_isr`, `ps_fsr`, `CMS_pileup`, `CMS_ctag2d`, `CMS_eff_e_reco_{below20,20to75,above75}` | per-process usable subset, not uniform — see `USABLE_SYST` and Known traps |
+| **muon efficiency SF (ID only)** | **wired 2026-08-21** (`id: loose`), real single-file smoke test passed end-to-end — see the dated update below. `iso`/`trigger` deliberately left off (see rationale in the workflow yaml). Doesn't change any existing r number — needs a full reprocessing to take effect (condor-blocked). |
+| **electron ID SF** | not applied (`id: false`) | documented, deliberate — smaller likely magnitude than the muon gap |
+| object shifts | `CMS_scale_j`/`CMS_res_j` **in progress**, `CMS_scale_m`/`CMS_res_m` **in progress** (both 2026-08-19, `jec_shifts` workflow — see "Object-shift systematics" update below); production/consumption smoke-tested on 1 file only, never run at scale (condor-blocked) | `hww-analysis` has live `CMS_scale_j/e/m`, `CMS_res_j/e/m` from JES/JER/lepton-scale shift directories |
+| lnN | `lumi_Run3` (1.4%), `pdf_gg`, `QCDscale_ggZZ`/`QCDscale_qqZZ`, `BR_HZZ4l` (2%), `ZX_norm` (30%) | values cross-validated against HIG-24-013 2026-08-21 (lumi 1.4% exact match); `pdf_qq` deliberately NOT added — qqZZ's real `lhe_pdf` shape already covers it, a separate lnN would double-count |
 | rateParam | `ZX_rate` | Z+X floats freely from data, same pattern as `hww-analysis`'s `tt` |
-| MC stat | `autoMCStats <threshold>`, **added 2026-08-18**, default threshold 10 | `--automcstats-threshold` CLI flag added 2026-08-19 to both `create_datacards_ctag2d.py`/`_100150.py` for testing higher cutoffs against the sparse-bin degeneracy noted below |
+| MC stat | `autoMCStats <threshold>`, **off by default since 2026-08-19** — confirmed non-convergent at threshold 10/50/100 (11.5h, zero quantiles) | `--automcstats-threshold` CLI flag opts back in for testing; real open gap, not a not-yet-tried item |
 
 `CMS_ctag_light` is **excluded entirely**, not just per-process-gated — see
 Known traps.
@@ -408,10 +410,13 @@ Known traps.
 > 2026-08-18) — the production default at this window is MC-only. `[90,160]`'s
 > own with-ZX number (r=329.0, from the OS/featmajor production) remains
 > available via `--window 90160 --with-zx`. **`lhe_alphaS` removed 2026-08-19
-> pending a bug fix (see the dated update below) — current number: r=309.5
-> full-syst / 279.0 stat-only, 15 systematics.** (r=311.5/16-systematics was
-> the number with the buggy `lhe_alphaS` still included; superseded, not a
-> live reference anymore.)
+> pending a bug fix (see the dated update below).** **Muon ID efficiency SF
+> (`CMS_eff_m_id`) added 2026-08-27 — current number: r=301.0 median /
+> kappa_c=54.86, 16 systematics** (see the 2026-08-27 dated update below for
+> the full CLs band and how it was produced — first result built from a
+> genuinely complete, muon-SF-corrected `ctag2d` reprocessing). Superseded:
+> r=309.5/15 systematics (2026-08-19, pre-muon-SF); r=311.5/16 systematics
+> (2026-08-17, buggy `lhe_alphaS` still included).
 
 Scripts: `combine/scripts/create_datacards_ctag2d.py` ([90,160] GeV, canonical),
 `create_datacards_ctag2d_100150.py` ([100,150] GeV copy, `MASS_WINDOW` hardcoded
@@ -421,8 +426,9 @@ All three share the same `SYSTEMATICS`/`USABLE_SYST` dicts and sumw/xs-scaling
 logic as `create_datacards_ctag2d.py` — edit all three together when changing
 the systematics model.
 
-**15 systematics total** (16 as of 2026-08-17, minus `lhe_alphaS` removed
-2026-08-19 pending a bug fix — see the dated update below): 5 `lnN` + 10 shape.
+**16 systematics total** (was 15 as of 2026-08-19; `CMS_eff_m_id` added
+2026-08-27; `lhe_alphaS` still removed everywhere pending a bug fix — see
+the dated update below): 5 `lnN` + 11 shape.
 
 | kind | name | size/processes | notes |
 |---|---|---|---|
@@ -435,6 +441,7 @@ the systematics model.
 | shape | ~~`lhe_alphaS`~~ | **removed everywhere, 2026-08-19** | not a per-process exclusion — a genuine bug in the weight-computation code itself, see the dated update below |
 | shape | `ps_isr`/`ps_fsr`/`CMS_pileup`/`CMS_ctag2d` | all 4 processes | |
 | shape | `CMS_eff_e_reco_20to75`/`above75`/`below20` | all 4 processes | **added 2026-08-17** — already computed and stored in the scored parquets (`weight_CMS_eff_e_reco_*_<year>Up/Down`), never wired into `USABLE_SYST` before. Verified sane (≤6%, symmetric) for every process incl. Signal/HPlusBottom via direct per-event ratio check — a detector-level correction, unaffected by the private-LHE-sample bugs below. |
+| shape | `CMS_eff_m_id` | all 4 processes | **added 2026-08-27** — muon ID efficiency SF (loose WP), wired into the workflow yaml 2026-08-21 but only reached a real scored-parquet tree and a combine run on 2026-08-27, once the ctag2d reprocessing campaign reached usable completeness. Detector-level correction like `CMS_eff_e_reco` above, not an LHE weight — usable for every process. |
 
 **Why `lhe_pdf`/`lhe_alphaS`/`scalevar_muR`/`scalevar_muF` are missing for some
 processes** (full reasoning already inline as comments above `USABLE_SYST` in
@@ -467,11 +474,14 @@ and `weight_lhe_pdf_alphaS` (combined variants) exist in the parquets too, but
 adding them alongside the already-used separate `muR`/`muF`/`pdf`/`alphaS` rows
 would double-count the same uncertainty.
 
-**Not addable without upstream work**: no muon ID/isolation/reco weight columns
-exist anywhere in the scored parquets (checked directly across Signal/ggZZ/
-Other_Higgs schemas) — needs new production, not a datacard-script change.
-JES/JER object-shift systematics also need new shift-directory production
-(see Open items #4).
+**Muon ID SF: resolved 2026-08-27** (was "not addable without upstream work" as
+of this writing) — `weight_CMS_eff_m_id_<year>Up/Down` now exists in a real
+scored production tree (`hplusc_mva_4class_ctag2d_scored_v2`) and is wired
+into the datacard as `CMS_eff_m_id`, see the table above and the 2026-08-27
+dated update below. Muon isolation/reco SF and electron ID/isolation SF are
+still not applied (deliberate scope choices, see the 2026-08-21 dated update
+for the muon isolation rationale). JES/JER object-shift systematics still
+need new shift-directory production (see Open items #4).
 
 ### Update 2026-08-19: `jec_shifts` bug fixed, muon scale/resolution shift production added, `higgsHFWeight` smoke-tested, `autoMCStats` threshold made configurable
 
@@ -751,6 +761,260 @@ real subset of events before re-including `lhe_alphaS` and rebuilding again.
 
 ---
 
+### Update 2026-08-21: `lhe_alphaS` signed fix applied (non-retrofittable),
+muon efficiency SF wired, one real regression caught and fixed by an actual
+smoke test
+
+**Full reproducibility reference** (exact commands, exact diffs, exact expected output for
+everything below): `second-brain/Notes/HcZZ-systematics-audit-2026-08-21.md`. The reusable
+smoke-test script itself is `smoketest_muon_sf.py` at this repo's root (EOS+AFS, identical) —
+run it directly to re-verify the muon-SF wiring end to end.
+
+**`lhe_alphaS` signed fix applied**: dropped the `np.abs()` per the "next
+step" above. Checked whether this could be retrofitted onto already-scored
+parquets (real `2023postBPix` ctag2d-scored file schemas) — only the final
+post-abs() `weight_lhe_alphaSUp/Down` columns survive, no raw
+`LHEPdfWeight[:,101]`/`[:,102]` components to recompute the true sign from.
+**Confirmed non-retrofittable**, same situation as the already-documented
+`lhe_pdf` normalization bug. `lhe_alphaS` stays excluded from `USABLE_SYST`
+until a real reprocessing exists; rebuilt the production `[100,150]` no-ZX
+card with the fix present (still excluded) — r=309.5000, bit-identical to
+the pre-fix baseline, as expected (the fix only benefits a future
+reprocessing).
+
+**Real regression caught by an actual smoke test, not a config check**:
+applying this fix initially left `w_as_low`/`w_as_high` undefined —
+`NameError: name 'w_as_high' is not defined` — a genuine bug that would have
+crashed every future reprocessing (this function runs for every 103-member
+`LHEPdfWeight` event, i.e. essentially all MC). Never caught by the earlier
+audit pass because that pass only rebuilt the datacard from already-scored
+*parquets*, which never call this NanoAOD-level correction function at all —
+only a real single-file `run_uproot_job` smoke test (see below) exercises
+this code path. Fixed by restoring the two extraction lines
+(`w_as_low = pdfweights[:, 101]`, `w_as_high = pdfweights[:, 102]`) before
+the signed-shift formula, in both EOS and AFS `lhepdf.py`.
+
+**Muon efficiency SF (ID only) wired into both ZZ→4l workflow yamls**
+(`hplusc_mva_4class.yaml`, `hplusc_mva_4class_ctag2d.yaml`, EOS+AFS),
+closing the gap found in the 2026-08-21 systematics-completeness audit
+(second-brain memory `hczz_systematics_completeness_audit`) — no ZZ→4l
+workflow previously had a `muon:` key at all.
+```yaml
+muon:
+  - id: loose
+  - iso: false
+  - trigger: false
+```
+- **`id: loose`**, not `tight`: this analysis's actual muon selection
+  (`zzto4l.yaml` → `is_loose` = isGlobal|isTracker + kinematic/IP cuts,
+  `is_tight` = `is_loose` + `is_relaxed` (SIP3D<4) + `isPFcand`) is the
+  standard CMS H→ZZ→4l lepton recipe, which is much closer to POG **loose**
+  muon ID (PF muon + isGlobal|isTracker) than POG **tight** ID (which
+  additionally requires normalized χ², station-match, and tracker-layer
+  cuts this selection never checks). Using `tight` here would apply an SF
+  for a selection efficiency tighter than what's actually cut on —
+  overcorrecting, not fixing a gap. `correctionlib` safely no-ops (SF=1)
+  for muons below the SF binning's pT floor (10–15 GeV depending on nano
+  version; see `MuonWeights.get_id_weights`/`unflat_sf`), so this
+  analysis's `pt>5` GeV muons are only corrected above that floor — no
+  crash risk, no silent extrapolation.
+- **`iso: false`, deliberately not wired**: this analysis's isolation is a
+  bespoke FSR-photon-corrected combined relative isolation
+  (`select_zzto4l_leptons` in `analysis/selections/object_selections.py`),
+  not a standard PF-relIso working point at a matching cone/threshold — the
+  generic `NUM_*RelIso_DEN_*ID` correctionlib SFs don't correspond to this
+  cut. Applying one anyway would risk a **new** mismatch bias, not fix one;
+  left open rather than silently misapplied.
+- **`trigger: false`**: matches the electron block's own choice and the
+  `hww.yaml` sibling; a real multi-path (SingleMu/DiMu/TriMu/SingleEle/
+  DiEle/MuEle) trigger SF needs combinatorial OR-of-paths efficiency
+  modeling beyond a single flag flip — out of scope for this pass.
+
+**Validated with a real end-to-end smoke test, not just YAML/config
+inspection**: ran the actual `WorkflowConfigBuilder` → confirmed
+`corrections_config["event_weights"]["muon"]` parses to
+`{"id": "loose", "iso": False, "trigger": False}` exactly as
+`correction_manager.py`'s muon branch expects (list-of-single-key-dicts →
+merged dict, same mechanism the working `electron:` block already uses).
+Then ran a **real single-file `processor.run_uproot_job`** (one
+`GluGluHtoZZto4L`/2023postBPix file, `hplusc_mva_4class_ctag2d` workflow,
+interactively in LCG_105 — no apptainer needed this time since coffea
+imports directly there) end to end: exit clean, 191 events selected,
+`weight_CMS_eff_m_id_2023`/`Up`/`Down` written to the output parquet with
+sane values (mean SF 0.999, spread ≤0.5% per event, exactly matching this
+framework's `weight_<name>Up/Down` convention that `create_datacards_
+ctag2d*.py` already knows how to read).
+
+**Two incidental bugs found and fixed while setting up this smoke test**
+(both pre-existing, unrelated to the muon-SF work itself, only surfaced
+because this was the first real interactive `run_uproot_job` test run
+outside apptainer in a while):
+1. The `lhe_alphaS` `NameError` above.
+2. `analysis/data/nnlo_ps/` was missing an `__init__.py` (unlike its sibling
+   `analysis/data/jec/__init__.py`), making it an implicit namespace
+   package — Python 3.9's `importlib.resources.open_text` resolved it
+   inconsistently in this interactive environment, constructing a wrong
+   path (`/eos/home-s/.../NNLOPS_reweight.json`, missing the
+   `analysis/data/nnlo_ps/` subdirectory entirely) and crashing
+   `add_nnlops_weight`. Added the matching empty `__init__.py` (EOS+AFS) —
+   turns it into a regular package, same fix pattern as the existing `jec/`
+   sibling. Apparently never bitten real condor production (different
+   environment setup there), but a real latent fragility worth having
+   fixed regardless.
+
+**At the time of this update, this did not yet change any existing combine
+number** — `weight_CMS_eff_m_id_*` only existed in that session's throwaway
+smoke-test parquet, not in any production scored-parquet tree. See the
+2026-08-27 dated update immediately below for the full reprocessing +
+datacard + combine run that finally used it for real.
+
+### Update 2026-08-27: muon SF reaches a real combine number for the first
+time — new production reference r=301.0, kappa_c=54.86 (16 systematics)
+
+**Full reproducibility reference**: `second-brain/Tasks/HcZZ-fake-rate.md`
+"Update 2026-08-27 ~19:30 CEST"; memory
+`hczz_systematics_completeness_audit` §16-18 for the full chain of findings
+that unblocked this (proxy-auth fix, `jobs_status.py` completeness-tool
+fix, real-vs-apparent job completeness).
+
+**Context**: the muon SF gap (§2 of the 2026-08-21 audit) was wired into the
+workflow yamls the same day, but stayed blocked on reaching a real scored
+production tree — the ctag2d reprocessing campaign that would carry
+`weight_CMS_eff_m_id_*` into production appeared stuck at 65-90% completeness
+for several days (2026-08-25 through 2026-08-27), traced through a site-wide
+XRootD outage, then an AFS-proxy auth bug, before a same-session forensic
+dig found the deeper cause: `jobs_status.py`'s completeness check couldn't
+tell "job ran fine, zero events survived a tight selection" (expected
+physics, especially for background MC and even some data streams) from
+"job never ran" — real completeness was already 97-100% per era. Fixed
+`jobs_status.py` (AFS checkout) to fall back to checking the always-written
+flat `{dataset}_{N}.coffea` file before declaring a job missing.
+
+**Rebuilt the MVA-scored parquets from scratch** (`analysis/postprocess/
+run_mva_postprocess.py`, LCG_105 env, the documented `models/best_model.pt`
++ `hc_zzto4l_mw_training_4class_nomass.yml` bundled pair) into a new
+directory, `hplusc_mva_4class_ctag2d_scored_v2` (old `_scored` dir from
+2026-08-16 left untouched) — all 4 eras, 5035 parquet files, **0 errors**,
+2,883,041 total events. Confirmed `weight_CMS_eff_m_id_2022/2023Up/Down`
+present for the first time ever in a scored production tree.
+
+**Added `CMS_eff_m_id`** (era-dependent, same convention as `CMS_pileup`/
+`CMS_ctag2d`) to `SYSTEMATICS`/`USABLE_SYST` in all three ctag2d datacard
+scripts — usable for every process (detector-level SF, not an LHE weight,
+none of the private-sample exclusions apply). 16 systematics total now.
+
+**Ran the standard production preset** (`run_pipeline.sh --merge-bin-ranges
+"2-4,7-10" --skip-zx`, i.e. `[100,150]`, surgical rebin, no-ZX) against the
+new scored dir:
+
+**Result: r < 301.0 (median, 50% CL), kappa_c = 54.86.** Full CLs band:
+
+| CL | r | kappa_c |
+|---|---|---|
+| 2.5% | 154.0273 | 29.35 |
+| 16.0% | 209.1421 | 38.92 |
+| 50.0% | 301.0000 | 54.86 |
+| 84.0% | 441.3765 | 79.20 |
+| 97.5% | 624.6505 | 110.96 |
+
+Tightens modestly from the pre-muon-SF reference (r=309.5, 2026-08-19, 15
+systematics) — expected direction/magnitude for one real systematic plus a
+much more complete underlying production. Negative-bin scan: 15/74
+histograms with a single ~1e-6-magnitude negative bin at index 0 (2 new
+entries are `CMS_eff_m_idUp/Down`, same tiny benign magnitude as the rest,
+same pattern documented in the 2026-08-18 negative-bins update). A ROOT
+`TNetXNGFile::Open [3001]` error appeared in the combine log right after
+CMSSW startup but didn't block or crash the fit — looks like a benign ROOT
+plugin-manager probe, not investigated further.
+
+**Re-ran impact ranking** (§7 method, freeze-and-compare) against this new
+datacard: `CMS_eff_m_id` has **zero measurable impact** on the median
+(`delta_r = 0.00`, exactly) — dominated by `CMS_eff_e_reco_below20`
+(-3.82%) and `CMS_ctag2d` (-3.49%), same top-2 as the pre-muon-SF ranking.
+Consistent with its small per-event magnitude (mean SF 0.999, <=0.5% spread,
+per the 2026-08-21 smoke test) — correctly wired and included, just
+genuinely small at this method's resolution, not a sign anything is wrong.
+Output: `combine/outputs/combine_run3_100150_ctag2d_muonSF/impact_ranking.
+{json,png}`.
+
+**Then resubmitted the remaining genuinely-missing jobs** (9 ctag2d across
+3 eras + 6 `ztoee` + ~103 `zplusl_ss`, using the fixed `jobs_status.py` to
+correctly identify only the real gaps) — draining as of this update; a
+still-more-complete number is expected once that lands and the pipeline is
+rerun again.
+
+**Nothing old was overwritten** — new scored dir
+(`hplusc_mva_4class_ctag2d_scored_v2`) and new output dir
+(`combine/outputs/combine_run3_100150_ctag2d_muonSF/`), both additive.
+
+---
+
+### Update 2026-08-28: `lhescale.py` Up/Down swap found and fixed; Signal/
+HPlusBottom `lhe_pdf`/`scalevar_muR/muF` root cause confirmed from raw
+NanoAOD (not a code bug); ggZZ exclusion confirmed structural
+
+**Full reproducibility reference**: `second-brain/Notes/HcZZ-systematics-
+audit-2026-08-28.md`; narrative in `second-brain/Tasks/HcZZ-fake-rate.md`
+"Update 2026-08-28 (later still): lhe_pdf/scalevar_muR/muF audit".
+
+**Audited every up/down systematic in `analysis/corrections/*.py`** for the
+same class of bug as the historical `lhe_pdf`/`lhe_alphaS` issues. Every file
+except `lhescale.py` delegates Up/Down to a correctionlib-named systematic
+string (`up`/`down`, `systup`/`systdown`, `sfup`/`sfdown`, `up_Total`/
+`down_Total`) — no custom-index risk. `jerc.py`'s JES/JER shift production
+(`apply_jerc_shifts`) checked and confirmed correct (`fac=+1/-1` around
+`jesunc` for JES; JER delegates to correctionlib's named systematic).
+`partonshower.py`'s `PSWeight` indices checked against the standard CMS
+NanoAOD producer convention — correct.
+
+**Real bug found in `lhescale.py`**: confirmed `coffea.analysis_tools.
+Weights.add()`'s signature is `(name, weight, weightUp, weightDown)`. Per
+the file's own docstring index table (index[1]/[7]=muR down/up,
+index[3]/[5]=muF down/up, index[0]/[8]=both down/up), the code passed
+`weightUp`/`weightDown` in the **opposite** order for all three of
+`scalevar_muR`/`scalevar_muF`/`scalevar_muR_muF` — Up and Down were
+physically swapped, for every process, since this file was written.
+`scalevar_muR_muF` also had a missing `/nom` ratio normalization (the only
+one of the three without it). **Fixed at the source**, both EOS+AFS
+checkouts, `ast.parse`-checked. Affects qqZZ/Other_Higgs's current
+`USABLE_SYST` entries in every existing scored parquet — needs a
+reprocessing to take effect, same non-retrofittable class as the
+`lhe_alphaS` fix above.
+
+**Signal/HPlusBottom root cause, confirmed from real NanoAOD (not the
+2026-08-03 parquet-level retrofit math)**: pulled real events directly via
+`uproot` from the regenerated `HPlusCharm_2023postBPix`/
+`HPlusBottom_2023postBPix` production (`hplusc_htozz1`/`hplusb_htozz1`
+paths). Confirmed index[4] (central ratio point) is exactly `1.000000`,
+std=0, for every event — rules out the "branch normalization is broken"
+hypothesis open since 2026-08-03. But every *other* grid index sits at
+mean/median ≈1.5–2.5× (not the expected ≈0.8–1.2×): Signal
+muR-up=1.96×/muR-down=2.24×, HPlusBottom muR-up=1.71×/muR-down=2.03× —
+median tracks mean closely, not an outlier artifact. `delta_pdf`
+recomputed from the raw 101/103-member `LHEPdfWeight` arrays with the
+current fixed formula: Signal mean=1.08/median=1.27, HPlusBottom
+mean=0.85/median=1.00 — same ~90-130% range as the earlier ~88% figure,
+now independently confirmed from raw LHE weights.
+
+**Explanation**: both datasets are tagged `MuRFScaleDynX0p50` — central
+scale = half of some dynamical reference. Every other 9-point-grid entry
+multiplies renscfact/facscfact onto that already-halved central scale, so
+the "central" weight sits at an outlier point in its own envelope rather
+than the middle — a genuine generator-setup artifact, not a downstream
+formula bug. Wiring a ~100-200% lnN/shape for Signal would dominate every
+other nuisance and misrepresent this as real theory uncertainty; keeping
+the exclusion. Real fix (if pursued) is regenerating with a standard
+central-scale definition — new item in Open items below, not a datacard
+change.
+
+**ggZZ exclusion confirmed structural**: pulled real
+`GluGluToContinto2Zto2E2Mu` events — `LHEScaleWeight`/`LHEPdfWeight`
+branches exist in the schema but are zero-length for every single event.
+Not present-but-degenerate — genuinely empty; this MCFM-based sample was
+never produced with these vectors filled.
+
+---
+
 **3-ratio discriminant variant** (`create_datacards_ctag2d_3ratio.py`): joint
 $(r_1,r_2,r_3) = (P_s/(P_s{+}P_{qqZZ}), P_s/(P_s{+}P_{ggZZ}), P_s/(P_s{+}P_{OH}))$,
 nested/conditional quantile tree binning (ported from `b-hive_ttcc/combine/
@@ -811,14 +1075,33 @@ validation task that changes what the corrector represents.
 | **`CMS_ctag_light` sign flips (historical, retired 2026-08-14)** | `ctag.py`'s untagged-jet formula `(1-SF*eff)/(1-eff)` goes negative when `SF*eff>1` — hits the light-flavor mistag SF's up variation in some pT/η bins. Confirmed genuine sign flips in every process's existing 1D-scored parquets. **Clamped at the source, not truly fixed** — a numerical safety net (BTV-POG-standard mitigation) so the code doesn't crash, not a resolution of the underlying disagreement; the clamp is exactly the kind of thing this project's standing rule rejects as "fixed" (see the earlier ratio-clip incident). This is why `CMS_ctag_light` stayed excluded from the datacard even after clamping, right up until production switched its whole SF scheme to `ctagging_2d` (which has no `eff/(1-eff)` formula at all, so this failure mode is structurally impossible, not just clamped around). `hww-analysis`'s `ctag.py` has the identical unclamped formula, still live in their repo — irrelevant to their own results only because their production never calls it (`ctagging_2d` there too), same as ours going forward. |
 | **Condor rejects `/eos` paths in submit files (CERN batch policy change since ~March)** | `condor/submit.sub` + `submit_condor.py`'s `CONDORDIR`/`LOGDIR` substitution point `executable`/`output`/`error`/`log` at literal `/eos/...` paths — confirmed working from this exact repo in March 2026 (found a successful old `.log`), now rejected outright: `ERROR: Failed to commit job submission into the queue... Standard batch schedds cannot use /eos paths directly`. **Workaround confirmed 2026-08-14: submit from the AFS checkout instead** (`/afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm/`, same `runner.py -w <workflow> -y <era> --submit --eos --output_format parquet`) — condor accepts submit files whose paths originate from AFS even though `--eos` still points job *output* at `/eos`; no code change needed, just run from a different filesystem. Not a permanent code fix (submit.sub itself still hardcodes `/eos` if invoked from an EOS cwd) — still open whether to patch `submit.sub` properly (xrootd URLs / EOS-submit schedds) or keep "submit from AFS" as the accepted permanent workflow. |
 | **AFS and EOS checkouts' fileset registries have diverged — EOS is missing signal samples entirely** | Confirmed 2026-08-14 right before the ctag2d condor campaign: running `runner.py`'s fileset discovery from the EOS checkout reports `hb not availabe` / `smsignal not availabe` for every era (would silently produce a datacard with zero signal events), while the identical discovery from AFS finds them correctly (`SomeSMSignal`, `HPlusCharm_<era>` all found via DAS phys03). Root cause not yet dug into — EOS's fileset registry JSON is just stale relative to AFS's. Deliberately not fixed before the campaign (user: "I know the issue... afs is fine. we can fix it after job submission as well") — still open. |
-| **`lhe_pdf` formula: Hessian vs. MC-replica** | Current formula (`sqrt(Σ(w_k-w0)²)`, no `1/sqrt(N-1)`) is correct **only** for Hessian-eigenvector PDF sets. `hww-analysis`'s `lhepdf.py` uses the identical formula, justified there as correct because their samples are official/central production (Hessian-reduced NNPDF3.1). Our private `HPlusCharm`/`HPlusBottom` samples may carry a different (MC-replica) PDF format — unconfirmed, blocked on the private NanoAODs being gone from all storage sites. |
+| **`lhe_pdf` formula: Hessian vs. MC-replica (RESOLVED 2026-08-03, root cause of residual size confirmed 2026-08-28)** | Fixed 2026-08-03: formula now divides by `N-1=99` (`sqrt(Σ(w_k-w0)²/99)`), correct for the NNPDF Monte-Carlo-replica prescription our private samples use. The private NanoAODs were regenerated (`hplusc_htozz1`/`hplusb_htozz1`, reachable again) and read directly 2026-08-28 — the formula is not the remaining problem. The residual ~90-130% `delta_pdf` for Signal/HPlusBottom is real and traced to the samples' `MuRFScaleDynX0p50` central-scale choice (half a dynamical reference scale), confirmed from raw `LHEScaleWeight`/`LHEPdfWeight` branches, not a formula bug — see the 2026-08-28 Systematics update above. |
 | **Signal/HPlusBottom negative-weight fraction is ~25%, not incidental** | Measured directly from `hplusc_mva_4class_scored_v4` (2026-08-14): `HPlusCharm`/`HPlusBottom` run **24–26% negative `weight_nominal`** across every era, roughly **8–17× higher** than every other process (`ZZto4L` 0.18%, `GluGlu*` ggZZ ~0.003–0.01%, Higgs backgrounds `WH`/`ZH`/`TTH` 1.4–1.7%). This is the same two processes with the already-diagnosed `lhe_pdf`/`scalevar_muR/muF` blowups — plausibly the same root cause (private amc@nlo-based generation), not yet connected. See [Open items](#open-items--next-techniques-to-port-from-hww-analysis). |
 
 ---
 
 ## Open items / next techniques to port from `hww-analysis`
 
-Priority order set 2026-08-14; update as items land.
+**Priority order re-ranked 2026-08-21** after a systematics-completeness audit vs Felix
+Heyen's thesis / HIG-24-013 / the HWW deck (full writeup: second-brain memory
+`hczz_systematics_completeness_audit`, `Tasks/HcZZ-fake-rate.md` "Update 2026-08-21"). New
+#0: **muon efficiency SF (ID/ISO/trigger) is entirely unapplied for ZZ→4l** — not a missing
+uncertainty like the items below, the *central value* itself is missing (no `muon:` key in
+any ZZ→4l workflow yaml, confirmed via `grep -rn "^\s*muon:" analysis/workflows/*.yaml`;
+`MuonWeights.add_id_weights()`/`add_iso_weights()` in `analysis/corrections/muon.py` already
+work, just never invoked here). Felix's thesis quotes the equivalent `muonSF` nuisance at
+~4.5–9% yield effect — since 3 of 4 ZZ→4l final states carry muons, this is a plausible
+few-percent normalization bias on every HcZZ number on record, not just an uncertainty gap.
+Needs a `muon:` key added to the workflow yaml plus a full reprocessing — blocked behind the
+same condor `/eos`-path issue as items 3–4 below. Electron ID SF has the same class of gap
+(`id: false`, documented/deliberate, smaller likely magnitude). Also newly flagged: a
+dedicated FS (flavour-scheme, 4FS/5FS envelope) uncertainty for Signal/HPlusBottom — Felix's
+thesis has one (~59%/42% yield effect, his "clearly leading" systematic), HcZZ has none; a
+candidate *addition*, not a fix for the already-excluded `lhe_pdf`/`scalevar` rows (different
+problem). `pdf_qq` was checked and resolved as **not** a gap — qqZZ's real `lhe_pdf` shape
+systematic already covers it.
+
+Original priority order set 2026-08-14; update as items land.
 
 1. **`ctag2d` pseudo-continuous SF migration — done, active in production
    as of 2026-08-17** (16-systematic datacard pipeline, both mass windows,

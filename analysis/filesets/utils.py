@@ -251,6 +251,17 @@ def get_process_sample_map(datasets: list[str], year: str) -> dict[str, list[str
     dataset_configs = get_dataset_config(year)
     process_sample_map = defaultdict(list)
     for sample in datasets:
+        # Skip samples absent from the fileset registry (e.g. private datasets that were
+        # condor-run directly without ever being added to <era>_nanov<n>.yaml, such as
+        # 2023postBPixHB) rather than crashing -- this map only feeds process-level
+        # histogram merging, not the MVA-scored-parquet path, so an unregistered sample
+        # here should be a skip, not a hard failure. Matches this codebase's existing
+        # defensive convention (create_datacards.py::get_process_from_path returns None
+        # for unmapped names and its caller skips, rather than raising).
+        if sample not in dataset_configs:
+            print(f"  WARNING: '{sample}' not in fileset registry for {year}, skipping "
+                  f"in process-sample map (added 2026-08-14)")
+            continue
         config = dataset_configs[sample]
         process_sample_map[config["process"]].append(sample)
     return dict(process_sample_map)

@@ -168,12 +168,57 @@ corrections:
     lhepdfWeight: true
     lhescaleWeight: true
     nnlopsWeight: true
+    # Muon efficiency SF (ID only) -- wired 2026-08-21, closing the gap found in
+    # the systematics-completeness audit (second-brain memory
+    # hczz_systematics_completeness_audit / README_HcZZ.md "Open items"): no
+    # ZZ->4l workflow previously had a `muon:` key at all, so the muon ID SF
+    # correction (implemented and working in analysis/corrections/muon.py,
+    # already used by hww.yaml) was never applied here -- a missing
+    # central-value correction, not just an uncovered uncertainty.
+    #   id: loose -- matches this analysis's actual muon selection
+    #     (zzto4l.yaml object_selection.muons: isGlobal|isTracker (is_loose) +
+    #     isPFcand (is_tight), the standard CMS H->ZZ->4l lepton recipe), NOT
+    #     POG tight ID (which additionally requires normalized chi2,
+    #     station-match, and tracker-layer cuts this selection never checks) --
+    #     using "tight" here would apply an SF for a selection tighter than
+    #     what's actually cut on, overcorrecting. correctionlib safely no-ops
+    #     (SF=1) for muons below the SF binning's pT floor (10-15 GeV
+    #     depending on nano version; see MuonWeights.get_id_weights/
+    #     unflat_sf), so this analysis's pt>5 GeV muons are only corrected
+    #     above that floor.
+    #   iso: false -- deliberately NOT wired. This analysis's isolation is a
+    #     bespoke FSR-photon-corrected combined relative isolation
+    #     (select_zzto4l_leptons in object_selections.py), not a standard
+    #     PF-relIso working point at a matching cone/threshold -- the generic
+    #     NUM_*RelIso_DEN_*ID correctionlib SFs don't correspond to this cut.
+    #     Applying one anyway would risk a NEW mismatch bias, not fix one;
+    #     left as a documented open item rather than silently misapplied.
+    #   trigger: false -- matches the electron block's own choice below and
+    #     the hww.yaml sibling; a real multi-path (SingleMu/DiMu/TriMu/...)
+    #     trigger SF needs combinatorial OR-of-paths efficiency modeling
+    #     beyond a single flag flip -- out of scope for this pass.
+    muon:
+      - id: loose
+      - iso: false
+      - trigger: false
     electron:
       - id: false
       - reco: true
       - trigger: false
-    ctagging:
-      - wp: loose
+    # Switched from the 1D fixed-WP corrector (ctagging: [wp: loose]) to the 2D
+    # pseudo-continuous SF, 2026-08-14 -- decision: applying both simultaneously would
+    # double-count the c-tagging data/MC correction (the 2D per-category SF already
+    # covers the jet's full tagger response independent of any 1D WP; a 1D SF is not
+    # a "companion" correction for a matching WP, it corrects the SAME physical effect
+    # via a different, WP-specific formula). Matches hww-analysis's own production
+    # pattern (medium WP selection + ctagging_2d only, no 1D SF block at all). Also
+    # retires the CMS_ctag_light exclusion in create_datacards.py's SYSTEMATICS --
+    # the 2D scheme has no eff/(1-eff) untagged-jet formula, so it can't hit that
+    # bug's negative-weight failure mode. The `atleast_one_cjet` SELECTION cut below
+    # is UNCHANGED (still `working_points.jet_ctagging(events, 'loose', year)`) --
+    # this is a weighting-scheme change only, not a selection change. See
+    # second-brain memory hczz_pnet_ctag_sf_migration and README_HcZZ.md.
+    ctagging_2d: true
 
 # MVA configuration for post-processing (4-class)
 # Pass these paths via command line:

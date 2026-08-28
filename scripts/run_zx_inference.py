@@ -23,7 +23,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 # Add higgscharm to path for MVAPostProcessor
-HIGGSCHARM = '/afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm'
+HIGGSCHARM = '/eos/user/s/snandaku/Higgscharmnew/higgscharm'
 if HIGGSCHARM not in sys.path:
     sys.path.insert(0, HIGGSCHARM)
 

@@ -247,6 +247,14 @@ class CTagCorrector:
         tagged_sf = ak.prod(sf.mask[pass_ctag], axis=-1)
 
         # untagged SF = (1 - SF * eff) / (1 - eff)
-        untagged_sf = ak.prod(((1 - sf * eff) / (1 - eff)).mask[~pass_ctag], axis=-1)
+        # Clamp SF*eff to not exceed 1: standard BTV-POG mitigation for the
+        # known numerical instability where a large SF variation (typically
+        # the light-flavor mistag "up" uncertainty, which can be large in
+        # some pT/eta bins) combined with efficiency pushes SF*eff above 1,
+        # making the per-jet untagged weight negative. Confirmed 2026-08-03:
+        # this flipped ~0.5-0.6% of qqZZ/Other_Higgs events' sign specifically
+        # for CMS_ctag_lightUp (not _b or _c, whose SFs don't hit this regime).
+        sf_eff = ak.where(sf * eff > 1, 1.0, sf * eff)
+        untagged_sf = ak.prod(((1 - sf_eff) / (1 - eff)).mask[~pass_ctag], axis=-1)
 
         return ak.fill_none(tagged_sf * untagged_sf, 1.0)

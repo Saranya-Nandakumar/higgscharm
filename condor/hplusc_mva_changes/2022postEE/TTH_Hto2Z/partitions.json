@@ -1,0 +1,27 @@
+{
+    "1": {
+        "TTH_Hto2Z_1": [
+            "root://rdr.echo.stfc.ac.uk//store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2520000/00c6cce1-a378-414e-b748-d635f29eb172.root",
+            "root://cceos.ihep.ac.cn:1094//eos/ihep/cms/store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2520000/e9c68c09-d354-4589-83bb-7668f6ea35f2.root",
+            "root://cceos.ihep.ac.cn:1094//eos/ihep/cms/store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2530000/309116c2-7f69-4040-bb24-49cfa7745907.root",
+            "root://gaexrdoor.ciemat.es:1094//store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2530000/db6161cf-2cb3-4924-8bef-e1793342f630.root",
+            "root://cceos.ihep.ac.cn:1094//eos/ihep/cms/store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/2540000/76fce871-497e-4427-a35f-7c3b3ae86501.root",
+            "root://xrootd-vanderbilt.sites.opensciencegrid.org:1094//store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/30000/7ee34381-7d68-485f-a248-7d513e75cd60.root",
+            "root://rdr.echo.stfc.ac.uk//store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/30000/aeb97b17-582e-4d28-b6f6-a7332d8ca334.root",
+            "root://storage01.lcg.cscs.ch:1096//pnfs/lcg.cscs.ch/cms/trivcat/store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/40000/065d12c7-b2d2-46f6-87a7-dada874edba7.root",
+            "root://gaexrdoor.ciemat.es:1094//store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/40000/4523179b-6c93-43e9-b0c7-54bf51db643f.root"
+        ]
+    },
+    "2": {
+        "TTH_Hto2Z_2": [
+            "root://eos.grid.vbc.ac.at:1094//eos/vbc/experiments/cms/store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/40000/6a2e0ae1-f327-4a4f-bbca-7551d69c20bf.root",
+            "root://xrootd-vanderbilt.sites.opensciencegrid.org:1094//store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/40000/9b8d88f9-b90e-442a-ab6f-fcb93b513719.root",
+            "root://lcgsedr01.jinr.ru:1094//pnfs/jinr.ru/data/cms/store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/40000/cba14cc7-8aef-4523-82a6-7e035ca47f05.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/40000/ec234dd6-ffcd-4dc1-a28a-c1b1ef0f1a4d.root",
+            "root://eos.grid.vbc.ac.at:1094//eos/vbc/experiments/cms/store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/50000/0b6869cc-148a-4677-b8f9-86e6fda1025b.root",
+            "root://rdr.echo.stfc.ac.uk//store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/50000/6d8f92ac-5af2-4232-b126-e0d47e65cda2.root",
+            "root://rdr.echo.stfc.ac.uk//store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/50000/7d33f4f6-022f-422a-b73d-9235ce67083a.root",
+            "root://rdr.echo.stfc.ac.uk//store/mc/Run3Summer22EENanoAODv12/TTH_Hto2Z_M-125_4LFilter_TuneCP5_13p6TeV_powheg2-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v2/50000/a67488f7-8806-4009-9f90-7951aca74233.root"
+        ]
+    }
+}

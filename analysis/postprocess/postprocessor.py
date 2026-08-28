@@ -21,6 +21,7 @@ from analysis.postprocess.utils import (
     get_process_dict,
     save_cutflows,
     accumulate_and_save_cutflows,
+    concat_tables_schema_safe,
 )
 
 
@@ -49,9 +50,19 @@ def fill_histograms_from_parquets(
             if not sample_parquets:
                 logging.warning(f"No parquet files found for sample {sample}, category {category} — skipping")
                 continue
-            sample_df = dd.read_parquet(
-                sample_parquets, engine="pyarrow", calculate_divisions=False
-            ).compute()
+            # pyarrow schema-safe read instead of dd.read_parquet(...).compute() -- same
+            # fix as analysis/postprocess/utils.py::merge_parquets (2026-08-14). The
+            # per-partition merge there unions schemas WITHIN each partition's own chunk
+            # files, but different partitions of the same dataset can still end up with
+            # different merged schemas from each other (e.g. EGamma0v1D's partition 1 vs.
+            # partition 4, if the workflow yaml's feature list changed between when each
+            # was condor-run) -- this second, across-partition aggregation needs the same
+            # treatment, confirmed necessary by a real crash here (and a second real crash,
+            # a genuine type mismatch on `nSV`, int64 vs double -- see
+            # concat_tables_schema_safe's docstring).
+            import pyarrow.parquet as pq
+            _tables = [pq.read_table(f) for f in sample_parquets]
+            sample_df = concat_tables_schema_safe(_tables).to_pandas()
             sample_df = sample_df.replace({None: np.nan})
             sample_df.to_parquet(
                 f"{output_dir}/{sample}.parquet", engine="pyarrow", index=False
@@ -113,7 +124,11 @@ def fill_histograms_from_parquets(
         fill_histogram(**fill_args)
 
         # fill syst variation histograms
-        if dataset_config[sample]["era"] in ["mc", "signal"]:
+        # Skip gracefully (nominal histogram above is unaffected) rather than crash for
+        # samples absent from the fileset registry -- same class of gap as
+        # filesets/utils.py::get_process_sample_map (private datasets condor-run directly,
+        # e.g. 2023postBPixHB, never added to <era>_nanov<n>.yaml). Added 2026-08-14.
+        if sample in dataset_config and dataset_config[sample]["era"] in ["mc", "signal"]:
             for syst in partial_weights:
                 for variation in ["Up", "Down"]:
                     syst_name = f"{syst}{variation}"
@@ -140,6 +155,19 @@ def save_histograms_by_sample(
 ):
     """Accumulate, scale, and save histograms for a single sample"""
     print_header(f"Processing {sample} outputs")
+
+    # Skip entirely (not a degraded/partial fill) if this sample is absent from the
+    # fileset registry -- get_lumi_weight() needs a real xsec to scale by, and there is
+    # no safe default (weight=1 would silently mis-scale, not just omit, the saved
+    # histogram/cutflow). Same class of gap as get_process_sample_map/
+    # fill_histograms_from_parquets (private datasets condor-run directly, e.g.
+    # 2023postBPixHB, never added to <era>_nanov<n>.yaml). Added 2026-08-14.
+    if sample not in get_dataset_config(year):
+        logging.warning(
+            f"  '{sample}' not in fileset registry for {year}, skipping "
+            f"save_histograms_by_sample entirely (no xsec to scale by)"
+        )
+        return
 
     # get histograms
     if output_format == "coffea":
@@ -195,10 +223,19 @@ def save_histograms_by_process(
             parquet_files += glob.glob(
                 f"{output_dir}/{sample}*.parquet", recursive=True
             )
-        process_df = pd.concat(
-            [pd.read_parquet(f) for f in parquet_files], ignore_index=True
-        )
-        process_df.to_parquet(Path(output_dir) / f"{process}.parquet")
+        if not parquet_files:
+            # Legitimately possible: every sample in this process group can have zero
+            # parquet output for a given era (e.g. 2022postEE's `dy_nlo` fileset entries
+            # point to a stale DAS tag -- pre-existing, documented, unrelated to this
+            # pipeline -- so DY+Jets has no real events at all for that one era). Skip
+            # rather than crash `pd.concat([])` (`ValueError: No objects to concatenate`).
+            logging.warning(f"No parquet files found for process {process} -- skipping "
+                             f"process-level parquet merge")
+        else:
+            process_df = pd.concat(
+                [pd.read_parquet(f) for f in parquet_files], ignore_index=True
+            )
+            process_df.to_parquet(Path(output_dir) / f"{process}.parquet")
 
     # accumulate and save cutflows if requested
     if not nocutflow:

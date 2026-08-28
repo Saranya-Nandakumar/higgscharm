@@ -521,3 +521,88 @@ def apply_muon_ss_corrections(events, year):
         apply_muon_ss_corrections_run2(events, year)
     else:
         apply_muon_ss_corrections_run3(events, year)
+
+
+def _met_with_muon_delta(events, met_field_key, pt_from, pt_to, phi):
+    """Move events' CURRENT met_field_key from reflecting muon pt `pt_from` to
+    reflecting muon pt `pt_to`, without mutating `events`. Reuses met.py::
+    update_met's own vetted px/py delta-propagation math (via a throwaway
+    array) instead of re-deriving that algebra here -- avoids adding a second,
+    independently-drifting copy of a formula this project has already gotten
+    wrong once (see the [-5,5] ratio-clip / sign-bug precedents elsewhere in
+    this codebase's corrections).
+    """
+    tmp = ak.Array(
+        {
+            "Muon": ak.zip({"pt_raw": pt_from, "pt": pt_to, "phi": phi}),
+            met_field_key: events[met_field_key],
+        }
+    )
+    update_met(tmp, other_obj="Muon", met_obj=met_field_key)
+    return tmp[met_field_key]
+
+
+def apply_muon_ss_shifts(events, year, met_field_key):
+    """Return a list of (collections_dict, shift_name) tuples for the
+    muon-scale/resolution systematics (CMS_scale_m_<year>, CMS_res_m_<year>),
+    mirroring jerc.py::apply_jerc_shifts's contract. collections_dict carries
+    {"Muon": <ak.Array>, met_field_key: <ak.Array>}.
+
+    MUST be called AFTER apply_muon_ss_corrections has already run on `events`
+    for this call (i.e. events.Muon.pt/pt_raw and events[met_field_key] already
+    reflect the NOMINAL muon SS correction) -- each variant's MET is built by
+    swapping the nominal muon-pt delta for a shifted one on top of events'
+    CURRENT met_field_key (which may also already include other nominal
+    corrections, e.g. JEC Type-1, applied earlier in the same pipeline pass --
+    that's fine, addition of independent MET deltas commutes, so those stay
+    correctly baked into every variant here too).
+
+    Run2 is not supported (Rochester corrections have no shift production
+    wired) -- raises, matching apply_jerc_shifts's year-coverage guard style.
+
+    Data: returns only the nominal entry (shift_name=None, events' current
+    already-corrected Muon/MET) -- no variation to produce for data.
+    """
+    if year.startswith("201"):
+        raise ValueError(
+            "apply_muon_ss_shifts only supports Run3 (ScaRe) years, "
+            f"got '{year}'."
+        )
+
+    nominal_entry = (
+        {"Muon": events.Muon, met_field_key: events[met_field_key]},
+        None,
+    )
+    if not hasattr(events, "genWeight"):
+        return [nominal_entry]
+
+    cset = correctionlib.CorrectionSet.from_file(correction_files["muon_ss"][year])
+    eta, phi, charge = events.Muon.eta, events.Muon.phi, events.Muon.charge
+    # set by apply_muon_ss_corrections_run3's nominal pass, already run before
+    # this function is called
+    pt_raw = events.Muon.pt_raw
+    pt_nom = events.Muon.pt
+
+    # re-derive the scale-only (pre-resolution) pt -- a cheap intermediate
+    # that apply_muon_ss_corrections_run3 discards, needed by pt_resol_var's
+    # own documented signature (pt_woresol, pt_wresol, ...)
+    ptscalecorr = pt_scale(False, pt_raw, eta, phi, charge, cset, nested=True)
+
+    y4 = year[:4]
+    variants = []
+    for direction, tag in [("up", "Up"), ("dn", "Down")]:
+        pt_var = pt_scale_var(pt_nom, eta, phi, charge, direction, cset, nested=True)
+        pt_var = ak.where(pt_raw <= 200, pt_var, pt_raw)
+        muon = ak.with_field(events.Muon, pt_raw, "pt_raw")
+        muon = ak.with_field(muon, pt_var, "pt")
+        met = _met_with_muon_delta(events, met_field_key, pt_nom, pt_var, phi)
+        variants.append(({"Muon": muon, met_field_key: met}, f"CMS_scale_m_{y4}{tag}"))
+    for direction, tag in [("up", "Up"), ("dn", "Down")]:
+        pt_var = pt_resol_var(ptscalecorr, pt_nom, eta, direction, cset, nested=True)
+        pt_var = ak.where(pt_raw <= 200, pt_var, pt_raw)
+        muon = ak.with_field(events.Muon, pt_raw, "pt_raw")
+        muon = ak.with_field(muon, pt_var, "pt")
+        met = _met_with_muon_delta(events, met_field_key, pt_nom, pt_var, phi)
+        variants.append(({"Muon": muon, met_field_key: met}, f"CMS_res_m_{y4}{tag}"))
+
+    return [nominal_entry] + variants

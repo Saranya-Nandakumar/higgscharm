@@ -3,22 +3,109 @@ from coffea.analysis_tools import Weights
 from analysis.filesets.utils import get_nano_version
 from analysis.corrections.muon import MuonWeights
 from analysis.corrections.ctag import CTagCorrector
+from analysis.corrections.ctag2d import CTag2DCorrector
 from analysis.corrections.pileup import add_pileup_weight
 from analysis.corrections.nnlops import add_nnlops_weight
 from analysis.corrections.lhepdf import add_lhepdf_weight
 from analysis.corrections.electron import ElectronWeights
-from analysis.corrections.jerc import apply_jerc_corrections
+from analysis.corrections.jerc import apply_jerc_corrections, apply_jerc_shifts
 from analysis.corrections.lhescale import add_scalevar_weight
 from analysis.corrections.met import apply_met_phi_corrections
-from analysis.corrections.muon_ss import apply_muon_ss_corrections
+from analysis.corrections.muon_ss import apply_muon_ss_corrections, apply_muon_ss_shifts
 from analysis.corrections.partonshower import add_partonshower_weight
 from analysis.corrections.electron_ss import apply_electron_ss_corrections
+from analysis.corrections.higgs_hf import add_higgs_hf_weight
 
 
 def object_corrector_manager(events, year, dataset, workflow_config):
-    """apply object level corrections"""
+    """apply object level corrections.
+
+    Returns a list of (collections, shift_name) tuples -- collections is a dict of
+    {"Jet"/"MET"/"Muon": <awkward array>} overrides and shift_name is a Combine-style
+    shape systematic tag (or None for nominal) -- when the workflow config requests
+    "jec_shifts" (JES/JER shift production, added 2026-08-18; muon scale/resolution
+    shift production, CMS_scale_m/CMS_res_m, added 2026-08-19). Otherwise applies
+    nominal-only corrections in place and returns None, exactly as this function
+    behaved before shift support existed -- no behavior change for any workflow that
+    doesn't explicitly opt in.
+    """
     objcorr_config = workflow_config.corrections_config["objects"]
     if objcorr_config:
+        if "jec_shifts" in objcorr_config:
+            met_field_key = (
+                "PuppiMET" if int(get_nano_version(year)) >= 12 else "MET"
+            )
+            # Apply nominal muon_ss/electon_ss corrections FIRST, before JES/JER
+            # shift production -- matches this function's own non-shift ordering
+            # (jec -> muon_ss -> electon_ss -> met_phi) except jec moves to last.
+            # That reordering is safe: apply_jerc_shifts reads events[met_field_key]
+            # fresh at call time (see get_corrected_jets_with_shifts), and
+            # independent MET deltas (JEC Type-1, muon SS) commute under addition
+            # -- so every JES/JER variant it produces automatically carries the
+            # nominal muon/electron correction too, with zero extra plumbing.
+            #
+            # BUG FIXED 2026-08-19: this whole branch used to `return
+            # apply_jerc_shifts(...)` immediately, silently skipping muon_ss/
+            # electon_ss entirely for any workflow requesting "jec_shifts" even
+            # though the yaml listed them (e.g. hplusc_mva_4class_ctag2d_
+            # jecshifts.yaml) -- caught while wiring in muon shift production.
+            if "muon_ss" in objcorr_config:
+                apply_muon_ss_corrections(events=events, year=year)
+            if "electon_ss" in objcorr_config:
+                if year.startswith("202"):
+                    apply_electron_ss_corrections(
+                        events=events, year=year, variation="nominal"
+                    )
+
+            jec_variants = apply_jerc_shifts(events, year, dataset)
+            nominal_jet = jec_variants[0][0]["Jet"]
+            nominal_met = jec_variants[0][0]["MET"]
+            events["Jet"] = nominal_jet
+            events[met_field_key] = nominal_met
+
+            if "muon_ss" in objcorr_config and hasattr(events, "genWeight"):
+                muon_variants = apply_muon_ss_shifts(events, year, met_field_key)
+            else:
+                muon_variants = [
+                    ({"Muon": events.Muon, met_field_key: events[met_field_key]}, None)
+                ]
+            nominal_muon = muon_variants[0][0]["Muon"]
+
+            # Every returned entry explicitly carries Jet/MET/Muon, even where
+            # unchanged from nominal: base.py's shift loop mutates `events`
+            # cumulatively across iterations rather than resetting to nominal
+            # each time, so an entry that omitted a key would silently inherit
+            # whatever the PREVIOUS iteration left behind instead of nominal.
+            final_variants = [
+                ({"Jet": nominal_jet, met_field_key: nominal_met, "Muon": nominal_muon}, None)
+            ]
+            for collections, shift_name in jec_variants[1:]:
+                final_variants.append(
+                    (
+                        {
+                            "Jet": collections["Jet"],
+                            met_field_key: collections["MET"],
+                            "Muon": nominal_muon,
+                        },
+                        shift_name,
+                    )
+                )
+            for collections, shift_name in muon_variants[1:]:
+                final_variants.append(
+                    (
+                        {
+                            "Jet": nominal_jet,
+                            met_field_key: collections[met_field_key],
+                            "Muon": collections["Muon"],
+                        },
+                        shift_name,
+                    )
+                )
+            # Note: "met_phi" is not handled in this branch (not requested by
+            # any current jec_shifts workflow) -- would need extra wiring
+            # (apply per-variant, after the Muon/Jet MET is finalized) if a
+            # future workflow combines jec_shifts with met_phi.
+            return final_variants
         if "jec" in objcorr_config:
             # apply JEC/JER corrections
             apply_jerc_corrections(events, year, dataset)
@@ -93,6 +180,16 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                         events=pruned_ev,
                         weights_container=weights_container,
                     )
+        if "higgsHFWeight" in weights_config:
+            if weights_config["higgsHFWeight"]:
+                # ggH/VBF only (see higgs_hf.py); per-event, keyed on gen-jet heavy
+                # flavour, replaces a flat lnN on the pooled Other_Higgs group
+                add_higgs_hf_weight(
+                    events=pruned_ev,
+                    weights_container=weights_container,
+                    dataset=dataset,
+                    flav="c",
+                )
         if "muon" in weights_config:
             if weights_config["muon"]:
                 if "selected_muons" in pruned_ev.fields:
@@ -172,6 +269,16 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                 ctag_corrector.add_ctag_weights(flavor="b")
                 ctag_corrector.add_ctag_weights(flavor="c")
                 ctag_corrector.add_ctag_weights(flavor="light")
+
+        if "ctagging_2d" in weights_config:
+            if weights_config["ctagging_2d"]:
+                ctag2d_corrector = CTag2DCorrector(
+                    events=pruned_ev,
+                    weights=weights_container,
+                    year=year,
+                    variation=variation,
+                )
+                ctag2d_corrector.add_weights()
     else:
         weights_container.add("weight", np.ones(len(pruned_ev)))
     return weights_container

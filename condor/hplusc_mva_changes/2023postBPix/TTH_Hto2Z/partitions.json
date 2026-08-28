@@ -1,0 +1,12 @@
+{
+    "1": {
+        "TTH_Hto2Z": [
+            "root://redirector.t2.ucsd.edu:1095//store/mc/Run3Summer23BPixNanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/50000/16d446ce-85e2-4dee-a89b-4e989cc5ac07.root",
+            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/Run3Summer23BPixNanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/50000/25ecf2e9-b77f-412a-884c-ba6129d61dde.root",
+            "root://ccxrdcms.in2p3.fr:1094//store/mc/Run3Summer23BPixNanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/50000/402a3f53-4bac-401c-9e1b-f87460095c1a.root",
+            "root://ccxrdcms.in2p3.fr:1094//store/mc/Run3Summer23BPixNanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/50000/c506cfc8-ff1a-4938-8ded-e7b9429c0096.root",
+            "root://xroot01.ncg.ingrid.pt:1094//store/mc/Run3Summer23BPixNanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/50000/e347eb0a-11cb-4a20-90f0-f57dfb7d97e4.root",
+            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/Run3Summer23BPixNanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/50000/e3f1dae4-7575-44f2-85b2-011e53fcab2c.root"
+        ]
+    }
+}

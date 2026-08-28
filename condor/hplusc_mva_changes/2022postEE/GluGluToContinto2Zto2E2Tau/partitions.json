@@ -1,0 +1,48 @@
+{
+    "1": {
+        "GluGluToContinto2Zto2E2Tau_1": [
+            "root://maite.iihe.ac.be:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/0323a7fc-3b2b-43ae-bbf3-40c549d4727e.root",
+            "root://xrootd-cmst1-door.pic.es:1094//pnfs/pic.es/data/cms/disk/store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/10fdda56-5ed9-42df-a69f-0aa214cb40eb.root",
+            "root://xrootd-cmst1-door.pic.es:1094//pnfs/pic.es/data/cms/disk/store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/150f943e-c844-443f-847a-350f3f2e66ff.root",
+            "root://maite.iihe.ac.be:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/16736b3e-b10a-44d3-b872-340aa0c17c55.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/16941836-74ee-4d9a-b43f-b0f91311a7c6.root",
+            "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/2b1dacca-a8ad-4b3f-92c8-096ce4d335a7.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/32d1bd3f-0858-4e2b-924f-6250af8f4932.root",
+            "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/350af3a9-71cb-4369-9b6c-069fb66e54e7.root",
+            "root://xrootd-cmst1-door.pic.es:1094//pnfs/pic.es/data/cms/disk/store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/35914228-e877-43e6-85ed-056775643573.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/3c652a77-304a-474f-bfd5-8d6be22f3f48.root",
+            "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/51abeb94-9523-4bb0-9bac-b1ce62c0a5c0.root",
+            "root://cmsio2.rc.ufl.edu:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/5ccbfd44-8734-4530-8c6e-4c160545a3f9.root"
+        ]
+    },
+    "2": {
+        "GluGluToContinto2Zto2E2Tau_2": [
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/5ee54853-eb0e-46af-acc7-9d54b6c72191.root",
+            "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/6c1b1d45-7f53-448b-9760-ea50616b5f22.root",
+            "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/7644f2fa-453e-4893-bdfd-d2b0ca07b33c.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/8b6aed7c-51e3-413d-9046-778375144f28.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/8ebc2a40-1cd2-49a7-8f3d-4ab52ea57aea.root",
+            "root://skynet013.crc.nd.edu//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/a5579889-a9e8-498b-803a-ad1403af145f.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/ad2784fb-4147-4e48-80cc-85febdc5bde0.root",
+            "root://gfe02.grid.hep.ph.ic.ac.uk:1094//pnfs/hep.ph.ic.ac.uk/data/cms/store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/ad5dd9e1-b1cf-4498-b3e9-32161f749d7b.root",
+            "root://gfe02.grid.hep.ph.ic.ac.uk:1094//pnfs/hep.ph.ic.ac.uk/data/cms/store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/aefc7bab-435b-4106-a653-a2b14b8c9cce.root",
+            "root://xrootd-cmst1-door.pic.es:1094//pnfs/pic.es/data/cms/disk/store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/b762c37f-8d3d-42d6-941b-17c3940c7b23.root",
+            "root://maite.iihe.ac.be:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/bac33ee8-cd91-42c3-89c2-33b4bdf6261f.root"
+        ]
+    },
+    "3": {
+        "GluGluToContinto2Zto2E2Tau_3": [
+            "root://xrootd-cmst1-door.pic.es:1094//pnfs/pic.es/data/cms/disk/store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/c51e8b17-91b0-4e5d-b3bc-28a342bbe34b.root",
+            "root://xrootd-cmst1-door.pic.es:1094//pnfs/pic.es/data/cms/disk/store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/c8054167-e740-4389-b8ef-21e4c425d95b.root",
+            "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/cbfa7094-1d99-4626-872f-d3d41287276c.root",
+            "root://skynet013.crc.nd.edu//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/ceebdf6e-add7-4c83-9ef3-edbcb033187d.root",
+            "root://maite.iihe.ac.be:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/d45061c7-6232-4f5e-bb9b-4debec8b0d2c.root",
+            "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/d97453dc-7449-4392-8fa2-7a03795c30b1.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/daa0117d-0900-41b3-a296-b56dc6094d3a.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/dc8aedfe-82df-4993-86bc-179d446e2569.root",
+            "root://skynet013.crc.nd.edu//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/e9e7b79d-12ad-4a36-8414-c30d20dadb18.root",
+            "root://cmsio2.rc.ufl.edu:1094//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/f3a12849-43c2-4443-9274-16a4efc5f26b.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22EENanoAODv12/GluGluToContinto2Zto2E2Tau_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_postEE_v6-v4/2810000/f91d083f-f188-42f5-a847-dd36bcb81590.root"
+        ]
+    }
+}

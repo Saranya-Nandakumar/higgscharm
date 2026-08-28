@@ -50,7 +50,7 @@ object_selection:
     field: events.Electron
     add_cut:
       is_loose:
-        - events.Electron.pt > 7
+        - events.Electron.pt > 5
         - np.abs(events.Electron.eta) < 2.5
         - np.abs(events.Electron.dxy) < 0.5
         - np.abs(events.Electron.dz) < 1

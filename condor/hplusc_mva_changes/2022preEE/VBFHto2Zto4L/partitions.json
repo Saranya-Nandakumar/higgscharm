@@ -1,0 +1,28 @@
+{
+    "1": {
+        "VBFHto2Zto4L_1": [
+            "root://grid143.kfki.hu:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/2520000/3861603a-2ce8-4356-b1df-c47261562e0b.root",
+            "root://grid-cms-xrootd.physik.rwth-aachen.de:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/2520000/aa243979-41bf-4dd8-b9e7-94a8fb9aa6b7.root",
+            "root://grid143.kfki.hu:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/2540000/c79eb776-89f8-429e-918f-f396405bc154.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/2540000/e1443f52-9297-40b1-9d4a-f609dc0732aa.root",
+            "root://ruhex-osgce.rutgers.edu//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/30000/0da6abc6-9ba9-42a2-951e-68bc44244431.root",
+            "root://grid143.kfki.hu:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/30000/fdb7f6d5-a094-46cd-b8cd-5c3c83129bd4.root",
+            "root://grid-cms-xrootd.physik.rwth-aachen.de:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/40000/185a1921-9a34-4bb5-beb6-5c44678c6449.root",
+            "root://t2dsk0011.cmsaf.mit.edu:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/40000/287270d6-52d1-4570-9597-1d36fe002c28.root",
+            "root://cmsdcache-kit-disk.gridka.de:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/40000/498e62b1-df3d-4336-9534-163eb63e3fb3.root"
+        ]
+    },
+    "2": {
+        "VBFHto2Zto4L_2": [
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/40000/4b625490-fee7-4deb-a36a-224eddc2d999.root",
+            "root://t2dsk0011.cmsaf.mit.edu:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/40000/511dc494-ca3b-4bfc-a688-4403a2f3cff9.root",
+            "root://ruhex-osgce.rutgers.edu//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/40000/7ffc0ed0-73a3-44bc-b765-5b44db14a2ef.root",
+            "root://grid-cms-xrootd.physik.rwth-aachen.de:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/40000/98fdcc6c-c405-45be-a37c-26a8eed3938b.root",
+            "root://grid-cms-xrootd.physik.rwth-aachen.de:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/40000/e86fa68c-e5d9-43e0-8be4-58b46471fa30.root",
+            "root://grid-cms-xrootd.physik.rwth-aachen.de:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/50000/06a04e1e-b6d0-417d-82d6-18475660eaa2.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/50000/1d2b220e-e564-4ff9-8cb1-3cf79bbe1efc.root",
+            "root://grid-cms-xrootd.physik.rwth-aachen.de:1094//store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/50000/25a1549c-7e02-42f6-9fa5-a2364ebe2906.root",
+            "root://se01.indiacms.res.in//dpm/indiacms.res.in/home/cms/store/mc/Run3Summer22NanoAODv12/VBFHto2Zto4L_M125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/50000/ebc0c567-4a27-4bed-b4a0-bac3bade2a7f.root"
+        ]
+    }
+}

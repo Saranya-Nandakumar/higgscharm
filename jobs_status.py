@@ -18,6 +18,7 @@ from analysis.filesets.utils import (
     extract_xrootd_errors,
     get_nano_version,
 )
+from submit_condor import move_proxy
 
 
 def parse_args():
@@ -404,6 +405,16 @@ def resubmit_jobs(job_dir, jobnum_missing, datasets_with_missing_jobs, workflow,
     print("------------------------------------------------------------")
     print("RESUBMITTING MISSING JOBS")
     print("------------------------------------------------------------")
+
+    # Refresh the AFS proxy copy each .sub file's X509PATH argument points
+    # to. Unlike a fresh `submit_condor.py --submit` run, this resubmit path
+    # reuses an existing .sub file verbatim -- without this, jobs silently
+    # run against whatever proxy snapshot was copied at the campaign's last
+    # real submission, which can be hours/days stale and expire mid-queue
+    # (seen 2026-08-26/27: ~30% of a resubmitted batch failed on
+    # "Auth failed: No protocols left to try" from an expired AFS proxy
+    # copy, misdiagnosed initially as site-wide XRootD congestion).
+    move_proxy()
 
     to_resubmit = []
     for dataset in datasets_with_missing_jobs:

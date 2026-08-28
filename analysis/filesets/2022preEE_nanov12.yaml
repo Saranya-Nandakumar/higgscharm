@@ -1,46 +1,46 @@
-DoubleMuonC:
+DoubleMuonRun2022C:
   era: C
   query: DoubleMuon/Run2022C-22Sep2023-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-SingleMuonC:
+SingleMuonRun2022C:
   era: C
   query: SingleMuon/Run2022C-22Sep2023-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-MuonC:
+MuonRun2022C:
   era: C
   query: Muon/Run2022C-22Sep2023-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-MuonD:
+MuonRun2022D:
   era: D
   query: Muon/Run2022D-22Sep2023-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-MuonEGC:
+MuonEGRun2022C:
   era: C
   query: MuonEG/Run2022C-22Sep2023-v1/NANOAOD
   process: Data
   key: muon_electron
   xsec: None
-MuonEGD:
+MuonEGRun2022D:
   era: D
   query: MuonEG/Run2022D-22Sep2023-v1/NANOAOD
   process: Data
   key: muon_electron
   xsec: None
-EGammaC:
+EGammaRun2022C:
   era: C
   query: EGamma/Run2022C-22Sep2023-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-EGammaD:
+EGammaRun2022D:
   era: D
   query: EGamma/Run2022D-22Sep2023-v1/NANOAOD
   process: Data
@@ -404,3 +404,70 @@ ZHto2Zto4L:
   process: H(125) 
   key: higgs
   xsec: 0.000775
+# ─── SMEFT H+c samples (4FS, LO+MLM, JHUGen H→ZZ→4ℓ, NanoAODv13, 2022preEE) ─
+SMEFT_SM_HplusC_2022preEE:
+  era: signal
+  query: SM_HplusC_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-SM-HplusC-133X_mcRun3_2022_realistic_ForNanov13_v1-v1-00000000000000000000000000000000/USER
+  key: smeft_sm
+  process: smeft_sm
+  xsec: 0.00004975
+SMEFT_CuG22_HplusC_FULL_2022preEE:
+  era: signal
+  query: SMEFT_CuG22_HplusC_FULL_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-cuG22-HplusC-FULL-133X_mcRun3_2022_realistic_ForNanov13_v1-v2-00000000000000000000000000000000/USER
+  key: smeft_cug_full
+  process: smeft_cug_full
+  xsec: 0.00003533
+SMEFT_CuG22_HplusC_INT_2022preEE:
+  era: signal
+  query: SMEFT_CuG22_HplusC_INT_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-cuG22-HplusC-INT-133X_mcRun3_2022_realistic_ForNanov13_v1-v1-00000000000000000000000000000000/USER
+  key: smeft_cug_int
+  process: smeft_cug_int
+  xsec: 0.00003533
+SMEFT_CuG22_HplusC_QUAD_2022preEE:
+  era: signal
+  query: SMEFT_CuG22_HplusC_QUAD_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-cuG22-HplusC-QUAD-133X_mcRun3_2022_realistic_ForNanov13_v1-v1-00000000000000000000000000000000/USER
+  key: smeft_cug_quad
+  process: smeft_cug_quad
+  xsec: 0.00003533
+SMEFT_CuH22_HplusC_FULL_2022preEE:
+  era: signal
+  query: SMEFT_CuH22_HplusC_FULL_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-cuH22-HplusC-FULL-133X_mcRun3_2022_realistic_ForNanov13_v1-v2-00000000000000000000000000000000/USER
+  key: smeft_cuh_full
+  process: smeft_cuh_full
+  xsec: 0.00002784
+SMEFT_CuH22_HplusC_QUAD_2022preEE:
+  era: signal
+  query: SMEFT_CuH22_HplusC_QUAD_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-cuH22-HplusC-QUAD-133X_mcRun3_2022_realistic_ForNanov13_v1-v1-00000000000000000000000000000000/USER
+  key: smeft_cuh_quad
+  process: smeft_cuh_quad
+  xsec: 0.00002784
+SMEFT_cHG_HplusC_FULL_2022preEE:
+  era: signal
+  query: SMEFT_cHG_HplusC_FULL_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-cHG-HplusC-FULL-133X_mcRun3_2022_realistic_ForNanov13_v1-v2-00000000000000000000000000000000/USER
+  key: smeft_chg_full
+  process: smeft_chg_full
+  xsec: 0.00003194
+SMEFT_cHGxCuH22_HplusC_FULL_2022preEE:
+  era: signal
+  query: SMEFT_cHGxCuH22_HplusC_FULL_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-cHGxCuH22-HplusC-FULL-133X_mcRun3_2022_realistic_ForNanov13_v1-v2-00000000000000000000000000000000/USER
+  key: smeft_chgxcuh22_full
+  process: smeft_chgxcuh22_full
+  xsec: 0.00004975
+SMEFT_CuG22xCuH22_HplusC_FULL_2022preEE:
+  era: signal
+  query: SMEFT_CuG22xCuH22_HplusC_FULL_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-CuG22xCuH22-HplusC-FULL-133X_mcRun3_2022_realistic_ForNanov13_v1-v2-00000000000000000000000000000000/USER
+  key: smeft_cug22xcuh22_full
+  process: smeft_cug22xcuh22_full
+  xsec: 0.000326069
+SMEFT_cHGxCuG22_HplusC_FULL_2022preEE:
+  era: signal
+  query: SMEFT_cHGxCuG22_HplusC_FULL_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-cHGxCuG22-HplusC-FULL-133X_mcRun3_2022_realistic_ForNanov13_v1-v2-00000000000000000000000000000000/USER
+  key: smeft_chgxcug22_full
+  process: smeft_chgxcug22_full
+  xsec: 0.000823305
+SMEFT_CuH22_HplusC_INT_2022preEE:
+  era: signal
+  query: SMEFT_CuH22_HplusC_INT_HToZZTo4l_M125_TuneCP5_13p6TeV_madgraph_JHUGen_pythia8/snandaku-Run3Summer22NanoAODv13-HToZZ-JHUGen-cuH22-HplusC-INT-133X_mcRun3_2022_realistic_ForNanov13_v1-v1-00000000000000000000000000000000/USER
+  key: smeft_cuh_int
+  process: smeft_cuh_int
+  xsec: 0.00002784

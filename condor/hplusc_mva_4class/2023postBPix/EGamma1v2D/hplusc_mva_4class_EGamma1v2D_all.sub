@@ -1,0 +1,13 @@
+executable            = /afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm/condor/submit.sh
+arguments             = $(JOBNUM) /afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm /afs/cern.ch/user/s/snandaku/private/x509up_u178308
+output                = /afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm/condor/logs/hplusc_mva_4class/2023postBPix/EGamma1v2D/hplusc_mva_4class_EGamma1v2D.$(ClusterId).$(ProcId).out
+error                 = /afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm/condor/logs/hplusc_mva_4class/2023postBPix/EGamma1v2D/hplusc_mva_4class_EGamma1v2D.$(ClusterId).$(ProcId).err
+log                   = /afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm/condor/logs/hplusc_mva_4class/2023postBPix/EGamma1v2D/hplusc_mva_4class_EGamma1v2D.$(ClusterId).$(ProcId).log
+
+should_transfer_files = YES
+transfer_input_files  = /afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm/condor/hplusc_mva_4class/2023postBPix/EGamma1v2D/partitions.json,/afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm/condor/hplusc_mva_4class/2023postBPix/EGamma1v2D/jobnum.txt,/afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm/condor/hplusc_mva_4class/2023postBPix/EGamma1v2D/arguments.json
+
++JobFlavour           = "longlunch"
++SingularityImage     = "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/coffeateam/coffea-base-almalinux9:0.7.30-py3.10"
+
+Queue JOBNUM from /afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm/condor/hplusc_mva_4class/2023postBPix/EGamma1v2D/jobnum.txt

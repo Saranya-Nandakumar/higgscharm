@@ -84,6 +84,13 @@ SYSTEMATICS = {
     "ps_fsr":         {"col": "weight_ps_fsr",        "era_dep": False},
     "CMS_pileup":     {"col": "weight_CMS_pileup",    "era_dep": True},
     "CMS_ctag2d":     {"col": "weight_CMS_ctag2d",    "era_dep": False},
+    # Muon ID efficiency SF (loose WP, wired 2026-08-21) -- see
+    # create_datacards_ctag2d.py's comment for the same row; this file was
+    # already missing the 2026-08-17 CMS_eff_e_reco_* addition those two
+    # scripts have (pre-existing drift, not fixed here -- out of scope for
+    # this change), but CMS_eff_m_id is added to keep the 3-way "edit all
+    # three together" convention for at least this new systematic.
+    "CMS_eff_m_id":   {"col": "weight_CMS_eff_m_id",  "era_dep": True},
 }
 
 # lhe_alphaS EXCLUDED EVERYWHERE, 2026-08-19 (under investigation, not yet
@@ -94,8 +101,8 @@ SYSTEMATICS = {
 USABLE_SYST = {
     "qqZZ":        set(SYSTEMATICS.keys()) - {"lhe_alphaS"},
     "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF", "lhe_alphaS"},
-    "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d"},
-    "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d"},
+    "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"},
+    "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"},
 }
 
 
@@ -413,8 +420,13 @@ def write_datacard(histograms, root_filename, output_dir, mass_window, stat_only
                 return line + "\n"
 
             dc.write(syst_row("lumi_Run3",     "lnN", {p: "1.014" for p in procs}))
-            dc.write(syst_row("pdf_gg",        "lnN", {"ggZZ": "1.05", "Signal": "1.05"}))
-            dc.write(syst_row("QCDscale_ggZZ", "lnN", {"ggZZ": "1.10"}))
+            # QCDscale_gg / pdf_gg / kfactor_ggZZ: values matched to HIG-24-013
+            # (AN2023_157_v10) Table 15 2026-08-28 -- see create_datacards_ctag2d.py
+            # for the full rationale (was one 5% pdf_gg placeholder + a
+            # mislabeled "QCDscale_ggZZ" that was actually the k-factor).
+            dc.write(syst_row("QCDscale_gg",   "lnN", {"ggZZ": "1.039", "Signal": "1.039"}))
+            dc.write(syst_row("pdf_gg",        "lnN", {"ggZZ": "1.032", "Signal": "1.032"}))
+            dc.write(syst_row("kfactor_ggZZ",  "lnN", {"ggZZ": "1.10"}))
             dc.write(f"\n# Shape systematics from per-event weight variations\n")
             for syst in SYSTEMATICS:
                 vals = {p: "1" for p in procs if syst in USABLE_SYST.get(p, set())}
@@ -452,7 +464,11 @@ def print_summary(histograms, mass_window):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scored-dir",
-        default="/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d_scored")
+        # _v2 (default since 2026-08-28) is the rebuild that also carries
+        # weight_CMS_eff_m_id_<year>Up/Down (muon efficiency SF); the old
+        # _scored dir predates that column and silently reproduces a stale
+        # pre-muon-SF result.
+        default="/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d_scored_v2")
     parser.add_argument("--sumw-dir",
         default="/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d")
     parser.add_argument("--output", required=True)

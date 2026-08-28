@@ -1,0 +1,27 @@
+{
+    "1": {
+        "WplusH_Hto2Zto4L_1": [
+            "root://rdr.echo.stfc.ac.uk//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/15a3626e-ebbb-432a-81ca-5094d911ef74.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/1821d82a-059a-4fa6-8547-15f5f9d0cb0e.root",
+            "root://se01.indiacms.res.in//dpm/indiacms.res.in/home/cms/store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/22b53b89-6540-4c24-9bf4-1cc3f5839113.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/2db44625-b302-45c0-9fe0-bdc57c88bdfb.root",
+            "root://gaexrdoor.ciemat.es:1094//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/42785203-d2b8-4e5d-a3e3-06246b992b73.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/52686e10-77ab-4815-b71d-5905485d120e.root",
+            "root://gaexrdoor.ciemat.es:1094//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/5e8d260f-d7fd-4b28-862f-de4095752399.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/68a3449d-6abd-498e-99a6-a10b86432966.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/6fc9fe30-4e11-480d-9e2c-75fc0758bd3a.root"
+        ]
+    },
+    "2": {
+        "WplusH_Hto2Zto4L_2": [
+            "root://gaexrdoor.ciemat.es:1094//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/77e6c7a5-cc16-4a6d-896b-e607396e4c0a.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/79ac4766-c7be-4ade-b695-853536785e89.root",
+            "root://se01.indiacms.res.in//dpm/indiacms.res.in/home/cms/store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/7c990601-f624-4421-8e5e-f6369d4281ea.root",
+            "root://se01.indiacms.res.in//dpm/indiacms.res.in/home/cms/store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/88215a28-3606-458c-a0c5-c085f4548110.root",
+            "root://rdr.echo.stfc.ac.uk//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/99feecdd-b7e8-4d76-90d2-61c7e99da10c.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/b60410d0-ab21-41da-9107-06d177e59d4a.root",
+            "root://gaexrdoor.ciemat.es:1094//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/b6d49cdb-069a-4d22-abaa-a2cbc9741b38.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer22NanoAODv12/WplusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/60000/c9e1834e-38ce-4414-b0cc-a31358a353a7.root"
+        ]
+    }
+}

@@ -1,0 +1,34 @@
+{
+    "1": {
+        "EGamma1v2C_1": [
+            "root://gaexrdoor.ciemat.es:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/0abc71b9-e9b0-421c-9d1d-d0e9e43f1bdf.root",
+            "root://cmsdcache-kit-disk.gridka.de:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/1e21cd55-f226-4dcf-985d-e8816028a3a3.root",
+            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/3386dd29-98a3-4394-9a6a-681f729c0ce5.root",
+            "root://grid-cms-xrootd.physik.rwth-aachen.de:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/3afc6c39-45e1-43e4-b63e-c5697883f4f8.root",
+            "root://cmsio2.rc.ufl.edu:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/3f11e22e-1251-488b-b094-bca0244be9b1.root",
+            "root://gaexrdoor.ciemat.es:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/4b879fb2-03ff-404f-8df8-622ee67a10d4.root",
+            "root://cms-se0.kipt.kharkov.ua//dpm/kipt.kharkov.ua/home/cms/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/4e613e52-c5b9-466b-abfc-d2af8af86a5e.root",
+            "root://grid-cms-xrootd.physik.rwth-aachen.de:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/53685499-777e-4186-8eff-dac545b8671e.root",
+            "root://cceos.ihep.ac.cn:1094//eos/ihep/cms/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/550af053-5bd9-4bc9-aa83-9a576d63fe74.root",
+            "root://storage01.lcg.cscs.ch:1096//pnfs/lcg.cscs.ch/cms/trivcat/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/6aee42ff-1cf0-4d0d-8fb5-51239d7c47ca.root",
+            "root://xrootd-vanderbilt.sites.opensciencegrid.org:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/70eb083d-f08b-4da4-b793-6a2b2ab23610.root",
+            "root://grid-cms-xrootd.physik.rwth-aachen.de:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/7a15bf34-5667-4c0e-ac9d-48cdfbb96bcd.root"
+        ]
+    },
+    "2": {
+        "EGamma1v2C_2": [
+            "root://xrootd-vanderbilt.sites.opensciencegrid.org:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/7db512db-827b-4051-b687-5b01b08e4ad5.root",
+            "root://storage01.lcg.cscs.ch:1096//pnfs/lcg.cscs.ch/cms/trivcat/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/9227d9ef-b8f8-4754-a94b-96e5b27d6a3d.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/a7263cc4-ff63-48c4-92a6-4d41b3817bb5.root",
+            "root://t3se01.psi.ch:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/afa01397-c015-4f67-908b-27b9896d15dc.root",
+            "root://gaexrdoor.ciemat.es:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/b25a43f0-76d2-48db-902f-8b5e13ae3347.root",
+            "root://xrootd.hep.kbfi.ee:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/bcbae2eb-e6d3-42eb-ae02-67c71fad9109.root",
+            "root://cmsio2.rc.ufl.edu:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/c66834bd-afb5-4a68-91fe-4e1f8194c5f8.root",
+            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/cd4240b2-1d54-4bf2-9024-aab9a33bbb53.root",
+            "root://ruhex-osgce.rutgers.edu//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/d1266fa9-1992-4ff2-b66f-9f842b2596de.root",
+            "root://cmsdcache-kit-disk.gridka.de:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/30000/e452824e-e45d-49e4-9973-2e9981e4c91c.root",
+            "root://cms-se0.kipt.kharkov.ua//dpm/kipt.kharkov.ua/home/cms/store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/50000/3a6cc2c8-07f5-4182-a6b3-317e10470225.root",
+            "root://xrootd-vanderbilt.sites.opensciencegrid.org:1094//store/data/Run2023C/EGamma1/NANOAOD/22Sep2023_v2-v1/50000/d0fe9bb0-a2dc-4136-8c88-8742da1bdb87.root"
+        ]
+    }
+}

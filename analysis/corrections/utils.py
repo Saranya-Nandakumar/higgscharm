@@ -5,6 +5,15 @@ from pathlib import Path
 # summary of pog scale factors: https://cms-analysis-corrections.docs.cern.ch/
 correction_files = {
     "jerc": {
+        # dated snapshots verified 2026-08-18 to contain exactly the correction
+        # names jec_params_correctionlib.yaml expects for each era (Total JES +
+        # JER ScaleFactor/PtResolution) -- CVMFS "latest" drifts per-era on an
+        # independent cadence, so don't swap these for "latest" without
+        # re-verifying against jec_params_correctionlib.yaml's pinned tags.
+        "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-22CDSep23-Summer22-NanoAODv12/latest/jet_jerc.json.gz",
+        "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-22EFGSep23-Summer22EE-NanoAODv12/2026-04-13/jet_jerc.json.gz",
+        "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-23CSep23-Summer23-NanoAODv12/2026-04-13/jet_jerc.json.gz",
+        "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-23DSep23-Summer23BPix-NanoAODv12/2026-04-13/jet_jerc.json.gz",
         "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-07-17/jet_jerc.json.gz",
     },
     "pileup": {
@@ -123,6 +132,17 @@ correction_files = {
         "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-23CSep23-Summer23-NanoAODv12/2025-08-20/ctagging.json.gz",
         "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-23DSep23-Summer23BPix-NanoAODv12/2025-08-20/ctagging.json.gz",
         "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-08-19/ctagging.json.gz",
+    },
+    # Preliminary 2D pseudo-continuous HF-tagging SF ("2D_HF_Tagging"), distinct scheme from
+    # "ctagging" above -- see analysis/corrections/ctag2d.py. Paths confirmed readable
+    # 2026-08-10 (second-brain memory hczz_pnet_ctag_sf_migration); correction name
+    # ParticleNetAK4_pseudocontinuous for 2022/2023, UParTAK4_pseudocontinuous for 2024.
+    "ctagging_2d": {
+        "2022preEE": "/eos/cms/store/group/phys_higgs/cmshgg/ingredients/2022/2D_HF_Tagging/flavTaggingSF_2022preEE.json.gz",
+        "2022postEE": "/eos/cms/store/group/phys_higgs/cmshgg/ingredients/2022/2D_HF_Tagging/flavTaggingSF_2022postEE.json.gz",
+        "2023preBPix": "/eos/cms/store/group/phys_higgs/cmshgg/ingredients/2023/2D_HF_Tagging/flavTaggingSF_2023preBPix.json.gz",
+        "2023postBPix": "/eos/cms/store/group/phys_higgs/cmshgg/ingredients/2023/2D_HF_Tagging/flavTaggingSF_2023postBPix.json.gz",
+        "2024": "/eos/cms/store/group/phys_higgs/cmshgg/ingredients/2024/2D_HF_Tagging/flavTaggingSF_2024.json.gz",
     },
 }
 

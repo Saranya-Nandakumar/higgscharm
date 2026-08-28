@@ -1,0 +1,11 @@
+{
+    "1": {
+        "WminusH_Hto2Zto4L": [
+            "root://t2-xrdcms.lnl.infn.it:7070//store/mc/Run3Summer23BPixNanoAODv12/WminusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/120000/326d738d-a065-41a3-b8dc-77879c1428cd.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23BPixNanoAODv12/WminusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/120000/518135f6-6cbf-4745-a262-a3a12d82f86c.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23BPixNanoAODv12/WminusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/120000/5757563c-1f2f-4c4e-9f33-a7b419921e33.root",
+            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/Run3Summer23BPixNanoAODv12/WminusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/120000/b3db93fa-7ba5-468f-88dd-66f25570dc01.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23BPixNanoAODv12/WminusH_Hto2Zto4L_M-125_TuneCP5_13p6TeV_powheg2-minlo-HWJ-JHUGenV752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_postBPix_v6-v2/120000/de193433-d9a9-4a67-87b4-1200c8c52d77.root"
+        ]
+    }
+}

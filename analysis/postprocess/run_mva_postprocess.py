@@ -593,6 +593,13 @@ def main():
         logger.info(f"Processing era: {era}")
         logger.info(f"{'='*60}")
 
+        # Real per-era jet_is_* category boundaries -- see MVAPostProcessor.__init__'s
+        # `era` docstring / JET_TAG_BOUNDARIES_BY_ERA. mva_processor is created once
+        # above and reused across eras, so the era must be updated per iteration
+        # (a bug found 2026-08-14: it was never set at all before this fix, so every
+        # era silently used the wrong legacy boundary set).
+        mva_processor.era = era
+
         process_era(
             input_dir=input_dir,
             output_dir=output_dir,

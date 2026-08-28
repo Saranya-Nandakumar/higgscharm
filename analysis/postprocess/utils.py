@@ -118,11 +118,71 @@ def find_kin_and_axis(processed_histograms, name="multiplicity"):
     raise ValueError(f"No histogram with a '{name}' axis found.")
 
 
+def concat_tables_schema_safe(tables):
+    """pa.concat_tables(tables, promote=True) unions schemas (a column missing from some
+    tables gets filled null) but does NOT reconcile a column present in multiple tables
+    with genuinely different types -- confirmed real 2026-08-14: `nSV` is stored as
+    int64 in some chunk files and double (float) in others, a type drift (not just a
+    missing-column drift) that raises `ArrowInvalid: Unable to merge: Field nSV has
+    incompatible types`. Cast any such numeric-vs-numeric mismatch to float64 (lossless
+    for realistic count-like values) before the union concat. A non-numeric type clash
+    is a more serious, not-safe-to-silently-resolve problem -- left to raise rather than
+    guessed at. Shared by merge_parquets() (within-partition) and
+    postprocessor.py::fill_histograms_from_parquets() (across-partition) -- both hit
+    this independently, keep them using the same helper rather than drifting.
+    """
+    import pyarrow as pa
+    import pyarrow.types as pat
+
+    col_types = {}
+    for t in tables:
+        for name, typ in zip(t.schema.names, t.schema.types):
+            col_types.setdefault(name, set()).add(typ)
+    to_cast = {
+        name: pa.float64()
+        for name, types in col_types.items()
+        if len(types) > 1 and all(pat.is_integer(ty) or pat.is_floating(ty) for ty in types)
+    }
+    if to_cast:
+        cast_tables = []
+        for t in tables:
+            for name, target_type in to_cast.items():
+                if name in t.schema.names:
+                    idx = t.schema.get_field_index(name)
+                    t = t.set_column(idx, name, t.column(name).cast(target_type))
+            cast_tables.append(t)
+        tables = cast_tables
+    return pa.concat_tables(tables, promote=True)
+
+
 def merge_parquets(inpath, outpath, sample_name):
-    parquets = dd.read_parquet(
-        f"{inpath}/*.parquet", engine="pyarrow", calculate_divisions=False
-    )
-    df = parquets.compute()
+    """Merge all per-chunk parquet files for one dataset partition into one file.
+
+    Reads each file with pyarrow and concatenates via concat_tables_schema_safe() (schema
+    union + numeric type promotion) rather than `dask.dataframe.read_parquet(...).compute()`
+    over a glob -- the latter requires every file to share an IDENTICAL schema and raises
+    a bare `KeyError` naming the missing columns otherwise. Confirmed 2026-08-14 this isn't
+    hypothetical: several non-analysis datasets (data, DY -- not in create_datacards.py's
+    PROCESS_MAPPING, so never read downstream) have files from before/after the workflow
+    yaml added `nSV`/`jet_btagUParTAK4*`/`jet_h_dphi_inclusive` columns, mixed within the
+    same dataset partition and never reprocessed to match. The all-physics-process
+    (Signal/qqZZ/ggZZ/Other_Higgs) directories were checked and are schema-clean, but this
+    generic loop processes every dataset it finds, physics-relevant or not, so a mismatch
+    anywhere used to abort the entire --postprocess run.
+    """
+    import pyarrow.parquet as pq
+
+    files = sorted(glob.glob(f"{inpath}/*.parquet"))
+    if not files:
+        # Legitimately empty: e.g. all-hadronic MC (W->4Q, tt->4Q) produces zero rows for
+        # a leptonic selection, and parquet_writer.py::dump_pa_table skips writing empty
+        # tables by design -- zero files here is a correct, expected outcome, not a
+        # failure. Skip writing a merged file rather than crash (pa.concat_tables raises
+        # ArrowInvalid on an empty table list).
+        return
+    tables = [pq.read_table(f) for f in files]
+    table = concat_tables_schema_safe(tables)
+    df = table.to_pandas()
     outpath = Path(outpath)
     if not outpath.exists():
         outpath.mkdir(parents=True, exist_ok=True)

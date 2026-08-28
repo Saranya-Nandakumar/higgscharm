@@ -1,0 +1,13 @@
+{
+    "workflow": "hplusc_mva_4class",
+    "year": "2022postEE",
+    "dataset": "WminusH_Hto2Zto4L",
+    "nfiles": 15,
+    "eos": true,
+    "submit": true,
+    "output_format": "parquet",
+    "image": "/cvmfs/unpacked.cern.ch/registry.hub.docker.com/coffeateam/coffea-base-almalinux9:0.7.30-py3.10",
+    "jobflavor": "longlunch",
+    "output_path": "/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class/2022postEE/WminusH_Hto2Zto4L",
+    "user": "snandaku"
+}

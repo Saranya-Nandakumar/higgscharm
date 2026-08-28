@@ -33,6 +33,7 @@ from glob import glob
 
 MERGED_BASE = "/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_CR_merged"
 CR_BASE     = "/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_CR"
+# These are overridden in main() via --workflow
 
 # Signal region selection cuts applied to CR events (must match hplusc_mva_4class.yaml)
 # These are module-level defaults; the CLI --mass-window / --no-mass-window overrides them.
@@ -181,14 +182,31 @@ def _load_flat(arr, fields):
                 flat[f] = flat_col
             else:
                 # Variable-length per-jet / per-cjet list
+                # If the column is option[var * ?T] (outer None wraps whole list),
+                # fill outer None with empty list before padding inner axis.
+                try:
+                    col_inner = ak.fill_none(col, [], axis=0)
+                except Exception:
+                    col_inner = col
                 # Extract first element as per-event scalar (NaN if empty)
-                padded = ak.pad_none(col, 1, axis=1)
-                flat[f] = ak.to_numpy(ak.fill_none(padded[:, 0], np.nan))
+                try:
+                    padded = ak.pad_none(col_inner, 1, axis=1)
+                    flat[f] = ak.to_numpy(ak.fill_none(ak.flatten(padded, axis=1), np.nan))
+                    if len(flat[f]) != n_rows:
+                        # fallback: take first element explicitly
+                        flat[f] = ak.to_numpy(ak.fill_none(padded[:, 0], np.nan))
+                except Exception:
+                    flat[f] = np.full(n_rows, np.nan)
                 # Also emit indexed columns _0, _1, _2 for jet arrays
                 max_idx = 3
-                padded3 = ak.pad_none(col, max_idx, axis=1)
-                for j in range(max_idx):
-                    flat[f'{f}_{j}'] = ak.to_numpy(ak.fill_none(padded3[:, j], np.nan))
+                try:
+                    padded3 = ak.pad_none(col_inner, max_idx, axis=1)
+                    for j in range(max_idx):
+                        col_j = padded3[:, j]
+                        flat[f'{f}_{j}'] = ak.to_numpy(ak.fill_none(col_j, np.nan))
+                except Exception:
+                    for j in range(max_idx):
+                        flat[f'{f}_{j}'] = np.full(n_rows, np.nan)
     return flat
 
 
@@ -284,10 +302,12 @@ def _get_sumw_from_coffea(year, dataset_prefix):
     return total
 
 
-def _sum_wnominal_from_cr(year, dataset_prefix, category, m4l_min=None, m4l_max=None):
+def _sum_wnominal_from_cr(year, dataset_prefix, category, m4l_min=None, m4l_max=None,
+                          cr_base=None, m4l_col=None):
     """Sum weight_nominal (genWeight × SFs, NOT xs-normalized) from per-dataset CR parquets."""
-    cr_dir   = os.path.join(CR_BASE, year)
-    m4l_col  = 'm4l_3p1f' if 'CR_3P1F' in category else 'm4l_2p2f'
+    cr_dir   = os.path.join(cr_base if cr_base is not None else CR_BASE, year)
+    if m4l_col is None:
+        m4l_col = 'm4l_3p1f' if 'CR_3P1F' in category else 'm4l_2p2f'
     total    = 0.0
     for dataset_folder in sorted(os.listdir(cr_dir)):
         if not dataset_folder.startswith(dataset_prefix):
@@ -372,6 +392,126 @@ def compute_zz_correction(year, category="CR_3P1F", df_data=None):
           f"N_data={n_data:,}  N_qqZZ={n_zz_qq:.2f}  N_ggZZ={n_zz_gg:.2f}  "
           f"N_ZZ_total={n_zz_mc:.2f}  factor={correction:.4f}")
     return correction, n_data, n_zz_mc
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Same-sign (SS) cross-check method (HIG-24-013 "2P2LSS" control region)
+# ────────────────────────────────────────────────────────────────────────
+# The official analysis (HIG-24-013) runs a second, independent Z+X estimate
+# from a same-sign (SS) control region as a cross-check against the OS
+# 3P1F/2P2F method above (see its "Different Z+ll control regions" section).
+# Unlike the OS method, the SS method uses no fake rates: same-sign
+# extra-lepton pairs are (to good approximation) not produced by genuine
+# ZZ, so N_data(SS) directly estimates the reducible background after
+# subtracting the small residual ZZ MC contamination in that region.
+#
+# The CR_2P2F_SS category is already produced (hplusc_mva_4class_CR_loose_z2
+# workflow) but was never consumed anywhere before this. This adds it as a
+# printed cross-check only -- it does NOT feed into the datacard/combine.
+
+SS_WORKFLOW = 'hplusc_mva_4class_CR_loose_z2'
+SS_CATEGORY = 'CR_2P2F_SS'
+SS_M4L_COL  = 'm4l_2p2f_ss'
+
+
+def load_cr_ss_data(year):
+    """
+    Load CR_2P2F_SS events directly from per-dataset parquets (no merged
+    directory exists for this workflow, unlike the primary OS CRs).
+    Returns (n_data, df_mc) with the SR mass window applied, where df_mc
+    carries per-dataset xs-normalizable weight sums for 'qqzz'/'ggzz'.
+    """
+    cr_dir = f"/eos/user/s/snandaku/higgscharm/outputs/{SS_WORKFLOW}/{year}"
+    if not os.path.isdir(cr_dir):
+        print(f"  SS CR directory not found: {cr_dir}")
+        return 0, pd.DataFrame(columns=['dataset_folder', 'dataset_class', 'weight_sum'])
+
+    n_data = 0
+    mc_rows = []
+    for dataset_folder in sorted(os.listdir(cr_dir)):
+        dclass = _classify_dataset(dataset_folder)
+        if dclass not in ('data', 'qqzz', 'ggzz'):
+            continue
+        pfiles = glob(os.path.join(cr_dir, dataset_folder, SS_CATEGORY, "*.parquet"))
+        if not pfiles:
+            continue
+        for pfile in pfiles:
+            try:
+                arr = ak.from_parquet(pfile)
+            except Exception as e:
+                print(f"    Warning reading {pfile}: {e}")
+                continue
+            if SS_M4L_COL not in arr.fields:
+                continue
+            m4l_col = arr[SS_M4L_COL]
+            m4l = ak.to_numpy(ak.fill_none(
+                ak.flatten(m4l_col, axis=1) if m4l_col.ndim > 1 else m4l_col, np.nan))
+            if SR_M4L_MIN is not None and SR_M4L_MAX is not None:
+                mask = (m4l >= SR_M4L_MIN) & (m4l <= SR_M4L_MAX)
+            else:
+                mask = np.ones(len(m4l), dtype=bool)
+            n_pass = int(np.nansum(mask))
+            if n_pass == 0:
+                continue
+            if dclass == 'data':
+                n_data += n_pass
+            else:
+                if 'weight_nominal' not in arr.fields:
+                    continue
+                w_col = arr['weight_nominal']
+                w = ak.to_numpy(ak.fill_none(
+                    ak.flatten(w_col, axis=1) if w_col.ndim > 1 else w_col, np.nan))
+                mc_rows.append({'dataset_folder': dataset_folder, 'dataset_class': dclass,
+                                 'weight_sum': float(np.nansum(w[mask]))})
+
+    df_mc = pd.DataFrame(mc_rows) if mc_rows else pd.DataFrame(
+        columns=['dataset_folder', 'dataset_class', 'weight_sum'])
+    return n_data, df_mc
+
+
+def estimate_zx_ss_crosscheck(year):
+    """
+    Compute the SS-method Z+X cross-check: N_data(SS) - N_ZZ_MC(SS), in the
+    same SR mass window as the OS method. Printed only -- not written to any
+    output file, not fed into combine.
+    """
+    lumi = _LUMI_FB.get(year, 0)
+    if lumi == 0:
+        print(f"  Unknown era {year}, skipping SS cross-check")
+        return None
+
+    n_data, df_mc = load_cr_ss_data(year)
+    if n_data == 0 and len(df_mc) == 0:
+        print(f"  No CR_2P2F_SS events found for {year} -- skipping SS cross-check.")
+        return None
+
+    # xs-normalize each MC dataset's weight sum the same way compute_zz_correction
+    # does for the OS method's ZZ-in-3P1F correction -- same sample-key lists.
+    n_zz_mc = 0.0
+    for dclass, sample_keys in [
+        ('qqzz', ['ZZto4L']),
+        ('ggzz', ['GluGlutoContinto2Zto4E', 'GluGlutoContinto2Zto4Mu',
+                   'GluGluToContinto2Zto2E2Mu']),
+    ]:
+        sub = df_mc[df_mc['dataset_class'] == dclass]
+        if len(sub) == 0:
+            continue
+        for sample_key in sample_keys:
+            xs = _load_xsec(year, sample_key)
+            sumw = _get_sumw_from_coffea(year, sample_key)
+            if sumw <= 0 or xs <= 0:
+                continue
+            xs_norm = xs * 1000 * lumi / sumw   # fb -> expected yield per unit weight
+            raw = sub[sub['dataset_folder'].str.startswith(sample_key)]['weight_sum'].sum()
+            n_zz_mc += raw * xs_norm
+
+    net_ss = n_data - n_zz_mc
+    mw_str = f"[{SR_M4L_MIN},{SR_M4L_MAX}] GeV" if SR_M4L_MIN is not None else "inclusive"
+    print(f"\n  SS-method cross-check (CR_2P2F_SS, m4l {mw_str}):")
+    print(f"    N_data(SS):     {n_data:>10,}")
+    print(f"    N_ZZ_MC(SS):    {n_zz_mc:>10.2f}")
+    print(f"    Net Z+X (SS):   {net_ss:>10.2f}   (cross-check only, not used in combine)")
+    return {'year': year, 'n_data_ss': n_data, 'n_zz_mc_ss': n_zz_mc, 'net_zx_ss': net_ss}
 
 
 def estimate_zx_background(year, fake_rates, output_dir):
@@ -551,7 +691,10 @@ def print_era_table(results):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cr-input', type=str, required=True)
+    parser.add_argument('--cr-input', type=str, default=None,
+                        help='(Deprecated, ignored) CR input base directory')
+    parser.add_argument('--workflow', type=str, default='hplusc_mva_4class_CR',
+                        help='CR workflow name (default: hplusc_mva_4class_CR)')
     parser.add_argument('--fake-rates', type=str, required=True)
     parser.add_argument('--year', type=str, default='all',
                         help="Era or 'all'")
@@ -561,7 +704,18 @@ def main():
     parser.add_argument('--mass-window', type=float, nargs=2, default=None,
                         metavar=('MIN', 'MAX'),
                         help='Override mass window in GeV (default: 100 150)')
+    parser.add_argument('--ss-crosscheck', action='store_true',
+                        help='Also print the SS-method (CR_2P2F_SS) cross-check '
+                             'per era. Printed only, not fed into combine.')
     args = parser.parse_args()
+
+    # Set workflow-dependent globals before any estimation runs
+    global MERGED_BASE, CR_BASE
+    MERGED_BASE = f"/eos/user/s/snandaku/higgscharm/outputs/{args.workflow}_merged"
+    CR_BASE     = f"/eos/user/s/snandaku/higgscharm/outputs/{args.workflow}"
+    print(f"Workflow:     {args.workflow}")
+    print(f"Merged base:  {MERGED_BASE}")
+    print(f"CR base:      {CR_BASE}")
 
     # Apply mass window settings to module globals before running
     global SR_M4L_MIN, SR_M4L_MAX
@@ -603,6 +757,9 @@ def main():
         result = estimate_zx_background(era, fr, out)
         if result[2] is not None:
             all_results.append(result[2])
+
+        if args.ss_crosscheck:
+            estimate_zx_ss_crosscheck(era)
 
     if all_results:
         print_era_table(all_results)

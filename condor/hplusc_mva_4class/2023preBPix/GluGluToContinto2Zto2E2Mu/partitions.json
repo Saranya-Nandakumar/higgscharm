@@ -1,0 +1,46 @@
+{
+    "1": {
+        "GluGluToContinto2Zto2E2Mu_1": [
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/079c5f43-ee60-4753-b239-7185c49bd436.root",
+            "root://skynet013.crc.nd.edu//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/07e7e8af-6f84-49a1-8558-fa6acf640f05.root",
+            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/07e931ac-06c8-45a5-ba5d-b72172ca171d.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/16b52ce1-1e09-454c-bfdd-b668f0c1b520.root",
+            "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/1dab096d-1546-4373-92cf-aac6c86e544c.root",
+            "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/1e1406b8-a48d-4bcf-82e5-4e6098a062de.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/2300478a-ee3d-4eaa-8029-07065ab81dac.root",
+            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/31b0439f-7f90-4b8e-98a3-80ea61ea8362.root",
+            "root://skynet013.crc.nd.edu//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/31e890f3-e4aa-4dab-b8c3-3c0f608e8a8f.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/35322b50-34bd-46e0-a96c-d866edfa1ef0.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/36be62a9-9b87-45cf-8716-f74156eb9cea.root"
+        ]
+    },
+    "2": {
+        "GluGluToContinto2Zto2E2Mu_2": [
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/4914e0f1-7f59-4dc0-b1f8-bf6451f626aa.root",
+            "root://cmsio2.rc.ufl.edu:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/50bc4787-9627-402d-902d-6e8b3851a3c3.root",
+            "root://cmsio2.rc.ufl.edu:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/52287869-c3db-45c4-b6b3-1cf4ebbc987d.root",
+            "root://xrootd-cms.infn.it:1194//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/5c194b13-0583-4f0c-b648-15ee6b36eff9.root",
+            "root://xrootd-cms.infn.it:1194//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/6d0f2986-9b04-43ed-87f7-56edb47696c6.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/6eb2e7ca-5a87-47f6-8065-a6e3c338bc4c.root",
+            "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/72741197-dc3f-4f27-a250-b7a7aae04765.root",
+            "root://maite.iihe.ac.be:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/7e5282e1-f9de-4778-91d7-e4a5a92e14aa.root",
+            "root://dcache-cms-xrootd.desy.de:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/82e8f476-5e3e-44ae-aa1a-fbdb0a953d9f.root",
+            "root://skynet013.crc.nd.edu//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/8a4837a2-a83e-46e5-8dc4-7c78d5e46e6a.root",
+            "root://maite.iihe.ac.be:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/94065375-4976-44a8-8bc9-693dbf254bf0.root"
+        ]
+    },
+    "3": {
+        "GluGluToContinto2Zto2E2Mu_3": [
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/a666edcf-c1fc-462b-a15b-fa8b5be869cc.root",
+            "root://lcgsedr01.jinr.ru:1094//pnfs/jinr.ru/data/cms/store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/a81ad769-985d-4bfd-a107-21f5807e435f.root",
+            "root://xrootd-cms.infn.it:1194//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/b2b78514-ddec-4759-bb6f-2ff071607d1a.root",
+            "root://cmsio2.rc.ufl.edu:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/b35dcc6b-c15e-4880-aa8a-3d2678431663.root",
+            "root://skynet013.crc.nd.edu//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/cdc27bc4-639c-44f1-b280-2983b37a8685.root",
+            "root://cmsio2.rc.ufl.edu:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/d4c9ecea-924c-4adf-af3d-dc9034a9d68e.root",
+            "root://xrootd-cms.infn.it:1194//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/e1eb6dff-0170-4e72-bba1-cda241ebb475.root",
+            "root://cmsio2.rc.ufl.edu:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/e2102089-e344-4aa4-b825-fb27ade6ae8f.root",
+            "root://lcgsedr01.jinr.ru:1094//pnfs/jinr.ru/data/cms/store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/fd66e4db-df89-46c2-9ea6-40052d58e278.root",
+            "root://cmsxrootd.hep.wisc.edu:1094//store/mc/Run3Summer23NanoAODv12/GluGluToContinto2Zto2E2Mu_TuneCP5_13p6TeV_mcfm701-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v2/2810000/fe385045-ce93-4337-99c9-9095c4078bc0.root"
+        ]
+    }
+}

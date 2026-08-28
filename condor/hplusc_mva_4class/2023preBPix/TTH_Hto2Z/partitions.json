@@ -1,0 +1,12 @@
+{
+    "1": {
+        "TTH_Hto2Z": [
+            "root://t2dsk0011.cmsaf.mit.edu:1094//store/mc/Run3Summer23NanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v3/50000/200f891c-027c-431d-a496-8a8f5646e357.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23NanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v3/50000/37dffea4-45bd-45b0-a248-d35132fb8aed.root",
+            "root://eos.cms.rcac.purdue.edu//store/mc/Run3Summer23NanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v3/50000/893952c4-ea7a-4a73-bfc2-7546f9b95b5f.root",
+            "root://cms-se0.kipt.kharkov.ua//dpm/kipt.kharkov.ua/home/cms/store/mc/Run3Summer23NanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v3/50000/8c00299c-4137-4266-b613-cc495d5ab290.root",
+            "root://se01.indiacms.res.in//dpm/indiacms.res.in/home/cms/store/mc/Run3Summer23NanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v3/50000/add628a3-d3ea-47d1-9ae4-3f1e4929039e.root",
+            "root://cms-se0.kipt.kharkov.ua//dpm/kipt.kharkov.ua/home/cms/store/mc/Run3Summer23NanoAODv12/TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/NANOAODSIM/130X_mcRun3_2023_realistic_v15-v3/50000/e30a8e16-4037-4c55-8782-5b540e9b929c.root"
+        ]
+    }
+}
