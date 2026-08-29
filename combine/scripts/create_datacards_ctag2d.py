@@ -772,14 +772,15 @@ def main():
     )
     parser.add_argument(
         "--scored-dir",
-        default="/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d_scored_v2",
+        default="/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d_scored_v4",
         help="Directory with MVA-scored parquets from the ctag2d WORKFLOW VARIANT "
              "(hplusc_mva_4class_ctag2d.yaml) -- NOT the production hplusc_mva_4class "
              "scored dir, which never has a weight_CMS_ctag2d_* column. Does not exist "
-             "until that workflow has been run + scored. _v2 (default since 2026-08-28) "
-             "is the rebuild that also carries weight_CMS_eff_m_id_<year>Up/Down "
-             "(muon efficiency SF); the old _scored dir predates that column and "
-             "silently reproduces a stale pre-muon-SF result.",
+             "until that workflow has been run + scored. _v4 (default since 2026-08-29) "
+             "is the first rebuild built on a genuinely complete production tree AND the "
+             "first to carry the lhescale.py Up/Down-swap fix (see README_HcZZ.md "
+             "2026-08-29 dated entry). _v2/_v3 predate that fix and silently reproduce "
+             "a stale swapped-label result.",
     )
     parser.add_argument(
         "--sumw-dir",

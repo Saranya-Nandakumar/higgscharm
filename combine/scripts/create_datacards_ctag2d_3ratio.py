@@ -83,13 +83,22 @@ SYSTEMATICS = {
     "ps_isr":         {"col": "weight_ps_isr",        "era_dep": False},
     "ps_fsr":         {"col": "weight_ps_fsr",        "era_dep": False},
     "CMS_pileup":     {"col": "weight_CMS_pileup",    "era_dep": True},
-    "CMS_ctag2d":     {"col": "weight_CMS_ctag2d",    "era_dep": False},
+    # era_dep fixed to True 2026-08-29 (was False): the real parquet column is
+    # weight_CMS_ctag2d_<year>Up/Down (confirmed against a live scored parquet's
+    # schema), so era_dep=False silently requested the nonexistent
+    # weight_CMS_ctag2dUp/Down and this systematic was quietly dropped from
+    # every process's datacard here -- create_datacards_ctag2d.py/_100150.py
+    # already had this right.
+    "CMS_ctag2d":     {"col": "weight_CMS_ctag2d",    "era_dep": True},
+    # Electron reco efficiency, split by pT range -- added 2026-08-29 to close
+    # the drift flagged 2026-08-17/27 vs. create_datacards_ctag2d.py/_100150.py
+    # (both already had this). Same detector-level correction, sane for every
+    # process incl. Signal/HPlusBottom.
+    "CMS_eff_e_reco_20to75":  {"col": "weight_CMS_eff_e_reco_20to75",  "era_dep": True},
+    "CMS_eff_e_reco_above75": {"col": "weight_CMS_eff_e_reco_above75", "era_dep": True},
+    "CMS_eff_e_reco_below20": {"col": "weight_CMS_eff_e_reco_below20", "era_dep": True},
     # Muon ID efficiency SF (loose WP, wired 2026-08-21) -- see
-    # create_datacards_ctag2d.py's comment for the same row; this file was
-    # already missing the 2026-08-17 CMS_eff_e_reco_* addition those two
-    # scripts have (pre-existing drift, not fixed here -- out of scope for
-    # this change), but CMS_eff_m_id is added to keep the 3-way "edit all
-    # three together" convention for at least this new systematic.
+    # create_datacards_ctag2d.py's comment for the same row.
     "CMS_eff_m_id":   {"col": "weight_CMS_eff_m_id",  "era_dep": True},
 }
 
@@ -98,11 +107,12 @@ SYSTEMATICS = {
 # always move the same direction for every process. See
 # create_datacards_ctag2d_100150.py's USABLE_SYST comment / README_HcZZ.md
 # for the full writeup.
+EFF_E_RECO = {"CMS_eff_e_reco_20to75", "CMS_eff_e_reco_above75", "CMS_eff_e_reco_below20"}
 USABLE_SYST = {
     "qqZZ":        set(SYSTEMATICS.keys()) - {"lhe_alphaS"},
     "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF", "lhe_alphaS"},
-    "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"},
-    "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"},
+    "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"} | EFF_E_RECO,
+    "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"} | EFF_E_RECO,
 }
 
 
@@ -464,11 +474,11 @@ def print_summary(histograms, mass_window):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scored-dir",
-        # _v2 (default since 2026-08-28) is the rebuild that also carries
-        # weight_CMS_eff_m_id_<year>Up/Down (muon efficiency SF); the old
-        # _scored dir predates that column and silently reproduces a stale
-        # pre-muon-SF result.
-        default="/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d_scored_v2")
+        # _v4 (default since 2026-08-29) is the first rebuild built on a genuinely
+        # complete production tree AND the first to carry the lhescale.py Up/Down-swap
+        # fix (see README_HcZZ.md 2026-08-29 dated entry). _v2/_v3 predate that fix and
+        # silently reproduce a stale swapped-label result.
+        default="/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d_scored_v4")
     parser.add_argument("--sumw-dir",
         default="/eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d")
     parser.add_argument("--output", required=True)

@@ -410,11 +410,13 @@ Known traps.
 > 2026-08-18) — the production default at this window is MC-only. `[90,160]`'s
 > own with-ZX number (r=329.0, from the OS/featmajor production) remains
 > available via `--window 90160 --with-zx`. **`lhe_alphaS` removed 2026-08-19
-> pending a bug fix (see the dated update below).** **Muon ID efficiency SF
-> (`CMS_eff_m_id`) added 2026-08-27 — current number: r=301.0 median /
-> kappa_c=54.86, 16 systematics** (see the 2026-08-27 dated update below for
-> the full CLs band and how it was produced — first result built from a
-> genuinely complete, muon-SF-corrected `ctag2d` reprocessing). Superseded:
+> pending a bug fix (see the dated update below).** **`lhescale.py` Up/Down
+> swap fixed + full reprocessing landed 2026-08-29 — current number: r=219.0
+> median / kappa_c=40.64, 17 systematics** (see the 2026-08-29 "full
+> reprocessing campaign" dated update below for the full CLs band, impact
+> ranking, and production paths — `_scored_v4`, 100% completeness on every
+> datacard-relevant dataset). Superseded: r=301.0/kappa_c=54.86, 16
+> systematics (2026-08-27, muon SF added but pre-`lhescale.py`-fix);
 > r=309.5/15 systematics (2026-08-19, pre-muon-SF); r=311.5/16 systematics
 > (2026-08-17, buggy `lhe_alphaS` still included).
 
@@ -426,17 +428,20 @@ All three share the same `SYSTEMATICS`/`USABLE_SYST` dicts and sumw/xs-scaling
 logic as `create_datacards_ctag2d.py` — edit all three together when changing
 the systematics model.
 
-**16 systematics total** (was 15 as of 2026-08-19; `CMS_eff_m_id` added
-2026-08-27; `lhe_alphaS` still removed everywhere pending a bug fix — see
-the dated update below): 5 `lnN` + 11 shape.
+**17 systematics total** (was 16 as of 2026-08-27; the `pdf_gg`/
+`QCDscale_ggZZ` placeholder pair was split into 3 real lnN's matching
+HIG-24-013 Table 15 on 2026-08-28 (net +1 row); `lhe_alphaS` still removed
+everywhere pending a bug fix — see the dated updates below): 6 `lnN` + 11
+shape.
 
 | kind | name | size/processes | notes |
 |---|---|---|---|
 | lnN | `lumi_Run3` | 1.4%, all | |
-| lnN | `pdf_gg` | 5%, ggZZ+Signal | placeholder |
-| lnN | `QCDscale_ggZZ` | 10%, ggZZ | placeholder |
+| lnN | `QCDscale_gg` | 3.9%, ggZZ+Signal | **added 2026-08-28**, matches HIG-24-013 Table 15's gg-initiated QCD-scale value exactly; replaces the old 5% `pdf_gg` placeholder's mislabeled half |
+| lnN | `pdf_gg` | 3.2%, ggZZ+Signal | **value corrected 2026-08-28** to HIG-24-013's real PDF(gg) number (was a 5% round placeholder) |
+| lnN | `kfactor_ggZZ` | 10%, ggZZ | **renamed 2026-08-28** from `QCDscale_ggZZ` — value (10%) was already numerically correct, just named after the wrong physics quantity (it's HIG-24-013's gg→ZZ k-factor, not a QCD-scale term) |
 | lnN | `BR_HZZ4l` | 2%, Signal+Other_Higgs | **added 2026-08-17**, sourced from Felix Heyen thesis Appendix D; no per-event weight column exists, pure rate lnN |
-| lnN | `QCDscale_qqZZ` | 4%, qqZZ | **added 2026-08-17**, same source; separate from `QCDscale_ggZZ`, not a duplicate |
+| lnN | `QCDscale_qqZZ` | 4%, qqZZ | **added 2026-08-17**, same source; separate from `kfactor_ggZZ`, not a duplicate |
 | shape | `lhe_pdf`/`scalevar_muR`/`scalevar_muF` | qqZZ only | excluded for Signal/ggZZ/most of Other_Higgs — see per-process reasons below |
 | shape | ~~`lhe_alphaS`~~ | **removed everywhere, 2026-08-19** | not a per-process exclusion — a genuine bug in the weight-computation code itself, see the dated update below |
 | shape | `ps_isr`/`ps_fsr`/`CMS_pileup`/`CMS_ctag2d` | all 4 processes | |
@@ -1082,6 +1087,78 @@ three production datacard scripts (`create_datacards_ctag2d.py`,
 **No code changed this session** — verification only. `lhescale.py`'s fix was
 pushed to `Saranya-Nandakumar/higgscharm` (`HcZZ-zx-estimation`, `075478d`)
 earlier the same day; this audit confirms that push is correct as-is.
+
+---
+
+### Update 2026-08-29 (later): full reprocessing campaign — `lhescale.py` fix
+and gg-lnN split now take effect for the first time; new production reference
+**r=219.0 / kappa_c=40.64** (was r=301.0 / kappa_c=54.86)
+
+The 2026-08-28/29 fixes (`lhescale.py` Up/Down swap; `QCDscale_gg`/`pdf_gg`/
+`kfactor_ggZZ` lnN split) only existed in source code / datacard scripts until
+now — neither had been through a real condor reprocessing + rescoring +
+combine cycle. Ran the full chain end to end:
+
+1. **Condor reprocessing** (`hplusc_mva_4class_ctag2d`, MC datasets only, all
+   4 eras, via `submit_condor.py` direct per-dataset calls — same pattern as
+   the 2026-07-31 sumw-fix resubmission). Two follow-up resubmission rounds
+   for congestion-driven XRootD failures (`Socket timeout`/`Operation
+   expired` against `cms-xrd-global.cern.ch` — the same well-documented
+   flakiness as 2026-08-25 through 08-28, no new root cause). **Final
+   completeness: 100% of every `PROCESS_MAPPING`-relevant dataset** (Signal,
+   qqZZ, ggZZ, Other_Higgs) across all 4 eras — the only persistent gaps are
+   in datasets `get_process_from_path()` maps to `None` (single-top,
+   diboson/triboson, DY HT-binned, plus the already-known-broken
+   `bbH_Hto2Zto4L`), which don't feed the datacard at all.
+2. **MVA rescoring** (`run_mva_postprocess.py`, `--no-mass-window`, all 4
+   eras) into a new `hplusc_mva_4class_ctag2d_scored_v4` directory — **9,503
+   files, 0 errors, 4,329,108 total events** (supersedes `_v2`/`_v3`, both
+   pre-dating the `lhescale.py` fix).
+3. **Datacard + combine rebuild** (`run_pipeline.sh`, default `[100,150]`
+   preset, `--scored-dir` pointed at `_v4`): **median r = 219.0**, full band
+   2.5%/16%/50%/84%/97.5% = 112.9/152.7/219.0/319.4/450.4, **kappa_c = 40.64**
+   (band 22.18/29.11/40.64/58.05/80.76). Reproduced bit-identically on a
+   second independent combine invocation. A **~27% tightening** vs the
+   pre-fix `r=301.0`/`kappa_c=54.86` (2026-08-27) — larger than the
+   "shape-only, small lnN-equivalent magnitude" expectation from the
+   `lhescale.py` fix alone, so some of the movement is the underlying
+   production being fresher/more complete, not purely the Up/Down relabel;
+   not decomposed further this session.
+4. **Impact ranking rebuilt** (`impact_ranking.py --plot`, all 17
+   systematics): top-2 unchanged from the 15/16-syst cards —
+   `CMS_eff_e_reco_below20` (−4.57%), `CMS_ctag2d` (−3.88%). `CMS_eff_m_id`
+   confirmed **exactly zero impact** (Δr=0.00), consistent with the
+   2026-08-28 freeze-and-compare proxy — this is now a real `-M
+   AsymptoticLimits`-based ranking of the full systematics list, not a
+   proxy. Every nuisance "improves the limit when frozen" — expected for a
+   blind/Asimov fit with **no floating rateParam** in this no-ZX card (unlike
+   the with-ZX card's `ZX_rate` degeneracy caveat), not evidence of a
+   problem.
+5. **Two transient-EOS-read incidents, self-resolved, no code bug**: the
+   very first `combine` call on the freshly-written `histograms_no_zx.root`
+   intermittently threw `RuntimeError: Bogus norm 0.0 for ... ggZZ,
+   systematic CMS_eff_m_id Down` (preceded by a ROOT `TBufferFile::
+   ReadClassBuffer ... wrong version: 256` read error) on 3 of 4 attempts —
+   same class of issue as the 2026-08-28 git-race note. `md5sum` confirmed
+   the EOS file itself was never corrupted; copying it to local `/tmp` disk
+   made every subsequent `combine`/`impact_ranking.py` call succeed
+   deterministically. **Takeaway for next time**: if `combine` throws a
+   `Bogus norm`/ROOT-version error immediately after a datacard/histogram
+   rebuild, retry once or copy the ROOT file to local disk before assuming a
+   real content bug.
+
+Outputs: `combine/outputs/combine_run3_100150_ctag2d_v4/` (datacard, ROOT
+histograms, `impact_ranking.json`/`.png`). `--scored-dir` default in all
+three datacard scripts (`create_datacards_ctag2d.py`, `_100150.py`,
+`_3ratio.py`) updated from `_scored_v2` to `_scored_v4`.
+
+**How to apply**: r=219.0/kappa_c=40.64 at `[100,150]`, no-ZX, 17 systematics
+is now the production reference number — supersedes every `_scored_v2`-based
+result in this README and in `second-brain/Notes/HcZZ-combine-results-
+reproducibility.md` (not yet updated there — do that before quoting the old
+301.0/54.86 number anywhere new). The `[90,160]`/with-ZX and `_3ratio`
+variants have **not** been rerun against `_scored_v4` yet — their existing
+numbers still reflect `_scored_v2`.
 
 ---
 
