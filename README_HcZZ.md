@@ -1059,6 +1059,32 @@ validation task that changes what the corrector represents.
 
 ---
 
+### Update 2026-08-29: fresh systematics correctness re-audit — no new bugs,
+`lhescale.py` fix confirmed correctly implemented in code
+
+**Full reproducibility reference**: `second-brain/Notes/HcZZ-systematics-
+audit-2026-08-29.md`; narrative in `second-brain/Tasks/HcZZ-fake-rate.md`
+"Update 2026-08-29".
+
+Re-read every `analysis/corrections/*.py` Up/Down call from the current
+checkout (not a recall of the 2026-08-28 audit) and cross-checked against
+`combine/scripts/create_datacards_ctag2d*.py`'s `SYSTEMATICS`/`USABLE_SYST`.
+Confirmed `lhescale.py`'s fix is correctly implemented (index[7]/[5]/[8] as
+Up, index[1]/[3]/[0] as Down, `/nom` present on all three variables) and
+diff-identical between the EOS and AFS checkouts. `lhepdf.py`, `ctag.py`,
+`ctag2d.py`, `pileup.py`, `partonshower.py`, `muon.py`, `electron.py` all
+re-verified correct. `electron_ss.py`/`muon_ss.py`/`met.py`/`jetvetomaps.py`
+confirmed to carry no weight systematics at all (object-level corrections
+only, correctly out of scope). `USABLE_SYST` confirmed identical across all
+three production datacard scripts (`create_datacards_ctag2d.py`,
+`..._100150.py`, `..._3ratio.py`). No new bugs found.
+
+**No code changed this session** — verification only. `lhescale.py`'s fix was
+pushed to `Saranya-Nandakumar/higgscharm` (`HcZZ-zx-estimation`, `075478d`)
+earlier the same day; this audit confirms that push is correct as-is.
+
+---
+
 ## Known traps
 
 | trap | detail |
