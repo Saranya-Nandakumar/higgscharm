@@ -260,6 +260,16 @@ def load_sumw(sumw_dir):
             print(f"  WARNING: sumw era dir not found: {era_dir}")
             continue
 
+        # Collect guid -> (json_path, mtime, proc) across ALL dataset
+        # partitions in this era before summing. Condor resubmission writes
+        # a fresh, differently-numbered partition dir per round (e.g.
+        # HPlusCharm_2022postEE, _10, _37, ...) without removing the old
+        # one, so the same source file's sumw/*.json sidecar can appear
+        # under several partition dirs -- summing them all double/triple
+        # counts sumw exactly like the un-deduped parquet reads did (see
+        # dedupe_parquet_files_by_source in run_mva_postprocess.py). Keep
+        # only the most recently written copy per source-file guid.
+        latest_by_guid = {}
         for dataset_partition in os.listdir(era_dir):
             proc = get_process_from_path(dataset_partition)
             if proc is None:
@@ -267,14 +277,21 @@ def load_sumw(sumw_dir):
 
             sumw_glob = os.path.join(era_dir, dataset_partition, "sumw", "*.json")
             for jf in glob.glob(sumw_glob):
-                try:
-                    with open(jf) as f:
-                        rec = json.load(f)
-                except Exception as e:
-                    print(f"  WARNING: {jf}: {e}")
-                    continue
-                sumw_by_proc[proc] += rec["sumw"]
-                n_files[proc] += 1
+                guid = os.path.basename(jf).split("_%2F")[0]
+                mtime = os.path.getmtime(jf)
+                prev = latest_by_guid.get(guid)
+                if prev is None or mtime > prev[1]:
+                    latest_by_guid[guid] = (jf, mtime, proc)
+
+        for jf, _mtime, proc in latest_by_guid.values():
+            try:
+                with open(jf) as f:
+                    rec = json.load(f)
+            except Exception as e:
+                print(f"  WARNING: {jf}: {e}")
+                continue
+            sumw_by_proc[proc] += rec["sumw"]
+            n_files[proc] += 1
 
     print(f"\n  {'Process':<15} {'n_sumw_files':>14} {'sumw_generated':>16}")
     print("  " + "-" * 47)

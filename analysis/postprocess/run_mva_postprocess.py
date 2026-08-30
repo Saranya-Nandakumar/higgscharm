@@ -291,6 +291,22 @@ def process_single_file(
         return {'status': 'error', 'file': input_file, 'error': str(e)}
 
 
+def dedupe_parquet_files_by_source(files: List[Path]) -> List[Path]:
+    """Collapse repeated condor-resubmission output to one file per source ROOT
+    file. Each parquet filename is `<source-GUID>_%2FEvents%3B1_<chunk>.parquet`;
+    resubmitting a dataset writes a fresh, differently-numbered partition dir
+    (e.g. `HPlusCharm_2022postEE_37`) without removing the old one, so the same
+    GUID can appear under several partition dirs. Keep only the most recently
+    written copy per GUID."""
+    latest_by_guid: Dict[str, Path] = {}
+    for f in files:
+        guid = f.name.split('_%2F')[0]
+        prev = latest_by_guid.get(guid)
+        if prev is None or f.stat().st_mtime > prev.stat().st_mtime:
+            latest_by_guid[guid] = f
+    return list(latest_by_guid.values())
+
+
 def process_era(
     input_dir: Path,
     output_dir: Path,
@@ -307,9 +323,14 @@ def process_era(
         logger.warning(f"Era directory not found: {era_input}")
         return
 
-    # Find all parquet files
-    parquet_files = list(era_input.glob('**/*.parquet'))
-    logger.info(f"Found {len(parquet_files)} parquet files for {era}")
+    # Find all parquet files, then collapse condor-resubmission duplicates
+    # (see dedupe_parquet_files_by_source) down to one copy per source file
+    raw_parquet_files = list(era_input.glob('**/*.parquet'))
+    parquet_files = dedupe_parquet_files_by_source(raw_parquet_files)
+    logger.info(
+        f"Found {len(raw_parquet_files)} parquet files for {era}, "
+        f"{len(parquet_files)} after deduping resubmission duplicates"
+    )
 
     if len(parquet_files) == 0:
         return

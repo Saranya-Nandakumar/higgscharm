@@ -380,6 +380,50 @@ A nuisance whose limit **improves** when frozen usually signals degeneracy
 with a free-floating rateParam (here: `ZX_rate`), not a broken nuisance —
 same caveat `hww-analysis`'s README notes for their `rate_tt`.
 
+**Update 2026-08-30 — `--real` flag added, the cheap proxy now warns on every
+run.** Cross-checking against Felix Heyen's thesis methodology (Sec 4.5.2)
+found this script's default freeze-and-compare method actually **disagrees**
+with the real profile-likelihood method on this analysis, not just
+approximates it: on the ctag2d `[100,150]` no-ZX `_v5` card (r=299.5), the
+proxy ranked `CMS_ctag2d`/`CMS_eff_e_reco_below20` a near-tie for #1
+(−3.51%/−4.01%) and read `CMS_eff_m_id` as exactly 0.00 impact; the real
+method ranks `CMS_ctag2d` clearly #1 (impact 143.6, ~3.2× the #2 value) and
+finds `CMS_eff_m_id` a small but nonzero 0.029. **The ranking order and a
+supposedly-exactly-zero nuisance both changed** — this proxy is fine for
+quick iteration but should not be the number quoted in a paper, AN, or
+final slide.
+
+Added `--real`: runs the actual `combineTool.py -M Impacts` 3-stage
+profile-likelihood workflow (`text2workspace.py` → `--doInitialFit
+--robustFit 1` → `--doFits --robustFit 1 --parallel N` → collect
+`impacts_real.json` → `plotImpacts.py`, with a best-effort `pdftoppm` PNG
+conversion), matching Felix's convention of injecting the Asimov dataset
+with signal at the nominal expected-limit strength (not background-only,
+which is what this project's one prior "real" Impacts run, 2026-08-16,
+used instead). Needs `combineTool.py`/`plotImpacts.py` on `PATH` (same
+CombineHarvester install as plain `combine`) and a wide
+`--setParameterRanges` (`--r-range`, default `0,1000` — the CombineHarvester
+default `r∈[0,20]` is far too narrow for this analysis's real r~O(100–600)
+sensitivity and causes boundary-pinned, meaningless per-nuisance fits, the
+same mistake caught and fixed 2026-08-16 for the manual 3-stage workflow).
+
+```bash
+# (combine env from §0)
+python3 /eos/home-s/snandaku/b-hive_ttcc/combine/impact_ranking.py \
+  --card datacard_no_zx.txt \
+  --dir  /eos/home-s/snandaku/Higgscharmnew/higgscharm/combine/outputs/combine_run3_100150_ctag2d_v5 \
+  --real [--expect-signal 299.5] [--r-range 0,1000] [--parallel 4]
+```
+
+Without `--expect-signal`, the script runs a nominal `AsymptoticLimits`
+first to find the injection point automatically. **Verified end-to-end
+2026-08-30**: rerunning against the `_v5` card reproduced the manually-run
+comparison numbers exactly (`CMS_ctag2d` impact 143.6333, `CMS_eff_m_id`
+0.0294, best-fit `r̂ = 299.500 (+180.369/-194.149, 68%)`), and the default
+(no `--real`) path was re-verified afterward with `--skip-existing` to
+confirm it still produces its usual (proxy) output unchanged. Full
+writeup: `second-brain/Tasks/HcZZ-fake-rate.md`, "Update 2026-08-30".
+
 ---
 
 ## Systematics
@@ -1159,6 +1203,222 @@ reproducibility.md` (not yet updated there — do that before quoting the old
 301.0/54.86 number anywhere new). The `[90,160]`/with-ZX and `_3ratio`
 variants have **not** been rerun against `_scored_v4` yet — their existing
 numbers still reflect `_scored_v2`.
+
+---
+
+### Update 2026-08-30: independent re-verification before slide update —
+item 5 above was wrong, the `histograms_no_zx.root` corruption was real and
+persisted; r=219.0/kappa_c=40.64 now genuinely confirmed reproducible
+
+> **SUPERSEDED same day — see "Update 2026-08-30 (later)" below.** The
+> corruption fix and template audit described in this section are still
+> correct, but the r=219.0/kappa_c=40.64 number they reproduced was itself
+> wrong for an unrelated reason (a duplicate-parquet-counting bug). Do not
+> use r=219.0/kappa_c=40.64 — the real production reference is
+> **r=299.5/kappa_c=54.60**.
+
+Asked to re-verify r=219.0/kappa_c=40.64 (every systematic's Up/Down
+templates, the impact plot, the number itself) before it went into the
+slides — not a recall of the account above, an actual fresh re-derivation.
+**Item 5's "self-resolved, no code bug" framing from 2026-08-29 turned out
+to be wrong**: the `histograms_no_zx.root` sitting in
+`combine_run3_100150_ctag2d_v4/` today **deterministically crashed combine,
+5/5 attempts, including from a fresh local-disk copy** — `RuntimeError:
+Bogus norm 0.0 for channel hczz, process ggZZ, systematic CMS_eff_m_id
+Down`. A second independent reader (`uproot`, no ROOT/CMSSW) agreed
+`h_ggZZ_CMS_eff_m_idDown` was genuinely malformed. That rules out the
+transient-EOS-read-race explanation (which predicts intermittent failures
+fixed by a local-disk copy, not a 100%-reproducible one) — the 2026-08-29
+session's local-disk workaround evidently fixed the run *for that session
+only* (hence the clean `combine_result.log`/`impact_ranking_full.log` from
+that evening) without the fix ever landing back on the EOS copy, which
+stayed broken. Root cause of the underlying corruption still not
+determined — treated as an isolated write/read fault on that one file, not
+a code bug (no other object in the file was affected).
+
+**Full 75-object Up/Down template audit** (all 4 processes × 17
+systematics) found nothing else wrong: no missing pairs, no Up==Down
+duplicates, no dead (identical-to-nominal) systematics, no zero-integral
+templates. The known Signal/HPlusBottom negative-bin dip (bin 0, ~1e-6 to
+2e-5, see the negative-weight-fraction row in the Known traps table) is
+present but consistent across nominal and every variation — not new.
+
+**Fix**: reran `run_pipeline.sh --merge-bin-ranges "2-4,7-10" --skip-zx`
+against `_scored_v4`, overwriting the corrupt file in place (same
+`combine_run3_100150_ctag2d_v4/` directory, same paths this README already
+documents). Fresh combine run, repeated twice: **r=219.0/kappa_c=40.64,
+full band 112.9/152.7/219.0/319.4/450.4 / 22.18/29.11/40.64/58.05/80.76 —
+exact match to the 2026-08-29 numbers, now genuinely reproducible from a
+healthy file.** Impact ranking rebuilt fresh: identical top-2
+(`CMS_eff_e_reco_below20` −4.57%, `CMS_ctag2d` −3.88%), `CMS_eff_m_id` still
+exactly 0.00; new `impact_ranking.png` is md5-identical to the one already
+committed in `second-brain/slides/AN_HcZZ_figures/` — that PNG was fine all
+along, only the datacard ROOT file was bad. `h_ggZZ_CMS_eff_m_idDown` reread
+via `uproot` post-rebuild: healthy, Up/Down (4.1645/4.1570) mirror
+symmetrically around nominal (4.1607).
+
+**Revised takeaway for item 5 above**: a `Bogus norm`/ROOT-version error
+right after a fresh datacard/histogram rebuild is *not* always the transient
+EOS read-race it was in 2026-08-28's case — if a local-disk retry also fails
+deterministically and a second independent reader (`uproot`) agrees the
+object is malformed, stop retrying and rebuild the datacard from the scored
+parquets instead; don't assume the workaround that fixed one session's
+`combine` run also fixed the file it read from.
+
+Slides (`second-brain/slides/analysis_overview_hczz.tex`,
+`combine_summary_hczz.tex`) already had the r=219.0/kappa_c=40.64 numbers
+committed 2026-08-29 (`d5b34e0`) — added "independently re-verified
+2026-08-30" addenda documenting this incident rather than changing any
+numbers. Full writeup: `second-brain/Tasks/HcZZ-fake-rate.md`, "Update
+2026-08-30".
+
+---
+
+### Update 2026-08-30 (later): r=219.0 RETRACTED — duplicate-parquet-
+counting bug found and fixed; true production reference **r=299.5 /
+kappa_c=54.60**, essentially unchanged from r=301.0/54.86
+
+The user's reaction to the "confirmed reproducible" verdict above: "the
+stat-only limit was also 300 something, so this 219 is now suspicious."
+Correct instinct — a full-syst limit *below* a stat-only baseline built on
+the same production is not physically possible (systematics only ever
+loosen an expected limit relative to stat-only). Chased it down rather than
+trusting the reproducibility check above, which only proved the number was
+*stable*, not that it was *correct*.
+
+**Same-file stat-only check** (`combine ... --freezeParameters
+allConstrainedNuisances` on the identical `_v4` `datacard_no_zx.txt`):
+stat-only median = 194.5. Full-syst (219.0) vs stat-only (194.5) → ratio
+1.126 — directionally fine, no bug in that ordering. **But** 194.5 is
+itself ~30% tighter than the *old* card's stat-only (279.0) — far more than
+the credited fixes (pure shape/lnN relabels, no yield effect) could
+explain. Compared the `rate` lines directly:
+
+| Process | Old (08-28 → r=301.0) | `_v4` (08-30 → r=219.0) | Change |
+|---|---|---|---|
+| Signal | 0.053225 | 0.082333 | +54.7% |
+| ggZZ | 2.944030 | 4.160709 | +41.3% |
+| qqZZ | 36.199311 | 58.928004 | +62.8% |
+| Other_Higgs | 55.088346 | 66.748218 | +21.2% |
+
+Every process jumped 20–63% — directly contradicting this same session's
+own earlier claim that its resubmission round only recovered `None`-mapped
+datasets that never feed the datacard.
+
+**Root cause**: the raw postprocess tree
+(`outputs/hplusc_mva_4class_ctag2d/<era>/<dataset>_<N>/base/*.parquet`) is
+read via `glob('**/*.parquet')` — recursively, unglobbed against prior
+partitions — by both `run_mva_postprocess.py` (MVA scoring) and
+`create_datacards_ctag2d_100150.py`'s `load_sumw()` (sumw denominator).
+Every condor resubmission round (2026-08-14, 08-25, 08-29 — all documented
+in earlier sections of this file) re-splits the file list into
+**freshly-numbered partition directories** (`HPlusCharm_2022postEE`, `_1`,
+`_10`, `_20`, `_30`, ...) instead of replacing older ones, so the same
+physical source file (identified by a GUID embedded in its parquet
+filename) accumulates across campaigns and gets summed multiple times.
+Verified on `2022postEE`: **HPlusCharm 926 files / 468 unique GUIDs
+(2.0×)**, **ZZto4L 1169 files / 208 unique GUIDs (5.6×)** — qqZZ's largest
+yield jump lines up with its largest duplication factor. This has likely
+been inflating every ctag2d-line combine result since at least 2026-08-14,
+not just this pair.
+
+**Fix** (dedupe at read time, non-destructive — old files stay on disk,
+filtered out at read time): added `dedupe_parquet_files_by_source()`
+(GUID-from-filename, keep latest write by mtime) at both read points:
+1. `analysis/postprocess/run_mva_postprocess.py` — `process_era()`'s
+   `era_input.glob('**/*.parquet')`.
+2. `combine/scripts/create_datacards_ctag2d_100150.py` — `load_sumw()`,
+   which independently re-globbed the same tree for the denominator (both
+   numerator and denominator needed the fix, or dedup would have been
+   inconsistent between them).
+
+Verified the fix collapses `2022postEE` HPlusCharm/ZZto4L to exactly 468/208
+files. Rebuilt: full rescoring, all 4 eras, into new
+`hplusc_mva_4class_ctag2d_scored_v5` (`_v4` left in place, untouched, as the
+known-buggy reference — nothing deleted). New datacard rates land almost
+exactly on the *old* 08-28 numbers (Signal 0.0538, ggZZ 2.7335, qqZZ
+36.3309, Other_Higgs 56.2245), consistent with `_v2`/`_v3` (used for the
+301.0 result) having accumulated far less duplication than `_v4` by the
+time it was built.
+
+**Combine result, reproduced bit-identically on 2 runs**:
+
+| CL | r | kappa_c |
+|---|---|---|
+| 2.5% | 153.26 | 29.21 |
+| 16.0% | 209.24 | 38.94 |
+| **50.0% (median)** | **299.50** | **54.60** |
+| 84.0% | 439.18 | 78.82 |
+| 97.5% | 621.54 | 110.42 |
+
+**r=299.5/kappa_c=54.60 is now the trustworthy production reference** —
+essentially identical to the pre-"fix" r=301.0/kappa_c=54.86 (0.5%
+difference, noise-level). The `lhescale.py` Up/Down-swap and gg-lnN split
+are still correct fixes worth keeping, but once duplication is removed they
+produced **no meaningful net change** to the limit — the entire apparent
+301.0→219.0 improvement was the duplication bug.
+
+Outputs: `combine/outputs/combine_run3_100150_ctag2d_v5/` (datacard, ROOT
+histograms). `--scored-dir` default in `create_datacards_ctag2d_100150.py`
+should be updated from `_scored_v4` to `_scored_v5` before any further use
+of that script (not yet done — flagged for the next session touching this
+file).
+
+**How to apply going forward**: (1) **any future read of the raw ctag2d
+postprocess tree must go through `dedupe_parquet_files_by_source()` or an
+equivalent GUID-based dedup** — a bare glob against
+`outputs/hplusc_mva_4class_ctag2d/` will double/triple-count. (2) A
+same-file full-syst-vs-stat-only sanity check (`-S 0` or
+`--freezeParameters allConstrainedNuisances`) is now a standing
+recommended step before trusting any new production number — it's what
+caught this. (3) Bit-identical reproducibility across repeated `combine`
+runs proves a result is *stable*, not that it's *correct* — a bug in the
+input data reproduces exactly as reliably as a correct result does.
+`[90,160]`/with-ZX and `_3ratio` have **not** been rebuilt against
+`_scored_v5` yet. Full writeup, including the diagnostic chain that found
+this: `second-brain/Tasks/HcZZ-fake-rate.md`, "Update 2026-08-30 (later)".
+
+---
+
+### Update 2026-08-30 (even later): was r=301.0 itself clean? No — same bug
+in `_scored_v3`; impact ranking rebuilt on `_v5`
+
+Follow-up question: does the *old* production (`_scored_v3`, which fed the
+r=301.0 result) carry the same duplication? Checked directly — **yes**,
+concentrated in `ZZto4L`/qqZZ:
+
+| Era | HPlusCharm (Signal) | ZZto4L (qqZZ) |
+|---|---|---|
+| 2022preEE | 4 files / 2 GUIDs (tiny N) | 190 / 82 = **2.3×** |
+| 2022postEE | 475 / 468 = 1.5% (negligible) | 666 / 208 = **3.2×** |
+| 2023preBPix | 435 / 435 = clean | 332 / 165 = **2.0×** |
+| 2023postBPix | 3 files / 1 GUID (tiny N) | 170 / 81 = **2.1×** |
+
+qqZZ — the dominant background — was duplicated 2.0–3.2× in **every era**
+of `_v3`, already present at the 2026-08-27/28 build. Signal/HPlusCharm's
+duplication in `_v3` was small or based on too few files to matter.
+**r=301.0 was never a clean baseline** — its near-agreement with the
+properly-deduped r=299.5 looks like coincidence (how a duplicated
+background vs. a duplicated signal each push the fit, non-linearly, don't
+have to cancel the same way), not evidence `_v3` was unbiased. `_v5`
+(deduped from the raw tree, all 4 eras, verified against unique-GUID
+counts) is the **only** number in this project's history confirmed built
+from a non-duplicated source tree.
+
+**Impact ranking rebuilt on `_v5`**: top-2 unchanged —
+`CMS_eff_e_reco_below20` (−4.01%, was −4.57% on the buggy `_v4` card),
+`CMS_ctag2d` (−3.51%, was −3.88%). `CMS_eff_m_id` confirmed exactly zero
+impact again, now across every version of this card. Full ranked deltas (r
+units): `CMS_eff_e_reco_below20` −12.0 (−4.01%), `CMS_ctag2d` −10.5
+(−3.51%), `BR_HZZ4l` −2.0 (−0.67%), `lumi_Run3` −1.0 (−0.33%),
+`QCDscale_gg`/`pdf_gg`/`ps_fsr`/`CMS_pileup`/`CMS_eff_e_reco_20to75` each
+−0.5 (−0.17%), remaining 8 systematics exactly 0.00. Output:
+`combine_run3_100150_ctag2d_v5/impact_ranking.json`/`.png`, also copied to
+`second-brain/slides/AN_HcZZ_figures/hczz_ctag2d_100150_v5_impact_ranking.png`
+and wired into a new slide in `combine_summary_hczz.tex`.
+
+Full writeup: `second-brain/Tasks/HcZZ-fake-rate.md`, "Update 2026-08-30
+(even later)".
 
 ---
 
