@@ -1106,6 +1106,10 @@ stays a documented caveat rather than triggering a scope change. Restricting to 
 would likely smooth it out but was explicitly rejected as a bigger, separate
 validation task that changes what the corrector represents.
 
+**Revisited 2026-08-31 — the 71.2 impact this decision was made against turned out to be
+roughly half the real value (143.6 from the real profile-likelihood fit); scope changed to
+a 3-jet cap.** See the dated update below.
+
 ---
 
 ### Update 2026-08-29: fresh systematics correctness re-audit — no new bugs,
@@ -1419,6 +1423,108 @@ and wired into a new slide in `combine_summary_hczz.tex`.
 
 Full writeup: `second-brain/Tasks/HcZZ-fake-rate.md`, "Update 2026-08-30
 (even later)".
+
+---
+
+### Update 2026-08-31: `CMS_ctag2d`'s 143.6 impact investigated — 3-jet cap
+replaces the unbounded all-`selected_jets` product
+
+User flagged the 143.6 real-Impacts value (previous update) as suspiciously
+large directly. The 2026-08-18 "documented caveat, keep the scope" decision
+(Known traps, above) was made against the coarse proxy's 71.2 — roughly half
+of what the real profile-likelihood fit later found — so it was revisited
+rather than assumed still valid.
+
+**Root cause quantified**: queried `flavTaggingSF_2022postEE.json.gz`
+directly across the full (flavor∈{0,4,5}, all 11 WP codes, pt 20–500 step 10)
+grid — **648/1584 (41%) return the exact placeholder triple
+`central=1.000, up_Total=3.000, down_Total=0.300`**, not a rare corner.
+`CTag2DCorrector` took `ak.prod` over every jet in `events.selected_jets`
+(pt>20/|η|<2.5/tight jetID+lepton veto/ΔR>0.4 — **uncapped multiplicity**),
+so events with 2 independent placeholder-corner jets compound to 3.0×3.0=9.0
+(or 0.3×0.3=0.09). Verified on real qqZZ `_scored_v5` parquets (692 events,
+2022postEE): mean(Up/nom)=1.066, **max=9.0**; mean(Down/nom)=1.004 (looks
+flat only because the tail is two-sided and cancels on average, not because
+Down doesn't vary), **min=0.09**. 1.5% of events have Up/nom>5.
+
+**Checked HWW's scope directly** (cloned `Chirayu18/higgscharm`,
+`hww-analysis` branch, read-only): their `CTag2DCorrector` applies the SF to
+exactly **one** jet (`ak.firsts(events.selected_candidate_cjet)`, their
+MVA's single leading-CvsL jet) — no `ak.prod`. **Not a fix to copy**: our
+`models/config_4class.yml` has `n_cpf_candidates: 3` with an explicit design
+comment that the model deliberately needs **all jet flavors** (b-jets for
+H+b, light-jets for VBF/qqZZ), not just c-jets — matching HWW's 1-jet scope
+would silently stop correcting jets 2–3's real tagging-SF mismodeling, which
+our classifier actually consumes.
+
+**Jet-multiplicity check** (`jet_multiplicity`, all 4 eras, `_scored_v5`):
+
+| Process | 1 jet | 2 jets | 3 jets | >3 jets | total | frac >3 |
+|---|---|---|---|---|---|---|
+| Signal | 32269 | 6808 | 1042 | 190 | 40309 | 0.47% |
+| qqZZ | 237911 | 74110 | 17645 | 4547 | 334213 | 1.36% |
+| ggZZ | 425938 | 143606 | 31745 | 6806 | 608095 | 1.12% |
+| Other_Higgs | 359480 | 268887 | 108656 | 60881 | 797904 | 7.63% |
+
+Most events already have ≤3 jets (the 9.0× qqZZ example above is a ≤3-jet
+process) — a 3-jet cap removes the unbounded tail from 4+-jet events (mostly
+Other_Higgs, via ttH/VBF) but does **not** eliminate the core
+placeholder-compounding pathology. Documented honestly as a partial,
+physically-motivated mitigation (matches the MVA's real jet dependency), not
+a full resolution — excluding placeholder cells from the uncertainty
+entirely would be the deeper fix, deferred (not requested this session).
+
+**Fix implemented** (EOS + AFS, kept in sync — AFS was also found missing
+the entire 2026-08-18 docstring paragraph above, a pre-existing
+checkout-drift gap, backfilled while here): `analysis/corrections/
+ctag2d.py`, `CTag2DCorrector.__init__`: `jets = events.selected_jets` →
+`jets = events.selected_jets[:, :3]`. Awkward's per-sublist slicing
+truncates each event's (pT-descending, native NanoAOD order) jet list to at
+most 3, leaves shorter lists untouched — verified directly
+(`ak.Array([[1,2,3,4,5],[10,20],[],[100]])[:, :3]` → `[[1,2,3],[10,20],[],
+[100]]`). Both checkouts `py_compile`-clean; `diff` shows only the intentional
+backfill sentence. Full coffea-level smoke test blocked by a pre-existing,
+unrelated numpy/numba version conflict in AFS's `.local` site-packages
+(documented standing issue) — relied on the isolated awkward unit check
+instead.
+
+**Not yet done**: rebuild `_scored_v6`/rerun combine with the capped
+corrector to get the corrected r/impact numbers (needs the same condor
+reprocessing pass already planned for the `lhe_alphaS` fix — not run this
+session). Full writeup: `second-brain/Tasks/HcZZ-fake-rate.md`, "Update
+2026-08-31"; memory `hczz_ctag2d_impact_investigation`.
+
+### Update 2026-08-31 (later): reprocessed end-to-end — 3-jet cap confirmed
+a partial mitigation only, `CMS_ctag2d` impact essentially unchanged
+
+Full condor reprocessing (`hplusc_mva_4class_ctag2d`, MC-only, all 4 eras,
+84 (era, dataset) pairs from the workflow's own `mc`+`signal` keys —
+80/84 succeeded, only the known-gone `bbH_Hto2Zto4L` failed everywhere;
+3 resubmit rounds closed the real `cms-xrd-global.cern.ch` XRootD-timeout
+gaps on datacard-relevant datasets, mostly `ZZto4L`/qqZZ) → rescore
+(`run_mva_postprocess.py --all-eras --no-mass-window` into
+`hplusc_mva_4class_ctag2d_scored_v6`, **0 errors**, 1,847,922 events) →
+datacard+combine rebuild (`run_pipeline.sh --merge-bin-ranges "2-4,7-10"
+--skip-zx`, `--scored-dir` pointed at `_v6`).
+
+**Result: median r = 299.0, kappa_c = 54.52** (was 299.5/54.60 — a 0.17%
+shift, statistically negligible). **Real impact ranking (`impact_ranking.py
+--real --expect-signal 299.0`): `CMS_ctag2d` still clearly #1, impact =
+142.17** (was 143.63 — ~1% shift). Confirms the prediction made when
+scoping the fix: the 3-jet cap only bounds the 4+-jet tail; it does not
+remove the core placeholder-SF-compounding pathology, since 2 of an
+event's remaining ≤3 jets can still both land in the 41%-placeholder
+region. The fix is correct and worth keeping, but the deeper fix
+(excluding placeholder SF cells from Up/Down evaluation entirely) is
+still the only known way to actually move this nuisance's impact — not
+implemented.
+
+**Current reference now**: r=299.0/kappa_c=54.52,
+`hplusc_mva_4class_ctag2d_scored_v6`, `combine/outputs/
+combine_run3_100150_ctag2d_v6`. Full writeup: `second-brain/
+Tasks/HcZZ-fake-rate.md`, "Update 2026-08-31 (later)"; memory
+`hczz_ctag2d_impact_investigation` (RESOLVED section). Slides:
+`second-brain/slides/hczz_wg_meeting_20260831.tex`.
 
 ---
 

@@ -45,6 +45,39 @@ statistically-empty (flavor, WP) corners of the official JSON, amplified by ak.p
 many jets). User sign-off to keep this scope regardless -- yield-comparability with the
 corrector being replaced outweighs the smoother-but-incomparable one-jet alternative. Not a
 bug; documented caveat only (see README_HcZZ.md "Known traps").
+
+**SCOPE REVISITED 2026-08-31**: the 2026-08-18 sign-off was made against a coarse
+freeze-and-compare impact of 71.2 (rank 1). The real `combineTool.py -M Impacts`
+profile-likelihood fit on the deduplicated `_v5` card (2026-08-30) found CMS_ctag2d's
+real impact is 143.6 -- ~3.2x the #2 nuisance -- roughly double what the original
+sign-off was evaluated against. Root-cause quantified directly: the official
+`flavTaggingSF_<year>.json.gz` returns the exact placeholder triple
+(central=1.000, up_Total=3.000, down_Total=0.300) for 41% of the (flavor, WP, pt)
+grid queried (2022postEE), not a rare corner. Because `ak.prod` ran over EVERY
+`selected_jets` entry (uncapped -- pt>20/|eta|<2.5/jetID/dR-lepton only), an event
+with 2 placeholder-corner jets got a per-event Up/nominal ratio up to 9.0 (3.0x3.0)
+and Down as low as 0.09 (0.3x0.3) -- verified directly on real qqZZ scored parquets
+(692 events, 2022postEE, 1.5% of events with Up/nom>5, up to 9.0x max).
+
+Checked whether HWW's single-c-jet scope (`Chirayu18/higgscharm`, `hww-analysis`
+branch) is the right model to copy: NO -- their MVA is keyed on exactly 1 jet, ours
+(`models/config_4class.yml`, `n_cpf_candidates: 3`) deliberately looks at up to 3
+jets of ANY flavor category (b-jets for H+b, light-jets for VBF/qqZZ, not just
+c-jets), so a single-c-jet scope would silently stop correcting jets 2-3's real
+tagging-SF mismodeling -- HWW's scope isn't a fix, it's just a narrower model that
+was never exposed to this failure mode. The physically-matched fix is a 3-jet cap
+(below), not a 1-jet cap: `events.selected_jets` is uncapped multiplicity (jet
+multiplicity check, `_scored_v5`, all 4 eras: >3 jets is 0.5% Signal / 1.4% qqZZ /
+1.1% ggZZ / 7.6% Other_Higgs of events) -- bounding to the same 3 jets the MVA
+actually consumes removes the unbounded tail from 4+-jet events (mostly
+Other_Higgs, via ttH/VBF) but does NOT eliminate the core pathology, since most
+events already have <=3 jets and can still have 2 of those 3 land in placeholder
+corners (the 9.0x qqZZ example above is a <=3-jet process). This is a real,
+partial mitigation for physics-consistency reasons, not a full fix for the
+placeholder-value compounding itself -- that would need excluding placeholder
+cells from the uncertainty specifically, deferred (not requested this session).
+Full writeup: second-brain `Tasks/HcZZ-fake-rate.md` "Update 2026-08-31", memory
+`hczz_ctag2d_impact_investigation`.
 """
 import numpy as np
 import awkward as ak
@@ -187,7 +220,16 @@ class CTag2DCorrector:
         )[CORRECTION_NAME]
         self._nuis = f"CMS_ctag2d_{NUIS_YEAR[year]}"
 
-        jets = events.selected_jets
+        # CAPPED 2026-08-31: at most the 3 leading (pT-descending, post-selection --
+        # NanoAOD's native Jet order, preserved through the pt/eta/jetID/dR cuts in
+        # the workflow yaml) jets, matching `n_cpf_candidates: 3` in
+        # models/config_4class.yml -- the MVA itself only ever looks at 3 jets'
+        # tagging categories (any flavor, not just c-jets), so those are the only
+        # jets whose tagging SF mismodeling can actually propagate into the
+        # analysis. `events.selected_jets` is NOT capped (pt>20/|eta|<2.5/jetID/
+        # dR-lepton only, unbounded multiplicity) -- see the "3-jet cap" note above
+        # for why the previous all-jets ak.prod scope was wrong, not just imprecise.
+        jets = events.selected_jets[:, :3]
         self._nj = ak.num(jets)
         j = ak.flatten(jets)
         self._cvsl = ak.to_numpy(ak.fill_none(j.btagPNetCvL, np.nan)).astype(np.float64)
