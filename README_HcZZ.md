@@ -1714,7 +1714,20 @@ Original priority order set 2026-08-14; update as items land.
    (efficiency SF, different from scale/resolution) remains genuinely
    blocked — no such weight columns exist anywhere in the scored parquets,
    checked directly, and no `muon:` block exists in the `ctag2d` workflow
-   yamls' `event_weights` at all.
+   yamls' `event_weights` at all. **Update 2026-08-31/09-01**: ran the
+   `jecshifts` workflow at scale for the first time (condor, MC-only, all
+   4 eras, 80/84 datasets — 4 known-gone `bbH_Hto2Zto4L` failures; one job,
+   `2022postEE/TTH_Hto2Z`, held on cgroup OOM at the default 3GB limit,
+   fixed by hand-patching `request_memory=8000` into its `.sub` file since
+   neither `submit_condor.py` nor `condor/submit.sub` expose a memory
+   override). **Output actually has 8 shift categories, not 4** — `base`
+   (nominal) plus `CMS_scale_j_<year>{Up,Down}`, `CMS_res_j_<year>{Up,Down}`,
+   `CMS_scale_m_<year>{Up,Down}`, `CMS_res_m_<year>{Up,Down}` sibling
+   directories per dataset — the workflow bundles JES/JER *and* muon
+   scale/resolution together. MVA rescoring will need 9 passes (base + 8)
+   per era, not the ~5 originally scoped. Completeness/resubmit check and
+   the datacard-side consumption code are still ahead — see `second-brain/
+   Tasks/HcZZ-fake-rate.md` "Update 2026-08-31/09-01 (overnight)".
 5. **Per-event HF-composition-style weight** — `hww-analysis`'s
    `higgs_hf.py` replaces a mis-scoped flat lnN on a pooled background group
    with a per-event GEN-jet-flavour weight. Same shape of problem as our
