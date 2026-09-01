@@ -454,12 +454,15 @@ Known traps.
 > 2026-08-18) — the production default at this window is MC-only. `[90,160]`'s
 > own with-ZX number (r=329.0, from the OS/featmajor production) remains
 > available via `--window 90160 --with-zx`. **`lhe_alphaS` removed 2026-08-19
-> pending a bug fix (see the dated update below).** **`lhescale.py` Up/Down
-> swap fixed + full reprocessing landed 2026-08-29 — current number: r=219.0
-> median / kappa_c=40.64, 17 systematics** (see the 2026-08-29 "full
-> reprocessing campaign" dated update below for the full CLs band, impact
-> ranking, and production paths — `_scored_v4`, 100% completeness on every
-> datacard-relevant dataset). Superseded: r=301.0/kappa_c=54.86, 16
+> pending a bug fix (see the dated update below).**
+> **CURRENT (as of 2026-08-31): r=299.0 median / kappa_c=54.52, 17
+> systematics, `_scored_v6`** — see the "Update 2026-08-31 (later)" section
+> near the end of this file. Everything below this point in the chain is
+> historical/superseded, kept for the investigation trail: r=219.0/40.64
+> (2026-08-29) was **RETRACTED** — a duplicate-job-output bug, not a real
+> improvement; the corrected r=299.5/kappa_c=54.60 (2026-08-30) was itself
+> superseded by the ctag2d 3-jet-cap fix's reprocessing (2026-08-31,
+> negligible 0.17% shift). Also superseded: r=301.0/kappa_c=54.86, 16
 > systematics (2026-08-27, muon SF added but pre-`lhescale.py`-fix);
 > r=309.5/15 systematics (2026-08-19, pre-muon-SF); r=311.5/16 systematics
 > (2026-08-17, buggy `lhe_alphaS` still included).
@@ -1200,13 +1203,14 @@ histograms, `impact_ranking.json`/`.png`). `--scored-dir` default in all
 three datacard scripts (`create_datacards_ctag2d.py`, `_100150.py`,
 `_3ratio.py`) updated from `_scored_v2` to `_scored_v4`.
 
-**How to apply**: r=219.0/kappa_c=40.64 at `[100,150]`, no-ZX, 17 systematics
-is now the production reference number — supersedes every `_scored_v2`-based
-result in this README and in `second-brain/Notes/HcZZ-combine-results-
-reproducibility.md` (not yet updated there — do that before quoting the old
-301.0/54.86 number anywhere new). The `[90,160]`/with-ZX and `_3ratio`
-variants have **not** been rerun against `_scored_v4` yet — their existing
-numbers still reflect `_scored_v2`.
+**How to apply**: r=219.0/kappa_c=40.64 was believed at the time to be the
+production reference — **RETRACTED 2026-08-30** (duplicate-job-output bug,
+see below); **current reference is r=299.0/kappa_c=54.52** (2026-08-31,
+`_scored_v6`, see the "Update 2026-08-31 (later)" section near the end of
+this file). `second-brain/Notes/HcZZ-combine-results-reproducibility.md`
+still needs updating with this chain — not yet done. The `[90,160]`/with-ZX
+and `_3ratio` variants have **not** been rerun against any post-`_scored_v2`
+tree yet — their existing numbers still reflect `_scored_v2`.
 
 ---
 
@@ -1218,8 +1222,11 @@ persisted; r=219.0/kappa_c=40.64 now genuinely confirmed reproducible
 > corruption fix and template audit described in this section are still
 > correct, but the r=219.0/kappa_c=40.64 number they reproduced was itself
 > wrong for an unrelated reason (a duplicate-parquet-counting bug). Do not
-> use r=219.0/kappa_c=40.64 — the real production reference is
-> **r=299.5/kappa_c=54.60**.
+> use r=219.0/kappa_c=40.64. **This section's own r=299.5/kappa_c=54.60
+> replacement was in turn superseded 2026-08-31** by the ctag2d 3-jet-cap
+> fix's reprocessing (negligible 0.17% shift) — **current reference is
+> r=299.0/kappa_c=54.52**, see "Update 2026-08-31 (later)" near the end of
+> this file.
 
 Asked to re-verify r=219.0/kappa_c=40.64 (every systematic's Up/Down
 templates, the impact plot, the number itself) before it went into the
@@ -1355,9 +1362,12 @@ time it was built.
 | 84.0% | 439.18 | 78.82 |
 | 97.5% | 621.54 | 110.42 |
 
-**r=299.5/kappa_c=54.60 is now the trustworthy production reference** —
-essentially identical to the pre-"fix" r=301.0/kappa_c=54.86 (0.5%
-difference, noise-level). The `lhescale.py` Up/Down-swap and gg-lnN split
+**r=299.5/kappa_c=54.60 was, as of 2026-08-30, the trustworthy production
+reference** — essentially identical to the pre-"fix" r=301.0/kappa_c=54.86
+(0.5% difference, noise-level). **Superseded 2026-08-31 by the ctag2d
+3-jet-cap fix's reprocessing: current reference is r=299.0/kappa_c=54.52**
+(negligible 0.17% shift from this number) — see "Update 2026-08-31 (later)"
+near the end of this file. The `lhescale.py` Up/Down-swap and gg-lnN split
 are still correct fixes worth keeping, but once duplication is removed they
 produced **no meaningful net change** to the limit — the entire apparent
 301.0→219.0 improvement was the duplication bug.
