@@ -78,3 +78,20 @@ For each sample, the inference step produces:
 ## Config
 
 The b-hive config YAML defines the feature list used at training time. The same config must be used at inference to ensure the feature vector matches the model's `input_dim`. Configs are stored in the b-hive repository under `config/`.
+
+`MVAPostProcessor` (`analysis/postprocess/mva_inference.py`) reads these keys from the config:
+
+| Key | Purpose |
+|-----|---------|
+| `class_names` (or `labels` / `classes`) | Output class order, e.g. `['qqZZ', 'ggZZ', 'Signal', 'Other_Higgs']`. Falls back to `class_0, class_1, ...` with a warning if missing. |
+| `mass_window` | `{min, max}` in GeV, used for `--mva-mass-window` and the `in_mass_window` global feature. Defaults to 100/150 if absent. |
+| `global_features` | Flat per-event features (e.g. `n_jet`, `m4l`, `n_ctagged_jets`). |
+| `cpf_candidates`, `n_cpf_candidates` | Per-jet ("c-jet") features and how many leading jets to use (default 3). |
+| `npf_candidates`, `n_npf_candidates` | Per-lepton features and lepton count (default 4). |
+| `vtx_candidates`/`vtx_features`, `n_vtx_candidates` | Per-vertex features and count (default 2). |
+
+`input_dim`, `hidden_dim`, `num_layers`, and `num_classes` are **not** read from the config — they're auto-detected from the checkpoint's `state_dict` tensor shapes at load time, so the config only needs to describe *which* features to build, not the resulting dimensions.
+
+**Feature ordering is candidate-major, not feature-major** (candidate outer loop, feature inner loop), concatenated as `cpf_candidates` → `npf_candidates` → `vtx_features`, matching `b-hive_ttcc/tasks/dataset.py`'s training-time layout. This was verified empirically 2026-08-04: candidate-major gives AUC=0.957 (matches the model's true performance), feature-major gives AUC=0.559 (near-random) — an earlier "fix" that switched to feature-major was wrong and was reverted. Don't reorder the loops in `prepare_features()` without re-validating AUC against a known-good checkpoint.
+
+**No ONNX path**: `onnxruntime` is imported opportunistically (`HAS_ONNX` flag) but never actually used — there's no `.onnx` model file and no `InferenceSession` call anywhere in this module. Inference is PyTorch-only (`torch.load` + `load_state_dict` into the natively-defined `MLP_HcZZ_MW_Deep`/`ResidualBlock` classes in this file).
