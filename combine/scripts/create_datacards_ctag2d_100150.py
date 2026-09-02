@@ -147,6 +147,18 @@ SYSTEMATICS = {
     # CMS_eff_e_reco above, not an LHE-generator weight -- unaffected by the
     # private-sample lhe_pdf/scalevar bugs, usable for every process.
     "CMS_eff_m_id":           {"col": "weight_CMS_eff_m_id",           "era_dep": True},
+    # Higgs+HF (ggH/VBF heavy-flavor-composition) uncertainty, computed by
+    # analysis/corrections/higgs_hf.py (ported from HiggsDNA, AN-23-102
+    # section 7.1) and confirmed present + correctly scoped in the real
+    # production parquets 2026-09-01 (flat +-50% on ggH/VBF events with a
+    # true gen-level c-jet, exactly 1.0 elsewhere -- verified directly:
+    # weight_higgs_plus_cUp/weight_nominal == 1.5 for ~19.7% of VBFHto2Zto4L
+    # events, 1.0 for the rest; column absent entirely from qqZZ). The
+    # deck/README's "still missing" note calling this absent from the
+    # ctag2d tree is STALE (that check was 2026-08-21; higgsHFWeight: true
+    # was enabled in the workflow yaml by 2026-08-28) -- it was just never
+    # wired into this SYSTEMATICS dict, which is the actual gap fixed here.
+    "higgs_plus_c":           {"col": "weight_higgs_plus_c",           "era_dep": False},
 }
 
 # Per-process usable systematics, based on empirical sanity checks (2026-08-03/04):
@@ -204,7 +216,13 @@ SYSTEMATICS = {
 # lhepdf.py's delta_alpha is fixed (drop the np.abs()) and re-verified.
 EFF_E_RECO = {"CMS_eff_e_reco_20to75", "CMS_eff_e_reco_above75", "CMS_eff_e_reco_below20"}
 USABLE_SYST = {
-    "qqZZ":        set(SYSTEMATICS.keys()) - {"lhe_alphaS"},
+    # higgs_plus_c is deliberately narrow-scoped to ggH/VBF only (see
+    # higgs_hf.py's own docstring) -- excluded here since qqZZ has no such
+    # sub-component; Other_Higgs pools ggH+VBF so it's left in (not excluded)
+    # and correctly falls back to nominal for its non-ggH/VBF sub-samples via
+    # load_mc_scored_parquets' existing missing-column handling. ggZZ/Signal
+    # use an explicit allow-list below and already don't include it.
+    "qqZZ":        set(SYSTEMATICS.keys()) - {"lhe_alphaS", "higgs_plus_c"},
     "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF", "lhe_alphaS"},
     "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"} | EFF_E_RECO,
     "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"} | EFF_E_RECO,
