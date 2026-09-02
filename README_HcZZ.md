@@ -487,11 +487,10 @@ All three share the same `SYSTEMATICS`/`USABLE_SYST` dicts and sumw/xs-scaling
 logic as `create_datacards_ctag2d.py` — edit all three together when changing
 the systematics model.
 
-**17 systematics total** (was 16 as of 2026-08-27; the `pdf_gg`/
-`QCDscale_ggZZ` placeholder pair was split into 3 real lnN's matching
-HIG-24-013 Table 15 on 2026-08-28 (net +1 row); `lhe_alphaS` still removed
-everywhere pending a bug fix — see the dated updates below): 6 `lnN` + 11
-shape.
+**18 systematics total** (was 17 as of 2026-08-28; `higgs_plus_c` added
+2026-09-02 alongside the `CMS_ctag2d` L0 swap fix — see the "Update
+2026-09-02" section below; `lhe_alphaS` still removed everywhere pending a
+bug fix): 6 `lnN` + 12 shape.
 
 | kind | name | size/processes | notes |
 |---|---|---|---|
@@ -505,6 +504,7 @@ shape.
 | shape | ~~`lhe_alphaS`~~ | **removed everywhere, 2026-08-19** | not a per-process exclusion — a genuine bug in the weight-computation code itself, see the dated update below |
 | shape | `ps_isr`/`ps_fsr`/`CMS_pileup`/`CMS_ctag2d` | all 4 processes | |
 | shape | `CMS_eff_e_reco_20to75`/`above75`/`below20` | all 4 processes | **added 2026-08-17** — already computed and stored in the scored parquets (`weight_CMS_eff_e_reco_*_<year>Up/Down`), never wired into `USABLE_SYST` before. Verified sane (≤6%, symmetric) for every process incl. Signal/HPlusBottom via direct per-event ratio check — a detector-level correction, unaffected by the private-LHE-sample bugs below. |
+| shape | `higgs_plus_c` | **Other_Higgs only** | **added 2026-09-02**, alongside the `CMS_ctag2d` L0 swap fix. Higgs+HF (ggH/VBF heavy-flavor-composition) uncertainty from `analysis/corrections/higgs_hf.py` (ported from HiggsDNA, AN-23-102 §7.1); present in scored parquets since `higgsHFWeight: true` (2026-08-28) but never wired into `USABLE_SYST` until now. Deliberately narrow-scoped — flat ±50% on ggH/VBF events with a true gen-level c-jet, exactly 1.0 elsewhere, column absent entirely from qqZZ — so excluded for qqZZ/ggZZ/Signal explicitly and only left in for the pooled `Other_Higgs` process (which includes ggH/VBF). Real impact ranking: #11, 7.51. |
 | shape | `CMS_eff_m_id` | all 4 processes | **added 2026-08-27** — muon ID efficiency SF (loose WP), wired into the workflow yaml 2026-08-21 but only reached a real scored-parquet tree and a combine run on 2026-08-27, once the ctag2d reprocessing campaign reached usable completeness. Detector-level correction like `CMS_eff_e_reco` above, not an LHE weight — usable for every process. |
 
 **Why `lhe_pdf`/`lhe_alphaS`/`scalevar_muR`/`scalevar_muF` are missing for some
@@ -1665,8 +1665,9 @@ systematic already covers it.
 Original priority order set 2026-08-14; update as items land.
 
 1. **`ctag2d` pseudo-continuous SF migration — done, active in production
-   as of 2026-08-17** (16-systematic datacard pipeline, both mass windows,
-   see the `ctag2d` variant subsection under Systematics above).
+   as of 2026-08-17** (18-systematic datacard pipeline as of 2026-09-02 for
+   `[100,150]` no-ZX; `[90,160]`/with-ZX not yet rebuilt against the same
+   count — see the `ctag2d` variant subsection under Systematics above).
    `analysis/corrections/ctag2d.py`
    ported from `Chirayu18/higgscharm`'s `hww-analysis` branch (same
    `L0=0, C0..C4=40..44, B0..B4=50..54` WP-code mapping, `(syst, flavor, wp,
