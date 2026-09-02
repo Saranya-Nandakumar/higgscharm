@@ -455,16 +455,28 @@ Known traps.
 > own with-ZX number (r=329.0, from the OS/featmajor production) remains
 > available via `--window 90160 --with-zx`. **`lhe_alphaS` removed 2026-08-19
 > pending a bug fix (see the dated update below).**
-> **CURRENT (as of 2026-08-31): r=299.0 median / kappa_c=54.52, 17
-> systematics, `_scored_v6`** — see the "Update 2026-08-31 (later)" section
-> near the end of this file. Everything below this point in the chain is
-> historical/superseded, kept for the investigation trail: r=219.0/40.64
-> (2026-08-29) was **RETRACTED** — a duplicate-job-output bug, not a real
-> improvement; the corrected r=299.5/kappa_c=54.60 (2026-08-30) was itself
-> superseded by the ctag2d 3-jet-cap fix's reprocessing (2026-08-31,
-> negligible 0.17% shift). Also superseded: r=301.0/kappa_c=54.86, 16
-> systematics (2026-08-27, muon SF added but pre-`lhescale.py`-fix);
-> r=309.5/15 systematics (2026-08-19, pre-muon-SF); r=311.5/16 systematics
+> **CURRENT (as of 2026-09-02): r=413.0 median / kappa_c=74.28, 18
+> systematics, `_scored_v7`** — see the "Update 2026-09-02" section near
+> the end of this file. `CMS_ctag2d`'s `up_Total`/`down_Total` were found
+> physically swapped for WP=L0 ("fails the tag") in the official
+> calibration file and fixed; `weight_higgs_plus_c` was also wired in for
+> the first time. `CMS_ctag2d` real-Impacts jumped 142.17 → 195.81 (now
+> ~11.7× #2, was ~3.2×) — verified three independent ways (stat-only limit
+> unchanged at 269.0 before/after; independent jet-level recomputation off
+> the raw calibration file; cross-checked against the file's own separately
+> -reported `up_Stat`/`down_Stat`, which corroborate the swap direction).
+> **Well-supported, not POG-confirmed** — see second-brain memory
+> `hczz_ctag2d_l0_updown_swap_fix` before citing this number without that
+> caveat. Everything below this point in the chain is historical/superseded,
+> kept for the investigation trail: r=299.0/kappa_c=54.52 (2026-08-31, 17
+> systematics, `_scored_v6`) was itself superseded by this swap fix — the
+> preceding 3-jet-cap fix (also 2026-08-31) was only a partial mitigation,
+> confirmed retrospectively; r=219.0/40.64 (2026-08-29) was **RETRACTED** —
+> a duplicate-job-output bug, not a real improvement; r=299.5/kappa_c=54.60
+> (2026-08-30) was superseded by the 3-jet-cap fix (negligible 0.17% shift
+> at the time). Also superseded: r=301.0/kappa_c=54.86, 16 systematics
+> (2026-08-27, muon SF added but pre-`lhescale.py`-fix); r=309.5/15
+> systematics (2026-08-19, pre-muon-SF); r=311.5/16 systematics
 > (2026-08-17, buggy `lhe_alphaS` still included).
 
 Scripts: `combine/scripts/create_datacards_ctag2d.py` ([90,160] GeV, canonical),
@@ -1535,6 +1547,73 @@ combine_run3_100150_ctag2d_v6`. Full writeup: `second-brain/
 Tasks/HcZZ-fake-rate.md`, "Update 2026-08-31 (later)"; memory
 `hczz_ctag2d_impact_investigation` (RESOLVED section). Slides:
 `second-brain/slides/hczz_wg_meeting_20260831.tex`.
+
+### Update 2026-09-02: `CMS_ctag2d` up_Total/down_Total swap for WP=L0
+fixed — the real driver of the impact anomaly, not the 3-jet cap above
+
+A 2026-09-01 session (context lost before write-up, recovered via
+`git status` at the start of this session — **lesson: check `git status`
+on both checkouts before assuming the Tasks log reflects the current
+working tree**) found `up_Total`/`down_Total` physically swapped in
+`flavTaggingSF_<era>.json.gz` for WP=L0 ("fails the tag"): reading the
+raw correctionlib content directly, `up_Total < central < down_Total` for
+~18/198 (flavor,wp,pt) cells, 100% WP=L0, 0/198 anywhere else. Distinct
+from the 41%-corner exact placeholder triple above (central isn't 1.0
+here) — a separate, isolated bug. Fixed in
+`analysis/corrections/ctag2d.py` (`_eval_flat_updown_corrected()`, both
+checkouts): detects the swap generically per-jet (`up_flat < down_flat`),
+self-corrects against any future SF-file version. Also wired
+`weight_higgs_plus_c` into `create_datacards_ctag2d_100150.py` for the
+first time (present in parquets since `higgsHFWeight: true` was enabled
+2026-08-28, never used until now).
+
+Reprocessed all 4 eras (`hplusc_mva_4class_ctag2d_scored_v7`, 0 errors,
+1,847,820 events) and rebuilt the `[100,150]` no-ZX card:
+
+**Result: median r = 413.0, kappa_c = 74.28** (was 299.0/54.52 — a 38%
+increase). **Real impact ranking (`impact_ranking.py --real
+--expect-signal 413.0`): `CMS_ctag2d` impact = 195.81** (was 142.17), now
+~11.7× the #2 nuisance (was ~3.2×) — 18 systematics total,
+`weight_higgs_plus_c` new at #11 (impact=7.51). Central yields verified
+essentially unchanged (Signal 0.053778→0.053781, qqZZ/ggZZ/Other_Higgs
+likewise flat) — this is purely a systematics-shape effect, not a
+yield/rate change.
+
+**User pushed back hard on the jump** — verified three independent ways
+before accepting it: (1) stat-only limit (all 18 nuisances frozen)
+identical at r=269.0 before and after — proves 100% of the delta is
+`CMS_ctag2d`'s shape, zero yield/duplication component; (2) independent
+jet-level recomputation straight off the raw calibration file (bypassing
+the pipeline's stored weight columns entirely) on 2183 real Signal
+events reproduced a ~4× widening of the per-event Up/Down spread from
+scratch; (3) cross-checked against the file's own separately-reported
+`up_Stat`/`down_Stat` (a component this analysis doesn't even read) —
+those follow the normal `up>central>down` convention on the exact same
+L0 cells where Total is inverted, and `up_Total` is bit-exact identical
+to `down_Stat` in most cells checked, corroborating the swap diagnosis
+from an independent, unused quantity in the same file.
+
+**Caveat, stated explicitly**: this is well-supported by internal file
+consistency and independent verification, but **not confirmed by
+whoever produced this preliminary `2D_HF_Tagging` calibration file** —
+treat as the best current understanding, not an external sign-off. The
+still-open 41%-corner placeholder triple (untouched by this fix) also
+contributes to `CMS_ctag2d`'s remaining large uncertainty.
+
+**Current reference now**: r=413.0/kappa_c=74.28, `CMS_ctag2d`
+impact=195.81, `hplusc_mva_4class_ctag2d_scored_v7`, `combine/outputs/
+combine_run3_100150_ctag2d_v7`. Full writeup, all verification detail:
+second-brain memory `hczz_ctag2d_l0_updown_swap_fix`; `second-brain/
+Tasks/HcZZ-fake-rate.md`, "Update 2026-09-02" entries. Plot:
+`second-brain/slides/hczz_overview_ctag2d_sf_band.pdf` (pre/post-fix
+bands shown side by side).
+
+**Still open**: no POG confirmation (see caveat above); `[90,160]`/
+with-ZX/`_3ratio` variants not rebuilt against `_v7`; 13 (era,dataset)
+pairs carry residual reprocessing-completeness risk from this campaign's
+3rd resubmit round, not yet checked against `_v7`'s own per-era file
+counts; the deeper placeholder-triple fix (excluding those exact cells
+from Up/Down entirely) remains unimplemented.
 
 ---
 
