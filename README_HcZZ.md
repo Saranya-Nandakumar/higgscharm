@@ -1609,11 +1609,14 @@ Tasks/HcZZ-fake-rate.md`, "Update 2026-09-02" entries. Plot:
 bands shown side by side).
 
 **Still open**: no POG confirmation (see caveat above); `[90,160]`/
-with-ZX/`_3ratio` variants not rebuilt against `_v7`; 13 (era,dataset)
-pairs carry residual reprocessing-completeness risk from this campaign's
-3rd resubmit round, not yet checked against `_v7`'s own per-era file
-counts; the deeper placeholder-triple fix (excluding those exact cells
-from Up/Down entirely) remains unimplemented.
+with-ZX/`_3ratio` variants not rebuilt against `_v7`; the deeper
+placeholder-triple fix (excluding those exact cells from Up/Down
+entirely) remains unimplemented. **Checked and closed**: the 13
+(era,dataset) pairs flagged as residual-risk from this campaign's
+`.err`-traceback scan were re-checked against `jobs_status.py`'s real
+completeness logic — all 13 are fully complete; the only real gaps
+(22 jobs total, 4 eras) are non-mapped MC or data streams, irrelevant to
+this datacard. `_v7` is confirmed complete for every process it uses.
 
 ---
 
