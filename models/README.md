@@ -2,6 +2,8 @@
 
 This directory stores trained MVA model checkpoints used for post-processing inference in the H+c → ZZ → 4ℓ analysis.
 
+See [`INFERENCE.md`](INFERENCE.md) for the internals of how `MVAPostProcessor` scores events, and how the reducible (Z+X) background gets run through the same model.
+
 ## Model format
 
 Models are saved as PyTorch `.pt` checkpoint files produced by the [b-hive](https://github.com/deoache/b-hive) training framework. Each checkpoint encodes the model architecture parameters (`input_dim`, `hidden_dim`, `num_layers`, `num_classes`) so no separate architecture config is needed at inference time.
