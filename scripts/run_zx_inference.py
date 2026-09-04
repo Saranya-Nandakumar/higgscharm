@@ -184,6 +184,10 @@ def main():
 
     for era in args.eras:
         logging.info(f'\n========== {era} ==========')
+        # era must be set per-loop (not just at construction) so
+        # _compute_jet_tags() uses the real per-era jet-tag boundaries
+        # instead of silently falling back to the legacy wrong ones.
+        processor.era = era
         run_inference_on_era(era, args.input, args.output, processor)
 
     logging.info('\nDone!')
