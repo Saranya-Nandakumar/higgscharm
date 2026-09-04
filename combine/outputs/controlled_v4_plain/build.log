@@ -1,0 +1,68 @@
+======================================================================
+H+c → ZZ → 4l  |  Combine datacard builder
+Mass window : 90–160 GeV
+Total lumi  : 61896.1 pb^-1
+Binning     : quantile (20 bins requested)
+======================================================================
+
+[1a] Pre-selection sumw
+    Dir: /eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class
+
+  Process           n_sumw_files   sumw_generated
+  -----------------------------------------------
+  qqZZ                      1495     177514547.05
+  ggZZ                       692      15103924.00
+  Signal                    1080        570751.47
+  Other_Higgs               1182      71510178.12
+
+[1b] MC scored parquets
+    Dir: /eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_scored_v4
+
+  Process              raw_wgt       sumw_gen  baseline_eff   expected   in_win_yield
+  ----------------------------------------------------------------------------------
+  qqZZ              1082525.55   177514547.05       0.6098% 86035.5790        75.8689
+  ggZZ               841401.39    15103924.00       5.5707%  1671.1947         3.9012
+  Signal              17382.11      570751.47       3.0455%     1.6329         0.0495
+  Other_Higgs       3271437.09    71510178.12       4.5748%  1242.3785        53.9532
+
+[1c] Bin edges (20 bins):
+    [0.000e+00 9.000e-04 1.100e-03 1.300e-03 1.500e-03 1.800e-03 2.300e-03
+ 2.900e-03 3.700e-03 4.700e-03 5.800e-03 7.200e-03 8.700e-03 1.070e-02
+ 1.360e-02 1.870e-02 2.980e-02 5.750e-02 1.224e-01 2.570e-01 1.000e+00]
+
+[2] Z+X background: SKIPPED (--skip-zx)
+
+[3] Building histograms
+
+  Process           n_events  hist_integral
+  ------------------------------------------
+  qqZZ                116159        75.8689
+  ggZZ                 36621         3.9012
+  Signal               76372         0.0495
+  Other_Higgs         904412        53.9532
+
+[4] Writing output
+
+  ROOT file: /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/controlled_v4_plain/histograms_no_zx.root
+  Datacard:  /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/controlled_v4_plain/datacard_no_zx.txt
+
+Process         Yield in [90,160] GeV
+--------------------------------------
+  Signal              0.0495
+  ggZZ                3.9012
+  qqZZ               75.8689
+  Other_Higgs        53.9532
+--------------------------------------
+  Total bkg         133.7234
+  S/sqrt(B) = 0.0043
+
+[Negative-bin scan]
+  Histograms checked: 46  |  with negative bins: 0
+  Clean -- no negative bins in any process/systematic template.
+
+[Done]  All files in: /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/controlled_v4_plain
+
+To run combine:
+  cd /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/controlled_v4_plain
+  combine -M AsymptoticLimits -m 120 --run blind --rAbsAcc 0.00001 --rRelAcc 0.00001 \
+    datacard_no_zx.txt -n HcZZ_ctag2d_no_ZX

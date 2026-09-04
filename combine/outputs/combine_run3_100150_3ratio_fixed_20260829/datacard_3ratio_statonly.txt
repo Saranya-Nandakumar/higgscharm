@@ -1,0 +1,17 @@
+# H+c -> ZZ -> 4l: 3-ratio-decomposition MVA, ctag2d SF, NO Z+X (stat-only)
+# Mass window: 100.0-150.0 GeV  |  Lumi: 61896.1 pb^-1
+# Discriminant: joint (r1,r2,r3) = (Ps/(Ps+PqqZZ), Ps/(Ps+PggZZ), Ps/(Ps+POH)), flattened
+imax 1
+jmax 3
+kmax 0
+--------------------------------------------------------------------------------
+shapes * * histograms_3ratio.root h_$PROCESS h_$PROCESS_$SYSTEMATIC
+--------------------------------------------------------------------------------
+bin         hczz
+observation -1
+--------------------------------------------------------------------------------
+bin         hczz            hczz            hczz            hczz            
+process     Signal          ggZZ            qqZZ            Other_Higgs     
+process     0               1               2               3               
+rate        0.053225        2.944030        36.199311       55.088346       
+--------------------------------------------------------------------------------

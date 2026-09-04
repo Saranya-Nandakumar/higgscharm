@@ -1,0 +1,30 @@
+# H+c -> ZZ -> 4l: MVA shape analysis, ctag2d, SURGICAL REBIN, NO Z+X
+# Mass window: 90-160 GeV | Lumi: 61896.1 pb^-1
+# Bins: merged old-20-bin edges 7-10 into one (15 bins total)
+imax 1
+jmax 3
+kmax *
+--------------------------------------------------------------------------------
+shapes * * histograms_surgical_v2_noZX.root h_$PROCESS h_$PROCESS_$SYSTEMATIC
+--------------------------------------------------------------------------------
+bin         hczz
+observation -1
+--------------------------------------------------------------------------------
+bin         hczz            hczz            hczz            hczz            
+process     Signal          ggZZ            qqZZ            Other_Higgs     
+process     0               1               2               3               
+rate        0.051777        4.229574        85.470470       55.277564       
+--------------------------------------------------------------------------------
+lumi_Run3                lnN     1.014           1.014           1.014           1.014           
+pdf_gg                   lnN     1.05            1.05            -               -               
+QCDscale_ggZZ            lnN     -               1.10            -               -               
+
+# Shape systematics
+lhe_pdf                  shape   -               -               1               -               
+lhe_alphaS               shape   -               -               1               1               
+scalevar_muR             shape   -               -               1               -               
+scalevar_muF             shape   -               -               1               -               
+ps_isr                   shape   1               1               1               1               
+ps_fsr                   shape   1               1               1               1               
+CMS_pileup               shape   1               1               1               1               
+CMS_ctag2d               shape   1               1               1               1               

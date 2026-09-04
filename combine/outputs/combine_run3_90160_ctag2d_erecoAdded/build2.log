@@ -1,0 +1,82 @@
+======================================================================
+H+c → ZZ → 4l  |  Combine datacard builder
+Mass window : 90–160 GeV
+Total lumi  : 61896.1 pb^-1
+Binning     : quantile (20 bins requested)
+======================================================================
+
+[1a] Pre-selection sumw
+    Dir: /eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d
+
+  Process           n_sumw_files   sumw_generated
+  -----------------------------------------------
+  qqZZ                      1297     152237846.88
+  ggZZ                       655      14414808.00
+  Signal                    1004        550850.41
+  Other_Higgs               1114      70342190.30
+
+[1b] MC scored parquets
+    Dir: /eos/user/s/snandaku/higgscharm/outputs/hplusc_mva_4class_ctag2d_scored
+
+  Process              raw_wgt       sumw_gen  baseline_eff   expected   in_win_yield
+  ----------------------------------------------------------------------------------
+  qqZZ              1042038.00   152237846.88       0.6845% 86035.5790        85.4705
+  ggZZ               860416.38    14414808.00       5.9690%  1671.1947         4.2296
+  Signal              17566.29      550850.41       3.1889%     1.6329         0.0518
+  Other_Higgs       3299117.20    70342190.30       4.6901%  1242.3785        55.2776
+
+[1c] Bin edges (20 bins):
+    [0.     0.001  0.0012 0.0014 0.0017 0.002  0.0024 0.003  0.0036 0.0043
+ 0.0051 0.0061 0.0075 0.0097 0.0136 0.0221 0.0439 0.1007 0.2377 0.4958
+ 1.    ]
+
+[2] Z+X background: SKIPPED (--skip-zx)
+
+[3] Building histograms
+
+  Process           n_events  hist_integral
+  ------------------------------------------
+  qqZZ                111367        85.4705
+  ggZZ                 36947         4.2296
+  Signal               75289         0.0518
+  Other_Higgs         911421        55.2776
+
+[4] Writing output
+
+  ROOT file: /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/combine_run3_90160_ctag2d_erecoAdded/histograms_no_zx.root
+  Datacard:  /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/combine_run3_90160_ctag2d_erecoAdded/datacard_no_zx.txt
+
+Process         Yield in [90,160] GeV
+--------------------------------------
+  Signal              0.0518
+  ggZZ                4.2296
+  qqZZ               85.4705
+  Other_Higgs        55.2776
+--------------------------------------
+  Total bkg         144.9776
+  S/sqrt(B) = 0.0043
+
+[Negative-bin scan]
+  Histograms checked: 70  |  with negative bins: 15
+    h_Signal: total=5.1777e-02  negative_bins=[(9, -9.79342725447707e-06)]
+    h_Signal_CMS_eff_e_reco_below20Up: total=5.4220e-02  negative_bins=[(9, -9.528497210070663e-06)]
+    h_Signal_CMS_eff_e_reco_below20Down: total=4.9487e-02  negative_bins=[(9, -1.0012856366979172e-05)]
+    h_Signal_ps_fsrUp: total=5.2155e-02  negative_bins=[(9, -7.6942736261532e-06)]
+    h_Signal_ps_fsrDown: total=5.1198e-02  negative_bins=[(9, -1.1421499965495692e-05)]
+    h_Signal_CMS_ctag2dUp: total=7.0706e-02  negative_bins=[(3, -9.881347672325299e-06), (9, -1.6531602543245043e-05)]
+    h_Signal_CMS_ctag2dDown: total=5.0111e-02  negative_bins=[(9, -7.882454598002244e-06)]
+    h_Signal_CMS_pileupUp: total=5.1257e-02  negative_bins=[(3, -3.0206280771199606e-06), (9, -1.0962931444082503e-05)]
+    h_Signal_CMS_pileupDown: total=5.2287e-02  negative_bins=[(9, -6.9197237627570895e-06)]
+    h_Signal_CMS_eff_e_reco_20to75Up: total=5.2340e-02  negative_bins=[(9, -9.835866250747284e-06)]
+    h_Signal_CMS_eff_e_reco_20to75Down: total=5.1221e-02  negative_bins=[(9, -9.759262985732054e-06)]
+    h_Signal_CMS_eff_e_reco_above75Up: total=5.1801e-02  negative_bins=[(9, -9.877064244790437e-06)]
+    h_Signal_CMS_eff_e_reco_above75Down: total=5.1754e-02  negative_bins=[(9, -9.70979026416373e-06)]
+    h_Signal_ps_isrUp: total=5.1110e-02  negative_bins=[(9, -9.34905394515407e-06)]
+    h_Signal_ps_isrDown: total=5.2649e-02  negative_bins=[(9, -1.0235954917420324e-05)]
+
+[Done]  All files in: /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/combine_run3_90160_ctag2d_erecoAdded
+
+To run combine:
+  cd /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/combine_run3_90160_ctag2d_erecoAdded
+  combine -M AsymptoticLimits -m 120 --run blind --rAbsAcc 0.00001 --rRelAcc 0.00001 \
+    datacard_no_zx.txt -n HcZZ_ctag2d_no_ZX

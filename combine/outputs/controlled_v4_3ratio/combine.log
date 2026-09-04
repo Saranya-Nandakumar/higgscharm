@@ -1,0 +1,23 @@
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+Will use a-priori instead of a-posteriori expected background.
+>>> Method used is AsymptoticLimits
+PDF didn't factorize!
+Parameters: 
+  1) RooRealVar:: n_exp_binhczz_proc_Other_Higgs = 53.9532
+  2) RooRealVar::        n_exp_binhczz_proc_ggZZ = 3.90123
+  3) RooRealVar::        n_exp_binhczz_proc_qqZZ = 75.8689
+  4) RooRealVar::                              r = 0.2 +/- 2
+Obs: 
+  1) RooRealVar::    CMS_th1x = 19.5
+  2) RooCategory:: CMS_channel = hczz(idx = 0)
+
+
+ -- AsymptoticLimits ( CLs ) --
+Expected  2.5%: r < 156.4922
+Expected 16.0%: r < 211.6201
+Expected 50.0%: r < 303.5000
+Expected 84.0%: r < 440.2033
+Expected 97.5%: r < 613.6722
+

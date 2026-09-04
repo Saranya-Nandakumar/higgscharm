@@ -1,0 +1,17 @@
+# H+c → ZZ → 4l: MVA shape analysis -- NO Z+X (MC-only, --skip-zx)
+# Mass window: 90–160 GeV  |  Lumi: 61896.1 pb^-1
+# Discriminant: mva_score_Signal (4-class MLP)
+imax 1
+jmax 3
+kmax 0
+--------------------------------------------------------------------------------
+shapes * * histograms_no_zx.root h_$PROCESS h_$PROCESS_$SYSTEMATIC
+--------------------------------------------------------------------------------
+bin         hczz
+observation -1
+--------------------------------------------------------------------------------
+bin         hczz            hczz            hczz            hczz            
+process     Signal          ggZZ            qqZZ            Other_Higgs     
+process     0               1               2               3               
+rate        0.051777        4.229574        85.470470       55.277564       
+--------------------------------------------------------------------------------

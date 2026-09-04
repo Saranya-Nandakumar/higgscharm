@@ -1,0 +1,64 @@
+/cvmfs/cms.cern.ch/el9_amd64_gcc12/external/py3-numpy/1.24.3-ac08ea497df571aa0b37dc29bb7a2045/lib/python3.9/site-packages/numpy/core/getlimits.py:518: UserWarning: The value of the smallest subnormal for <class 'numpy.float64'> type is zero.
+  setattr(self, word, getattr(machar, word).flat[0])
+/cvmfs/cms.cern.ch/el9_amd64_gcc12/external/py3-numpy/1.24.3-ac08ea497df571aa0b37dc29bb7a2045/lib/python3.9/site-packages/numpy/core/getlimits.py:89: UserWarning: The value of the smallest subnormal for <class 'numpy.float64'> type is zero.
+  return self._float_to_str(self.smallest_subnormal)
+Ranking 17 nuisance(s) from datacard_no_zx.txt:
+  - lumi_Run3
+  - QCDscale_gg
+  - pdf_gg
+  - kfactor_ggZZ
+  - BR_HZZ4l
+  - QCDscale_qqZZ
+  - lhe_pdf
+  - scalevar_muR
+  - scalevar_muF
+  - ps_isr
+  - ps_fsr
+  - CMS_pileup
+  - CMS_ctag2d
+  - CMS_eff_e_reco_20to75
+  - CMS_eff_e_reco_above75
+  - CMS_eff_e_reco_below20
+  - CMS_eff_m_id
+
+Nominal median r = 219.0000
+
+  lumi_Run3                      r_frozen=  218.0000  Delta_r=  -1.0000  ( -0.46%)
+  QCDscale_gg                    r_frozen=  218.5000  Delta_r=  -0.5000  ( -0.23%)
+  pdf_gg                         r_frozen=  218.5000  Delta_r=  -0.5000  ( -0.23%)
+  kfactor_ggZZ                   r_frozen=  219.0000  Delta_r=  +0.0000  ( +0.00%)
+  BR_HZZ4l                       r_frozen=  217.5000  Delta_r=  -1.5000  ( -0.68%)
+  QCDscale_qqZZ                  r_frozen=  218.7500  Delta_r=  -0.2500  ( -0.11%)
+  lhe_pdf                        r_frozen=  219.0000  Delta_r=  +0.0000  ( +0.00%)
+  scalevar_muR                   r_frozen=  219.0000  Delta_r=  +0.0000  ( +0.00%)
+  scalevar_muF                   r_frozen=  219.0000  Delta_r=  +0.0000  ( +0.00%)
+  ps_isr                         r_frozen=  219.0000  Delta_r=  +0.0000  ( +0.00%)
+  ps_fsr                         r_frozen=  218.5000  Delta_r=  -0.5000  ( -0.23%)
+  CMS_pileup                     r_frozen=  218.5000  Delta_r=  -0.5000  ( -0.23%)
+  CMS_ctag2d                     r_frozen=  210.5000  Delta_r=  -8.5000  ( -3.88%)
+  CMS_eff_e_reco_20to75          r_frozen=  218.5000  Delta_r=  -0.5000  ( -0.23%)
+  CMS_eff_e_reco_above75         r_frozen=  219.0000  Delta_r=  +0.0000  ( +0.00%)
+  CMS_eff_e_reco_below20         r_frozen=  209.0000  Delta_r= -10.0000  ( -4.57%)
+  CMS_eff_m_id                   r_frozen=  219.0000  Delta_r=  +0.0000  ( +0.00%)
+
+=== Ranked by |Delta r| (largest impact first) ===
+   1. CMS_eff_e_reco_below20         Delta_r= -10.0000 ( -4.57%)  <- IMPROVES when frozen (check for rateParam degeneracy)
+   2. CMS_ctag2d                     Delta_r=  -8.5000 ( -3.88%)  <- IMPROVES when frozen (check for rateParam degeneracy)
+   3. BR_HZZ4l                       Delta_r=  -1.5000 ( -0.68%)  <- IMPROVES when frozen (check for rateParam degeneracy)
+   4. lumi_Run3                      Delta_r=  -1.0000 ( -0.46%)  <- IMPROVES when frozen (check for rateParam degeneracy)
+   5. QCDscale_gg                    Delta_r=  -0.5000 ( -0.23%)  <- IMPROVES when frozen (check for rateParam degeneracy)
+   6. pdf_gg                         Delta_r=  -0.5000 ( -0.23%)  <- IMPROVES when frozen (check for rateParam degeneracy)
+   7. ps_fsr                         Delta_r=  -0.5000 ( -0.23%)  <- IMPROVES when frozen (check for rateParam degeneracy)
+   8. CMS_pileup                     Delta_r=  -0.5000 ( -0.23%)  <- IMPROVES when frozen (check for rateParam degeneracy)
+   9. CMS_eff_e_reco_20to75          Delta_r=  -0.5000 ( -0.23%)  <- IMPROVES when frozen (check for rateParam degeneracy)
+  10. QCDscale_qqZZ                  Delta_r=  -0.2500 ( -0.11%)  <- IMPROVES when frozen (check for rateParam degeneracy)
+  11. kfactor_ggZZ                   Delta_r=  +0.0000 ( +0.00%)
+  12. lhe_pdf                        Delta_r=  +0.0000 ( +0.00%)
+  13. scalevar_muR                   Delta_r=  +0.0000 ( +0.00%)
+  14. scalevar_muF                   Delta_r=  +0.0000 ( +0.00%)
+  15. ps_isr                         Delta_r=  +0.0000 ( +0.00%)
+  16. CMS_eff_e_reco_above75         Delta_r=  +0.0000 ( +0.00%)
+  17. CMS_eff_m_id                   Delta_r=  +0.0000 ( +0.00%)
+
+Wrote /tmp/snandaku/combine_local/impact_ranking.json
+Wrote /tmp/snandaku/combine_local/impact_ranking.png

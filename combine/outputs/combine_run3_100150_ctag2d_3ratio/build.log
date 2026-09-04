@@ -1,0 +1,42 @@
+======================================================================
+H+c -> ZZ -> 4l  |  ctag2d 3-ratio-decomposition datacard builder
+Mass window : 100.0-150.0 GeV
+Binning     : nested tree (2,2,5) = 20 bins
+======================================================================
+
+  Process           n_sumw_files   sumw_generated
+  -----------------------------------------------
+  qqZZ                      1297     152237846.88
+  ggZZ                       655      14414808.00
+  Signal                    1004        550850.41
+  Other_Higgs               1114      70342190.30
+
+  Process              raw_wgt       sumw_gen  baseline_eff   expected   in_win_yield
+  ----------------------------------------------------------------------------------
+  qqZZ              1042038.00   152237846.88       0.6845% 86035.5790        34.4609
+  ggZZ               860416.38    14414808.00       5.9690%  1671.1947         2.9399
+  Signal              17566.29      550850.41       3.1889%     1.6329         0.0515
+  Other_Higgs       3299117.20    70342190.30       4.6901%  1242.3785        54.7378
+
+  Process           n_events  hist_integral
+  ------------------------------------------
+  qqZZ                 44933        34.4609
+  ggZZ                 25660         2.9399
+  Signal               74859         0.0515
+  Other_Higgs         889058        54.7378
+
+  ROOT file: /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/combine_run3_100150_ctag2d_3ratio/histograms_3ratio.root
+  Datacard:  /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/combine_run3_100150_ctag2d_3ratio/datacard_3ratio.txt
+  Datacard:  /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/combine_run3_100150_ctag2d_3ratio/datacard_3ratio_statonly.txt
+
+Process         Yield in [100.0,150.0] GeV
+--------------------------------------
+  Signal              0.0515
+  ggZZ                2.9399
+  qqZZ               34.4609
+  Other_Higgs        54.7378
+--------------------------------------
+  Total bkg          92.1387
+  S/sqrt(B) = 0.0054
+
+[Done] All files in: /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/combine_run3_100150_ctag2d_3ratio

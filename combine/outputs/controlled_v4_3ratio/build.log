@@ -1,0 +1,42 @@
+======================================================================
+H+c -> ZZ -> 4l  |  ctag2d 3-ratio-decomposition datacard builder
+Mass window : 90.0-160.0 GeV
+Binning     : nested tree (2,2,5) = 20 bins
+======================================================================
+
+  Process           n_sumw_files   sumw_generated
+  -----------------------------------------------
+  qqZZ                      1495     177514547.05
+  ggZZ                       692      15103924.00
+  Signal                    1080        570751.47
+  Other_Higgs               1182      71510178.12
+
+  Process              raw_wgt       sumw_gen  baseline_eff   expected   in_win_yield
+  ----------------------------------------------------------------------------------
+  qqZZ              1082525.55   177514547.05       0.6098% 86035.5790        75.8689
+  ggZZ               841401.39    15103924.00       5.5707%  1671.1947         3.9012
+  Signal              17382.11      570751.47       3.0455%     1.6329         0.0495
+  Other_Higgs       3271437.09    71510178.12       4.5748%  1242.3785        53.9532
+
+  Process           n_events  hist_integral
+  ------------------------------------------
+  qqZZ                116159        75.8689
+  ggZZ                 36621         3.9012
+  Signal               76372         0.0495
+  Other_Higgs         904412        53.9532
+
+  ROOT file: /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/controlled_v4_3ratio/histograms_3ratio.root
+  Datacard:  /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/controlled_v4_3ratio/datacard_3ratio.txt
+  Datacard:  /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/controlled_v4_3ratio/datacard_3ratio_statonly.txt
+
+Process         Yield in [90.0,160.0] GeV
+--------------------------------------
+  Signal              0.0495
+  ggZZ                3.9012
+  qqZZ               75.8689
+  Other_Higgs        53.9532
+--------------------------------------
+  Total bkg         133.7234
+  S/sqrt(B) = 0.0043
+
+[Done] All files in: /eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/outputs/controlled_v4_3ratio

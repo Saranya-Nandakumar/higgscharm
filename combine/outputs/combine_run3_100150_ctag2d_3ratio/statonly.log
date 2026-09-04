@@ -1,0 +1,27 @@
+/afs/cern.ch/user/s/snandaku/.bashrc: line 62: zoxide: command not found
+/afs/cern.ch/user/s/snandaku/.bashrc: line 73: lhapdf-config: command not found
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+Will use a-priori instead of a-posteriori expected background.
+>>> Method used is AsymptoticLimits
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+PDF didn't factorize!
+Parameters: 
+  1) RooRealVar:: n_exp_binhczz_proc_Other_Higgs = 54.7378
+  2) RooRealVar::        n_exp_binhczz_proc_ggZZ = 2.93991
+  3) RooRealVar::        n_exp_binhczz_proc_qqZZ = 34.4609
+  4) RooRealVar::                              r = 0.2 +/- 2
+Obs: 
+  1) RooRealVar::    CMS_th1x = 19.5
+  2) RooCategory:: CMS_channel = hczz(idx = 0)
+
+
+ -- AsymptoticLimits ( CLs ) --
+Expected  2.5%: r < 143.0254
+Expected 16.0%: r < 195.2696
+Expected 50.0%: r < 279.5000
+Expected 84.0%: r < 407.0643
+Expected 97.5%: r < 568.8099
+

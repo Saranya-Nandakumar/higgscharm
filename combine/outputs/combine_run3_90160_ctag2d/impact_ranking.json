@@ -1,0 +1,13 @@
+{
+  "r_nominal": 317.0,
+  "nuisances": {
+    "CMS_ctag2d": {
+      "r_frozen": 308.0,
+      "delta_r": -9.0,
+      "delta_r_pct": -2.8391167192429023
+    }
+  },
+  "ranked_order": [
+    "CMS_ctag2d"
+  ]
+}

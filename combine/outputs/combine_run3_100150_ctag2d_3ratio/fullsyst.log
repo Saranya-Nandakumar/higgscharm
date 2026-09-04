@@ -1,0 +1,15 @@
+/afs/cern.ch/user/s/snandaku/.bashrc: line 62: zoxide: command not found
+/afs/cern.ch/user/s/snandaku/.bashrc: line 73: lhapdf-config: command not found
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+Will use a-priori instead of a-posteriori expected background.
+>>> Method used is AsymptoticLimits
+
+ -- AsymptoticLimits ( CLs ) --
+Expected  2.5%: r < 145.9961
+Expected 16.0%: r < 200.1656
+Expected 50.0%: r < 287.5000
+Expected 84.0%: r < 420.4345
+Expected 97.5%: r < 592.3864
+

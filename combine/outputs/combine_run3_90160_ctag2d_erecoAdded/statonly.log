@@ -1,0 +1,25 @@
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+Will use a-priori instead of a-posteriori expected background.
+>>> Method used is AsymptoticLimits
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+PDF didn't factorize!
+Parameters: 
+  1) RooRealVar:: n_exp_binhczz_proc_Other_Higgs = 55.2776
+  2) RooRealVar::        n_exp_binhczz_proc_ggZZ = 4.22957
+  3) RooRealVar::        n_exp_binhczz_proc_qqZZ = 85.4705
+  4) RooRealVar::                              r = 0.2 +/- 2
+Obs: 
+  1) RooRealVar::    CMS_th1x = 19.5
+  2) RooCategory:: CMS_channel = hczz(idx = 0)
+
+
+ -- AsymptoticLimits ( CLs ) --
+Expected  2.5%: r < 151.7031
+Expected 16.0%: r < 205.4105
+Expected 50.0%: r < 292.0000
+Expected 84.0%: r < 422.3596
+Expected 97.5%: r < 586.4911
+

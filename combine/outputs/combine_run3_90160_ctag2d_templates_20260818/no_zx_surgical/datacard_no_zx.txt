@@ -1,0 +1,36 @@
+# H+c → ZZ → 4l: MVA shape analysis -- NO Z+X (MC-only, --skip-zx)
+# Mass window: 90–160 GeV  |  Lumi: 61896.1 pb^-1
+# Discriminant: mva_score_Signal (4-class MLP)
+imax 1
+jmax 3
+kmax *
+--------------------------------------------------------------------------------
+shapes * * histograms_no_zx.root h_$PROCESS h_$PROCESS_$SYSTEMATIC
+--------------------------------------------------------------------------------
+bin         hczz
+observation -1
+--------------------------------------------------------------------------------
+bin         hczz            hczz            hczz            hczz            
+process     Signal          ggZZ            qqZZ            Other_Higgs     
+process     0               1               2               3               
+rate        0.051777        4.229574        85.470470       55.277564       
+--------------------------------------------------------------------------------
+lumi_Run3                lnN     1.014           1.014           1.014           1.014           
+pdf_gg                   lnN     1.05            1.05            -               -               
+QCDscale_ggZZ            lnN     -               1.10            -               -               
+BR_HZZ4l                 lnN     1.02            -               -               1.02            
+QCDscale_qqZZ            lnN     -               -               1.04            -               
+
+# Shape systematics from per-event weight variations (Up/Down
+# histograms in the ROOT file); coefficient 1 = process has it.
+lhe_pdf                  shape   -               -               1               -               
+lhe_alphaS               shape   -               -               1               1               
+scalevar_muR             shape   -               -               1               -               
+scalevar_muF             shape   -               -               1               -               
+ps_isr                   shape   1               1               1               1               
+ps_fsr                   shape   1               1               1               1               
+CMS_pileup               shape   1               1               1               1               
+CMS_ctag2d               shape   1               1               1               1               
+CMS_eff_e_reco_20to75    shape   1               1               1               1               
+CMS_eff_e_reco_above75   shape   1               1               1               1               
+CMS_eff_e_reco_below20   shape   1               1               1               1               

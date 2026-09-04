@@ -1,0 +1,13 @@
+Have POIs: ['r']
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Doing initial fit: 
+
+ --- MultiDimFit ---
+best fit parameter values and profile-likelihood uncertainties: 
+   r :    +0.000   -130.648/+147.563 (68%)
+>> combine -M MultiDimFit -n _initialFit_Ctag2D100150_15syst_noalphaS --algo singles --redefineSignalPOIs r -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_15syst_noalphaS.root

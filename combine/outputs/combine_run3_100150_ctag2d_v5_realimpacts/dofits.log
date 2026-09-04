@@ -1,0 +1,193 @@
+Have POIs: ['r']
+Have parameters: 17
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+>>> Random number generator seed is 123456
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Method used is MultiDimFit
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter  :   Best-fit               r            
+  CMS_pileup :   +0.000  -0.990/+0.989  -9.514/+9.522
+  Parameter              :   Best-fit               r            
+  CMS_eff_e_reco_below20 :   +0.000  -0.964/+0.961  +44.980/-43.633
+  Parameter :   Best-fit               r            
+  BR_HZZ4l  :   +0.000  -0.992/+0.992  +18.588/-18.251
+  Parameter             :   Best-fit               r            
+  CMS_eff_e_reco_20to75 :   +0.000  -0.992/+0.992  +9.717/-10.189
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter   :   Best-fit               r            
+  QCDscale_gg :   +0.000  -0.994/+0.994  +11.398/-10.208
+
+ --- MultiDimFit ---
+Parameter impacts: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+  Parameter  :   Best-fit               r            
+  CMS_ctag2d :   +0.000  -0.953/+0.884  +31.392/-143.633
+  Parameter    :   Best-fit               r            
+  CMS_eff_m_id :   +0.000  -0.994/+0.994  -0.029/+0.029
+  Parameter              :   Best-fit               r            
+  CMS_eff_e_reco_above75 :   +0.000  -0.993/+0.994  +0.161/-0.164
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  lhe_pdf   :   +0.000  -0.993/+0.994  +0.418/-0.425
+
+ --- MultiDimFit ---
+Parameter impacts: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+  Parameter :   Best-fit               r            
+  ps_isr    :   +0.000  -0.986/+0.989  -2.385/+1.600
+  Parameter     :   Best-fit               r            
+  QCDscale_qqZZ :   +0.000  -0.982/+0.983  +2.488/-3.458
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+  Parameter :   Best-fit               r            
+  pdf_gg    :   +0.000  -0.994/+0.994  +9.250/-8.452
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+  Parameter :   Best-fit               r            
+  lumi_Run3 :   +0.000  -0.991/+0.990  +13.972/-13.247
+
+ --- MultiDimFit ---
+Parameter impacts: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+  Parameter    :   Best-fit               r            
+  scalevar_muF :   +0.000  -0.987/+0.991  +2.277/-2.052
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter    :   Best-fit               r            
+  kfactor_ggZZ :   +0.000  -0.993/+0.994  +0.547/-0.616
+  Parameter :   Best-fit               r            
+  ps_fsr    :   +0.000  -0.986/+0.993  +11.983/-6.843
+Set Range of Parameter r To : (0,1000)
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter    :   Best-fit               r            
+  scalevar_muR :   +0.000  -0.992/+0.993  -1.251/+0.928
+>> combine -M MultiDimFit -n _paramFit_Test_CMS_eff_e_reco_20to75 --algo impact --redefineSignalPOIs r -P CMS_eff_e_reco_20to75 --floatOtherPOIs 1 --saveInactivePOI 1 --setParameterRanges r=0,1000 -t -1 --expectSignal 299.5 --robustFit 1 -m 120 -d workspace.root
+>> combine -M MultiDimFit -n _paramFit_Test_CMS_eff_e_reco_above75 --algo impact --redefineSignalPOIs r -P CMS_eff_e_reco_above75 --floatOtherPOIs 1 --saveInactivePOI 1 --setParameterRanges r=0,1000 -t -1 --expectSignal 299.5 --robustFit 1 -m 120 -d workspace.root
+>> combine -M MultiDimFit -n _paramFit_Test_ps_isr --algo impact --redefineSignalPOIs r -P ps_isr --floatOtherPOIs 1 --saveInactivePOI 1 --setParameterRanges r=0,1000 -t -1 --expectSignal 299.5 --robustFit 1 -m 120 -d workspace.root
+>> combine -M MultiDimFit -n _paramFit_Test_scalevar_muF --algo impact --redefineSignalPOIs r -P scalevar_muF --floatOtherPOIs 1 --saveInactivePOI 1 --setParameterRanges r=0,1000 -t -1 --expectSignal 299.5 --robustFit 1 -m 120 -d workspace.root

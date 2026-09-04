@@ -1,0 +1,109 @@
+{
+  "r_nominal": 219.0,
+  "nuisances": {
+    "lumi_Run3": {
+      "r_frozen": 218.0,
+      "delta_r": -1.0,
+      "delta_r_pct": -0.45662100456621
+    },
+    "QCDscale_gg": {
+      "r_frozen": 218.5,
+      "delta_r": -0.5,
+      "delta_r_pct": -0.228310502283105
+    },
+    "pdf_gg": {
+      "r_frozen": 218.5,
+      "delta_r": -0.5,
+      "delta_r_pct": -0.228310502283105
+    },
+    "kfactor_ggZZ": {
+      "r_frozen": 219.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "BR_HZZ4l": {
+      "r_frozen": 217.5,
+      "delta_r": -1.5,
+      "delta_r_pct": -0.684931506849315
+    },
+    "QCDscale_qqZZ": {
+      "r_frozen": 218.75,
+      "delta_r": -0.25,
+      "delta_r_pct": -0.1141552511415525
+    },
+    "lhe_pdf": {
+      "r_frozen": 219.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "scalevar_muR": {
+      "r_frozen": 219.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "scalevar_muF": {
+      "r_frozen": 219.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "ps_isr": {
+      "r_frozen": 219.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "ps_fsr": {
+      "r_frozen": 218.5,
+      "delta_r": -0.5,
+      "delta_r_pct": -0.228310502283105
+    },
+    "CMS_pileup": {
+      "r_frozen": 218.5,
+      "delta_r": -0.5,
+      "delta_r_pct": -0.228310502283105
+    },
+    "CMS_ctag2d": {
+      "r_frozen": 210.5,
+      "delta_r": -8.5,
+      "delta_r_pct": -3.8812785388127855
+    },
+    "CMS_eff_e_reco_20to75": {
+      "r_frozen": 218.5,
+      "delta_r": -0.5,
+      "delta_r_pct": -0.228310502283105
+    },
+    "CMS_eff_e_reco_above75": {
+      "r_frozen": 219.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "CMS_eff_e_reco_below20": {
+      "r_frozen": 209.0,
+      "delta_r": -10.0,
+      "delta_r_pct": -4.566210045662101
+    },
+    "CMS_eff_m_id": {
+      "r_frozen": 219.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    }
+  },
+  "ranked_order": [
+    "CMS_eff_e_reco_below20",
+    "CMS_ctag2d",
+    "BR_HZZ4l",
+    "lumi_Run3",
+    "QCDscale_gg",
+    "pdf_gg",
+    "ps_fsr",
+    "CMS_pileup",
+    "CMS_eff_e_reco_20to75",
+    "QCDscale_qqZZ",
+    "kfactor_ggZZ",
+    "lhe_pdf",
+    "scalevar_muR",
+    "scalevar_muF",
+    "ps_isr",
+    "CMS_eff_e_reco_above75",
+    "CMS_eff_m_id"
+  ]
+}

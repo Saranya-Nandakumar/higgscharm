@@ -1,0 +1,159 @@
+Have POIs: ['r']
+Have parameters: 15
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+>>> Random number generator seed is 123456
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Method used is MultiDimFit
+>>> Method used is MultiDimFit
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+Doing initial fit: 
+Doing initial fit: 
+Doing initial fit: 
+Doing initial fit: 
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Doing initial fit: 
+  Parameter     :   Best-fit               r            
+  QCDscale_qqZZ :   +0.000  -0.961/+0.958  -4.276/-1.357
+  Parameter             :   Best-fit               r            
+  CMS_eff_e_reco_20to75 :   +0.000  -0.992/+0.992  +7.222/-7.590
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter  :   Best-fit               r            
+  CMS_pileup :   +0.000  -0.992/+0.991  -6.935/+5.827
+  Parameter  :   Best-fit               r            
+  CMS_ctag2d :   +0.000  -0.986/+0.824  +9.250/-58.957
+  Parameter              :   Best-fit               r            
+  CMS_eff_e_reco_below20 :   +0.000  -0.950/+0.942  +21.618/-29.967
+  Parameter              :   Best-fit               r            
+  CMS_eff_e_reco_above75 :   +0.000  -0.994/+0.994  +0.189/-0.191
+
+ --- MultiDimFit ---
+Parameter impacts: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+  Parameter :   Best-fit               r            
+  BR_HZZ4l  :   +0.000  -0.993/+0.993  +13.467/-13.311
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+  Parameter     :   Best-fit               r            
+  QCDscale_ggZZ :   +0.000  -0.994/+0.994  +0.648/-0.740
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Doing initial fit: 
+Doing initial fit: 
+  Parameter :   Best-fit               r            
+  lhe_pdf   :   +0.000  -0.994/+0.994  +0.462/-0.478
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter    :   Best-fit               r            
+  scalevar_muF :   +0.000  -0.978/+0.956  -0.201/-5.849
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  pdf_gg    :   +0.000  -0.994/+0.994  +0.360/-0.350
+Doing initial fit: 
+  Parameter :   Best-fit               r            
+  ps_isr    :   +0.000  -0.985/+0.989  +1.575/-1.682
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  lumi_Run3 :   +0.000  -0.987/+0.988  +8.169/-9.613
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  ps_fsr    :   +0.000  -0.987/+0.993  +4.854/-3.172
+  Parameter    :   Best-fit               r            
+  scalevar_muR :   +0.000  -0.989/+0.988  -0.670/+0.265
+>> combine -M MultiDimFit -n _paramFit_Ctag2D90160_15syst_noalphaS_QCDscale_ggZZ --algo impact --redefineSignalPOIs r -P QCDscale_ggZZ --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_90160_15syst_noalphaS.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D90160_15syst_noalphaS_CMS_eff_e_reco_below20 --algo impact --redefineSignalPOIs r -P CMS_eff_e_reco_below20 --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_90160_15syst_noalphaS.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D90160_15syst_noalphaS_ps_isr --algo impact --redefineSignalPOIs r -P ps_isr --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_90160_15syst_noalphaS.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D90160_15syst_noalphaS_QCDscale_qqZZ --algo impact --redefineSignalPOIs r -P QCDscale_qqZZ --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_90160_15syst_noalphaS.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D90160_15syst_noalphaS_lhe_pdf --algo impact --redefineSignalPOIs r -P lhe_pdf --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_90160_15syst_noalphaS.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D90160_15syst_noalphaS_CMS_ctag2d --algo impact --redefineSignalPOIs r -P CMS_ctag2d --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_90160_15syst_noalphaS.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D90160_15syst_noalphaS_ps_fsr --algo impact --redefineSignalPOIs r -P ps_fsr --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_90160_15syst_noalphaS.root

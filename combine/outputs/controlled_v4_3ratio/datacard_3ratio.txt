@@ -1,0 +1,30 @@
+# H+c -> ZZ -> 4l: 3-ratio-decomposition MVA, ctag2d SF, NO Z+X
+# Mass window: 90.0-160.0 GeV  |  Lumi: 61896.1 pb^-1
+# Discriminant: joint (r1,r2,r3) = (Ps/(Ps+PqqZZ), Ps/(Ps+PggZZ), Ps/(Ps+POH)), flattened
+imax 1
+jmax 3
+kmax *
+--------------------------------------------------------------------------------
+shapes * * histograms_3ratio.root h_$PROCESS h_$PROCESS_$SYSTEMATIC
+--------------------------------------------------------------------------------
+bin         hczz
+observation -1
+--------------------------------------------------------------------------------
+bin         hczz            hczz            hczz            hczz            
+process     Signal          ggZZ            qqZZ            Other_Higgs     
+process     0               1               2               3               
+rate        0.049463        3.901228        75.868949       53.953207       
+--------------------------------------------------------------------------------
+lumi_Run3                lnN     1.014           1.014           1.014           1.014           
+pdf_gg                   lnN     1.05            1.05            -               -               
+QCDscale_ggZZ            lnN     -               1.10            -               -               
+
+# Shape systematics from per-event weight variations
+lhe_pdf                  shape   -               -               1               -               
+lhe_alphaS               shape   -               -               1               1               
+scalevar_muR             shape   -               -               1               -               
+scalevar_muF             shape   -               -               1               -               
+ps_isr                   shape   1               1               1               1               
+ps_fsr                   shape   1               1               1               1               
+CMS_pileup               shape   1               1               1               1               
+CMS_ctag2d               shape   1               1               1               1               

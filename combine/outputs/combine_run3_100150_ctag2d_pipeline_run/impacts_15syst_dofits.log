@@ -1,0 +1,187 @@
+Have POIs: ['r']
+Have parameters: 15
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+ <<< Combine >>> 
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+>>> Method used is MultiDimFit
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Doing initial fit: 
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Doing initial fit: 
+Doing initial fit: 
+Doing initial fit: 
+  Parameter  :   Best-fit               r            
+  CMS_ctag2d :   +0.000  -0.982/+0.900  +13.665/-71.180
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter             :   Best-fit               r            
+  CMS_eff_e_reco_20to75 :   -0.000  -0.992/+0.992  +6.975/-7.261
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+  Parameter  :   Best-fit               r            
+  CMS_pileup :   +0.000  -0.992/+0.992  -6.544/+5.871
+  Parameter              :   Best-fit               r            
+  CMS_eff_e_reco_above75 :   -0.000  -0.994/+0.994  +0.155/-0.157
+  Parameter     :   Best-fit               r            
+  QCDscale_qqZZ :   -0.000  -0.983/+0.983  +2.753/-4.023
+  Parameter              :   Best-fit               r            
+  CMS_eff_e_reco_below20 :   +0.000  -0.965/+0.963  +28.207/-28.152
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+  Parameter :   Best-fit               r            
+  BR_HZZ4l  :   -0.000  -0.992/+0.992  +12.021/-11.975
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Method used is MultiDimFit
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter     :   Best-fit               r            
+  QCDscale_ggZZ :   -0.000  -0.993/+0.994  +0.588/-0.662
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Error in <TNetXNGFile::Open>: [ERROR] Server responded with an error: [3001] Required argument not present
+
+Doing initial fit: 
+Doing initial fit: 
+Doing initial fit: 
+Doing initial fit: 
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Doing initial fit: 
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  lumi_Run3 :   +0.000  -0.990/+0.990  +9.099/-9.643
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  ps_fsr    :   +0.000  -0.987/+0.993  +5.449/-2.869
+  Parameter    :   Best-fit               r            
+  scalevar_muF :   -0.000  -0.991/+0.985  -2.313/+2.655
+  Parameter :   Best-fit               r            
+  pdf_gg    :   -0.000  -0.994/+0.994  +0.326/-0.314
+  Parameter    :   Best-fit               r            
+  scalevar_muR :   -0.000  -0.993/+0.992  +1.023/-1.310
+  Parameter :   Best-fit               r            
+  ps_isr    :   +0.000  -0.985/+0.989  +2.955/-2.645
+  Parameter :   Best-fit               r            
+  lhe_pdf   :   -0.000  -0.993/+0.994  +0.398/-0.403
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_15syst_noalphaS_QCDscale_ggZZ --algo impact --redefineSignalPOIs r -P QCDscale_ggZZ --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_15syst_noalphaS.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_15syst_noalphaS_CMS_eff_e_reco_20to75 --algo impact --redefineSignalPOIs r -P CMS_eff_e_reco_20to75 --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_15syst_noalphaS.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_15syst_noalphaS_lumi_Run3 --algo impact --redefineSignalPOIs r -P lumi_Run3 --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_15syst_noalphaS.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_15syst_noalphaS_CMS_eff_e_reco_above75 --algo impact --redefineSignalPOIs r -P CMS_eff_e_reco_above75 --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_15syst_noalphaS.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_15syst_noalphaS_ps_fsr --algo impact --redefineSignalPOIs r -P ps_fsr --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_15syst_noalphaS.root

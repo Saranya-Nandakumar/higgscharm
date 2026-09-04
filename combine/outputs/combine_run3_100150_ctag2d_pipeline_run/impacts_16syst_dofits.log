@@ -1,0 +1,170 @@
+Have POIs: ['r']
+Have parameters: 16
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+>>> Random number generator seed is 123456
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Doing initial fit: 
+  Parameter     :   Best-fit               r            
+  QCDscale_ggZZ :   +0.000  -0.993/+0.994  +0.568/-0.639
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Doing initial fit: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter  :   Best-fit               r            
+  CMS_pileup :   -0.000  -0.992/+0.992  -6.383/+5.707
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+  Parameter :   Best-fit               r            
+  BR_HZZ4l  :   -0.000  -0.992/+0.992  +11.908/-11.820
+Doing initial fit: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter  :   Best-fit               r            
+  CMS_ctag2d :   +0.000  -0.982/+0.897  +13.942/-70.444
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+  Parameter     :   Best-fit               r            
+  QCDscale_qqZZ :   +0.000  -0.983/+0.983  +2.559/-3.342
+
+ --- MultiDimFit ---
+Parameter impacts: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+  Parameter              :   Best-fit               r            
+  CMS_eff_e_reco_below20 :   +0.000  -0.964/+0.963  +27.806/-27.561
+Doing initial fit: 
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter             :   Best-fit               r            
+  CMS_eff_e_reco_20to75 :   +0.000  -0.992/+0.992  +6.814/-7.090
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter              :   Best-fit               r            
+  CMS_eff_e_reco_above75 :   -0.000  -0.994/+0.994  +0.152/-0.153
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+Doing initial fit: 
+  Parameter :   Best-fit               r            
+  pdf_gg    :   +0.000  -0.994/+0.994  +0.314/-0.303
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  lumi_Run3 :   +0.000  -0.991/+0.990  +8.893/-9.412
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  ps_fsr    :   +0.000  -0.987/+0.993  +5.263/-2.751
+  Parameter  :   Best-fit               r            
+  lhe_alphaS :   -0.000  -0.986/+0.986  +17.568/-17.639
+Doing initial fit: 
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  lhe_pdf   :   +0.000  -0.993/+0.994  +0.384/-0.389
+  Parameter :   Best-fit               r            
+  ps_isr    :   -0.000  -0.985/+0.989  +3.156/-2.793
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter    :   Best-fit               r            
+  scalevar_muF :   -0.000  -0.991/+0.985  -2.225/+2.438
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter    :   Best-fit               r            
+  scalevar_muR :   +0.000  -0.993/+0.992  +0.986/-1.260
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_16syst_CMS_ctag2d --algo impact --redefineSignalPOIs r -P CMS_ctag2d --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_16syst.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_16syst_pdf_gg --algo impact --redefineSignalPOIs r -P pdf_gg --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_16syst.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_16syst_QCDscale_qqZZ --algo impact --redefineSignalPOIs r -P QCDscale_qqZZ --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_16syst.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_16syst_ps_fsr --algo impact --redefineSignalPOIs r -P ps_fsr --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_16syst.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_16syst_BR_HZZ4l --algo impact --redefineSignalPOIs r -P BR_HZZ4l --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_16syst.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_16syst_lumi_Run3 --algo impact --redefineSignalPOIs r -P lumi_Run3 --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_16syst.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_16syst_QCDscale_ggZZ --algo impact --redefineSignalPOIs r -P QCDscale_ggZZ --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_16syst.root
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150_16syst_lhe_alphaS --algo impact --redefineSignalPOIs r -P lhe_alphaS --floatOtherPOIs 1 --saveInactivePOI 1 -t -1 --rMin -500 --rMax 2000 --robustFit 1 -m 120 -d ws_100150_16syst.root

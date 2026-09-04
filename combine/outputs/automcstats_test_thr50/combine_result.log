@@ -1,0 +1,292 @@
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+Will use a-priori instead of a-posteriori expected background.
+>>> Method used is AsymptoticLimits
+============================================================
+Analyzing bin errors for: prop_binhczz
+Poisson cut-off: 50
+Processes excluded for sums: Signal
+============================================================
+Bin        Contents        Error           Notes                         
+0          2.021081        1.421649        total sum                     
+0          2.021081        1.421647        excluding marked processes    
+0          2.000000        1.414214        Unweighted events, alpha=1.010541
+  => Number of weighted events is below Poisson threshold
+    Signal               0.000000        0.001912                                      
+      => Poisson not viable, prop_binhczz_bin0_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.272854        0.522354                                      
+      => Poisson not viable, prop_binhczz_bin0_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.717575        1.310563                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.858788
+      => Product of prop_binhczz_bin0_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          0.030652        0.175078                                      
+      => Poisson not viable, prop_binhczz_bin0_Other_Higgs[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+1          1.982946        1.408171        total sum                     
+1          1.982933        1.408167        excluding marked processes    
+1          2.000000        1.414214        Unweighted events, alpha=0.991473
+  => Number of weighted events is below Poisson threshold
+    Signal               0.000013        0.003651                                      
+      => Poisson not viable, prop_binhczz_bin1_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.218799        0.467760                                      
+      => Poisson not viable, prop_binhczz_bin1_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.719048        1.311125                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.859524
+      => Product of prop_binhczz_bin1_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          0.045086        0.212335                                      
+      => Poisson not viable, prop_binhczz_bin1_Other_Higgs[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+2          5.705872        2.388697        total sum                     
+2          5.705844        2.388691        excluding marked processes    
+2          6.000000        2.449490        Unweighted events, alpha=0.950979
+  => Number of weighted events is below Poisson threshold
+    Signal               0.000028        0.005282                                      
+      => Poisson not viable, prop_binhczz_bin2_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.373822        0.611410                                      
+      => Poisson not viable, prop_binhczz_bin2_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 5.158567        2.271248                                      
+                         5.000000        2.236068        Unweighted events, alpha=1.031713
+      => Product of prop_binhczz_bin2_qqZZ[5.00,0.01,41.33] and const [0.2000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          0.173455        0.416479                                      
+      => Poisson not viable, prop_binhczz_bin2_Other_Higgs[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+3          1.918985        1.385274        total sum                     
+3          1.918953        1.385263        excluding marked processes    
+3          2.000000        1.414214        Unweighted events, alpha=0.959492
+  => Number of weighted events is below Poisson threshold
+    Signal               0.000032        0.005622                                      
+      => Poisson not viable, prop_binhczz_bin3_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.104458        0.323200                                      
+      => Poisson not viable, prop_binhczz_bin3_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.718784        1.311024                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.859392
+      => Product of prop_binhczz_bin3_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          0.095711        0.309373                                      
+      => Poisson not viable, prop_binhczz_bin3_Other_Higgs[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+4          1.996191        1.412866        total sum                     
+4          1.996163        1.412856        excluding marked processes    
+4          2.000000        1.414214        Unweighted events, alpha=0.998096
+  => Number of weighted events is below Poisson threshold
+    Signal               0.000028        0.005305                                      
+      => Poisson not viable, prop_binhczz_bin4_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.117448        0.342707                                      
+      => Poisson not viable, prop_binhczz_bin4_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.721960        1.312235                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.860980
+      => Product of prop_binhczz_bin4_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          0.156755        0.395922                                      
+      => Poisson not viable, prop_binhczz_bin4_Other_Higgs[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+5          11.683589       3.418127        total sum                     
+5          11.682690       3.417995        excluding marked processes    
+5          12.000000       3.464102        Unweighted events, alpha=0.973632
+  => Number of weighted events is below Poisson threshold
+    Signal               0.000899        0.029984                                      
+      => Poisson not viable, prop_binhczz_bin5_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.518295        0.719927                                      
+      => Poisson not viable, prop_binhczz_bin5_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 6.862553        2.619647                                      
+                         7.000000        2.645751        Unweighted events, alpha=0.980365
+      => Product of prop_binhczz_bin5_qqZZ[7.00,0.07,45.79] and const [0.1429] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          4.301841        2.074088                                      
+                         4.000000        2.000000        Unweighted events, alpha=1.075460
+      => Product of prop_binhczz_bin5_Other_Higgs[4.00,0.00,38.96] and const [0.2500] to be Poisson constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+6          4.118339        2.029369        total sum                     
+6          4.117827        2.029243        excluding marked processes    
+6          4.000000        2.000000        Unweighted events, alpha=1.029585
+  => Number of weighted events is below Poisson threshold
+    Signal               0.000512        0.022637                                      
+      => Poisson not viable, prop_binhczz_bin6_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.111458        0.333853                                      
+      => Poisson not viable, prop_binhczz_bin6_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.715807        1.309888                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.857903
+      => Product of prop_binhczz_bin6_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          2.290562        1.513460                                      
+                         2.000000        1.414214        Unweighted events, alpha=1.145281
+      => Product of prop_binhczz_bin6_Other_Higgs[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+7          4.490386        2.119053        total sum                     
+7          4.489660        2.118882        excluding marked processes    
+7          4.000000        2.000000        Unweighted events, alpha=1.122596
+  => Number of weighted events is below Poisson threshold
+    Signal               0.000726        0.026942                                      
+      => Poisson not viable, prop_binhczz_bin7_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.108616        0.329569                                      
+      => Poisson not viable, prop_binhczz_bin7_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.711481        1.308236                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.855741
+      => Product of prop_binhczz_bin7_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          2.669563        1.633880                                      
+                         3.000000        1.732051        Unweighted events, alpha=0.889854
+      => Product of prop_binhczz_bin7_Other_Higgs[3.00,0.00,36.46] and const [0.3333] to be Poisson constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+8          5.138546        2.266836        total sum                     
+8          5.137437        2.266591        excluding marked processes    
+8          5.000000        2.236068        Unweighted events, alpha=1.027709
+  => Number of weighted events is below Poisson threshold
+    Signal               0.001109        0.033304                                      
+      => Poisson not viable, prop_binhczz_bin8_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.104965        0.323983                                      
+      => Poisson not viable, prop_binhczz_bin8_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.718207        1.310804                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.859104
+      => Product of prop_binhczz_bin8_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          3.314265        1.820512                                      
+                         3.000000        1.732051        Unweighted events, alpha=1.104755
+      => Product of prop_binhczz_bin8_Other_Higgs[3.00,0.00,36.46] and const [0.3333] to be Poisson constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+9          5.546020        2.354999        total sum                     
+9          5.544520        2.354681        excluding marked processes    
+9          6.000000        2.449490        Unweighted events, alpha=0.924337
+  => Number of weighted events is below Poisson threshold
+    Signal               0.001500        0.038725                                      
+      => Poisson not viable, prop_binhczz_bin9_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.093354        0.305539                                      
+      => Poisson not viable, prop_binhczz_bin9_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.707986        1.306900                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.853993
+      => Product of prop_binhczz_bin9_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          3.743180        1.934730                                      
+                         4.000000        2.000000        Unweighted events, alpha=0.935795
+      => Product of prop_binhczz_bin9_Other_Higgs[4.00,0.00,38.96] and const [0.2500] to be Poisson constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+10         6.285401        2.507070        total sum                     
+10         6.283109        2.506613        excluding marked processes    
+10         6.000000        2.449490        Unweighted events, alpha=1.047567
+  => Number of weighted events is below Poisson threshold
+    Signal               0.002291        0.047866                                      
+      => Poisson not viable, prop_binhczz_bin10_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.101039        0.317866                                      
+      => Poisson not viable, prop_binhczz_bin10_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.715739        1.309862                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.857869
+      => Product of prop_binhczz_bin10_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          4.466332        2.113370                                      
+                         4.000000        2.000000        Unweighted events, alpha=1.116583
+      => Product of prop_binhczz_bin10_Other_Higgs[4.00,0.00,38.96] and const [0.2500] to be Poisson constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+11         7.478398        2.734666        total sum                     
+11         7.474700        2.733990        excluding marked processes    
+11         7.000000        2.645751        Unweighted events, alpha=1.068343
+  => Number of weighted events is below Poisson threshold
+    Signal               0.003698        0.060808                                      
+      => Poisson not viable, prop_binhczz_bin11_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.105172        0.324302                                      
+      => Poisson not viable, prop_binhczz_bin11_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.721021        1.311877                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.860510
+      => Product of prop_binhczz_bin11_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          5.648507        2.376659                                      
+                         6.000000        2.449490        Unweighted events, alpha=0.941418
+      => Product of prop_binhczz_bin11_Other_Higgs[6.00,0.03,43.60] and const [0.1667] to be Poisson constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+12         9.168050        3.027879        total sum                     
+12         9.161750        3.026838        excluding marked processes    
+12         9.000000        3.000000        Unweighted events, alpha=1.018672
+  => Number of weighted events is below Poisson threshold
+    Signal               0.006300        0.079370                                      
+      => Poisson not viable, prop_binhczz_bin12_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.116243        0.340944                                      
+      => Poisson not viable, prop_binhczz_bin12_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.712783        1.308733                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.856391
+      => Product of prop_binhczz_bin12_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          7.332725        2.707900                                      
+                         7.000000        2.645751        Unweighted events, alpha=1.047532
+      => Product of prop_binhczz_bin12_Other_Higgs[7.00,0.07,45.79] and const [0.1429] to be Poisson constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+13         10.145271       3.185164        total sum                     
+13         10.136042       3.183715        excluding marked processes    
+13         10.000000       3.162278        Unweighted events, alpha=1.014527
+  => Number of weighted events is below Poisson threshold
+    Signal               0.009230        0.096072                                      
+      => Poisson not viable, prop_binhczz_bin13_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.105273        0.324457                                      
+      => Poisson not viable, prop_binhczz_bin13_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.705640        1.306002                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.852820
+      => Product of prop_binhczz_bin13_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          8.325129        2.885330                                      
+                         8.000000        2.828427        Unweighted events, alpha=1.040641
+      => Product of prop_binhczz_bin13_Other_Higgs[8.00,0.12,47.91] and const [0.1250] to be Poisson constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+14         12.151248       3.485864        total sum                     
+14         12.128755       3.482636        excluding marked processes    
+14         12.000000       3.464102        Unweighted events, alpha=1.012604
+  => Number of weighted events is below Poisson threshold
+    Signal               0.022494        0.149979                                      
+      => Poisson not viable, prop_binhczz_bin14_Signal[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    ggZZ                 0.081273        0.285084                                      
+      => Poisson not viable, prop_binhczz_bin14_ggZZ[0.00,-7.00,7.00] to be Gaussian constrained
+  ----------------------------------------------------------
+    qqZZ                 1.690973        1.300374                                      
+                         2.000000        1.414214        Unweighted events, alpha=0.845486
+      => Product of prop_binhczz_bin14_qqZZ[2.00,0.00,33.79] and const [0.5000] to be Poisson constrained
+  ----------------------------------------------------------
+    Other_Higgs          10.356509       3.218153                                      
+                         10.000000       3.162278        Unweighted events, alpha=1.035651
+      => Product of prop_binhczz_bin14_Other_Higgs[10.00,0.30,52.00] and const [0.1000] to be Poisson constrained
+  ----------------------------------------------------------
+------------------------------------------------------------
+Channel hczz will use autoMCStats with settings: event-threshold=50, include-signal=0, hist-mode=1

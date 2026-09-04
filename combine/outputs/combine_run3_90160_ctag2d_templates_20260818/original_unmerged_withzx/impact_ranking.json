@@ -1,0 +1,109 @@
+{
+  "r_nominal": 329.0,
+  "nuisances": {
+    "lumi_Run3": {
+      "r_frozen": 328.0,
+      "delta_r": -1.0,
+      "delta_r_pct": -0.303951367781155
+    },
+    "pdf_gg": {
+      "r_frozen": 327.5,
+      "delta_r": -1.5,
+      "delta_r_pct": -0.45592705167173253
+    },
+    "QCDscale_ggZZ": {
+      "r_frozen": 329.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "BR_HZZ4l": {
+      "r_frozen": 327.0,
+      "delta_r": -2.0,
+      "delta_r_pct": -0.60790273556231
+    },
+    "QCDscale_qqZZ": {
+      "r_frozen": 329.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "ZX_norm": {
+      "r_frozen": 329.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "lhe_pdf": {
+      "r_frozen": 329.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "lhe_alphaS": {
+      "r_frozen": 327.0,
+      "delta_r": -2.0,
+      "delta_r_pct": -0.60790273556231
+    },
+    "scalevar_muR": {
+      "r_frozen": 329.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "scalevar_muF": {
+      "r_frozen": 329.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "ps_isr": {
+      "r_frozen": 329.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "ps_fsr": {
+      "r_frozen": 328.5,
+      "delta_r": -0.5,
+      "delta_r_pct": -0.1519756838905775
+    },
+    "CMS_pileup": {
+      "r_frozen": 328.5,
+      "delta_r": -0.5,
+      "delta_r_pct": -0.1519756838905775
+    },
+    "CMS_ctag2d": {
+      "r_frozen": 320.0,
+      "delta_r": -9.0,
+      "delta_r_pct": -2.735562310030395
+    },
+    "CMS_eff_e_reco_20to75": {
+      "r_frozen": 328.5,
+      "delta_r": -0.5,
+      "delta_r_pct": -0.1519756838905775
+    },
+    "CMS_eff_e_reco_above75": {
+      "r_frozen": 329.0,
+      "delta_r": 0.0,
+      "delta_r_pct": 0.0
+    },
+    "CMS_eff_e_reco_below20": {
+      "r_frozen": 320.0,
+      "delta_r": -9.0,
+      "delta_r_pct": -2.735562310030395
+    }
+  },
+  "ranked_order": [
+    "CMS_ctag2d",
+    "CMS_eff_e_reco_below20",
+    "BR_HZZ4l",
+    "lhe_alphaS",
+    "pdf_gg",
+    "lumi_Run3",
+    "ps_fsr",
+    "CMS_pileup",
+    "CMS_eff_e_reco_20to75",
+    "QCDscale_ggZZ",
+    "QCDscale_qqZZ",
+    "ZX_norm",
+    "lhe_pdf",
+    "scalevar_muR",
+    "scalevar_muF",
+    "ps_isr",
+    "CMS_eff_e_reco_above75"
+  ]
+}

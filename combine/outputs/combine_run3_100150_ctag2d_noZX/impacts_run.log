@@ -1,0 +1,137 @@
+/afs/cern.ch/user/s/snandaku/.bashrc: line 62: zoxide: command not found
+/afs/cern.ch/user/s/snandaku/.bashrc: line 73: lhapdf-config: command not found
+=== [1/5] text2workspace ===
+=== [2/5] doInitialFit ===
+Have POIs: ['r']
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+[ERROR] Closed range without finding crossing! 
+
+ --- MultiDimFit ---
+best fit parameter values and profile-likelihood uncertainties: 
+ Warning - No valid low-error found, will report difference to minimum of range for : r
+   r :    +1.716   -1.716/+141.297 (68%)
+>> combine -M MultiDimFit -n _initialFit_Ctag2D100150NoZX --algo singles --redefineSignalPOIs r --robustFit 1 -t -1 --expectSignal 0 --rMin 0 --rMax 700 -m 120 -d workspace_100150_noZX.root
+=== [3/5] doFits ===
+Have POIs: ['r']
+Have parameters: 11
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter  :   Best-fit               r            
+  CMS_ctag2d :   -0.004  -0.978/+0.728  +10.190/-1.716
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter  :   Best-fit               r            
+  CMS_pileup :   -0.001  -0.989/+0.993  -1.708/+5.901
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter     :   Best-fit               r            
+  QCDscale_ggZZ :   +0.000  -0.994/+0.993  -0.681/-1.011
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter  :   Best-fit               r            
+  lhe_alphaS :   +0.002  -0.988/+0.974  +17.024/-1.715
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  lhe_pdf   :   +0.000  -0.995/+0.994  -1.057/-1.009
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  lumi_Run3 :   +0.002  -0.992/+0.986  +9.830/-1.712
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  pdf_gg    :   +0.000  -0.995/+0.994  -1.160/-0.923
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  ps_fsr    :   +0.001  -0.988/+0.991  +5.371/-1.440
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter :   Best-fit               r            
+  ps_isr    :   -0.001  -0.984/+0.989  -0.312/-1.332
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter    :   Best-fit               r            
+  scalevar_muF :   -0.001  -0.988/+0.986  -1.312/+1.918
+ <<< Combine >>> 
+ <<< v10.5.0 >>>
+>>> Random number generator seed is 123456
+>>> Method used is MultiDimFit
+Doing initial fit: 
+
+ --- MultiDimFit ---
+Parameter impacts: 
+  Parameter    :   Best-fit               r            
+  scalevar_muR :   +0.001  -0.993/+0.991  +0.013/-1.151
+>> combine -M MultiDimFit -n _paramFit_Ctag2D100150NoZX_CMS_ctag2d --algo impact --redefineSignalPOIs r -P CMS_ctag2d --floatOtherPOIs 1 --saveInactivePOI=== [4/5] collect json ===
+Have POIs: ['r']
+Have parameters: 11
+=== [5/5] plotImpacts ===
+Info in <TCanvas::Print>: pdf file impacts_ctag2d_100150_nozx.pdf has been created
+>> Doing page 0, have 11 parameters
+DONE
