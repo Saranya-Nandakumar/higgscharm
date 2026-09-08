@@ -24,6 +24,7 @@ Usage:
 """
 
 import os
+import re
 import sys
 import argparse
 import yaml
@@ -291,20 +292,45 @@ def process_single_file(
         return {'status': 'error', 'file': input_file, 'error': str(e)}
 
 
+_CHUNK_RANGE_RE = re.compile(r'_(\d+)-(\d+)\.parquet$')
+
+
 def dedupe_parquet_files_by_source(files: List[Path]) -> List[Path]:
-    """Collapse repeated condor-resubmission output to one file per source ROOT
-    file. Each parquet filename is `<source-GUID>_%2FEvents%3B1_<chunk>.parquet`;
-    resubmitting a dataset writes a fresh, differently-numbered partition dir
-    (e.g. `HPlusCharm_2022postEE_37`) without removing the old one, so the same
-    GUID can appear under several partition dirs. Keep only the most recently
-    written copy per GUID."""
-    latest_by_guid: Dict[str, Path] = {}
+    """Collapse repeated condor-resubmission output to one file per source-file
+    chunk. Each parquet filename is
+    `<source-GUID>_%2FEvents%3B1_<start>-<end>.parquet`; a single source ROOT
+    file is legitimately split into several non-overlapping entry-range chunks
+    during processing (e.g. `_0-96310`, `_96310-192620`, ...) and ALL of them
+    are required to reconstruct the full file's events -- they are NOT
+    duplicates of each other, even though they share the same GUID. A true
+    duplicate is the *same* chunk (identical GUID and start/end range)
+    reprocessed into a freshly-numbered partition dir by a condor resubmission
+    (e.g. `HPlusCharm_2022postEE_37`) without removing the old one. Keeping
+    only the most recently written copy per GUID alone -- the original version
+    of this function -- silently discarded every non-final chunk of every
+    multi-chunk file: verified against the live `hplusc_mva_4class_ctag2d`
+    production, this was dropping ~22% of real, distinct event chunks (13-27%
+    per era), not merely redundant resubmission output.
+
+    Keyed on (immediate parent dir name, GUID, start, end). The parent-dir
+    component is `'base'` for nominal jecshifts output and the category name
+    for shifted output (`base/<category>/`, where the same GUID+range
+    legitimately recurs once per shift category) -- and is always `'base'`
+    for non-jecshifts campaigns, so that component is a no-op there. The
+    start/end component is what actually distinguishes real chunks from real
+    duplicates: only an exact match on all four collapses to the
+    latest-mtime copy; two chunks of the same file with different ranges are
+    both kept."""
+    latest_by_key: Dict[tuple, Path] = {}
     for f in files:
         guid = f.name.split('_%2F')[0]
-        prev = latest_by_guid.get(guid)
+        m = _CHUNK_RANGE_RE.search(f.name)
+        chunk_range = (m.group(1), m.group(2)) if m else None
+        key = (f.parent.name, guid, chunk_range)
+        prev = latest_by_key.get(key)
         if prev is None or f.stat().st_mtime > prev.stat().st_mtime:
-            latest_by_guid[guid] = f
-    return list(latest_by_guid.values())
+            latest_by_key[key] = f
+    return list(latest_by_key.values())
 
 
 def process_era(

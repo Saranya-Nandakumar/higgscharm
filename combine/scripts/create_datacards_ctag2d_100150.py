@@ -52,6 +52,7 @@ The scored parquets provide mva_score_Signal; normalization uses xs × lumi scal
 """
 
 import os
+import re
 import glob
 import argparse
 import numpy as np
@@ -278,16 +279,31 @@ def load_sumw(sumw_dir):
             print(f"  WARNING: sumw era dir not found: {era_dir}")
             continue
 
-        # Collect guid -> (json_path, mtime, proc) across ALL dataset
-        # partitions in this era before summing. Condor resubmission writes
-        # a fresh, differently-numbered partition dir per round (e.g.
-        # HPlusCharm_2022postEE, _10, _37, ...) without removing the old
-        # one, so the same source file's sumw/*.json sidecar can appear
-        # under several partition dirs -- summing them all double/triple
-        # counts sumw exactly like the un-deduped parquet reads did (see
-        # dedupe_parquet_files_by_source in run_mva_postprocess.py). Keep
-        # only the most recently written copy per source-file guid.
-        latest_by_guid = {}
+        # Collect (guid, chunk_range) -> (json_path, mtime, proc) across ALL
+        # dataset partitions in this era before summing. Two distinct things
+        # can make the same source-file guid appear more than once here, and
+        # they need OPPOSITE treatment:
+        #   1. Condor resubmission writes a fresh, differently-numbered
+        #      partition dir per round (e.g. HPlusCharm_2022postEE, _10,
+        #      _37, ...) without removing the old one, so the exact same
+        #      chunk's sumw/*.json sidecar can appear under several
+        #      partition dirs -- these ARE true duplicates and summing all
+        #      of them double/triple counts sumw. Keep only the most
+        #      recently written copy of each exact (guid, start, end).
+        #   2. `sumw = ak.sum(events.genWeight)` (analysis/processors/
+        #      base.py:110) is computed per coffea PROCESSING CHUNK, not per
+        #      source file -- a large ROOT file legitimately splits into
+        #      several non-overlapping entry-range chunks
+        #      (`_%2FEvents%3B1_<start>-<end>.json`), each writing its own
+        #      partial-sum sidecar. These are NOT duplicates: the correct
+        #      total sumw for that file is the SUM over all its chunks.
+        #      Deduping by guid alone (as this function originally did,
+        #      same bug as the pre-fix dedupe_parquet_files_by_source in
+        #      run_mva_postprocess.py) collapsed every multi-chunk file down
+        #      to one chunk's partial sumw, undercounting the denominator by
+        #      the same ~13-27%-per-era margin measured on the parquet side.
+        _chunk_re = re.compile(r'_(\d+)-(\d+)\.json$')
+        latest_by_chunk = {}
         for dataset_partition in os.listdir(era_dir):
             proc = get_process_from_path(dataset_partition)
             if proc is None:
@@ -295,13 +311,17 @@ def load_sumw(sumw_dir):
 
             sumw_glob = os.path.join(era_dir, dataset_partition, "sumw", "*.json")
             for jf in glob.glob(sumw_glob):
-                guid = os.path.basename(jf).split("_%2F")[0]
+                base = os.path.basename(jf)
+                guid = base.split("_%2F")[0]
+                m = _chunk_re.search(base)
+                chunk_range = (m.group(1), m.group(2)) if m else None
+                key = (guid, chunk_range)
                 mtime = os.path.getmtime(jf)
-                prev = latest_by_guid.get(guid)
+                prev = latest_by_chunk.get(key)
                 if prev is None or mtime > prev[1]:
-                    latest_by_guid[guid] = (jf, mtime, proc)
+                    latest_by_chunk[key] = (jf, mtime, proc)
 
-        for jf, _mtime, proc in latest_by_guid.values():
+        for jf, _mtime, proc in latest_by_chunk.values():
             try:
                 with open(jf) as f:
                     rec = json.load(f)
