@@ -230,6 +230,37 @@ USABLE_SYST = {
 }
 
 
+# ---------------------------------------------------------------------------
+# JES/JER (and lepton scale/res) object-shift systematics -- architecturally
+# different from every systematic in SYSTEMATICS above: those are per-event
+# weight-ratio shapes computed on the SAME selected sample (a shifted jet pT
+# never changes which events pass selection). Object shifts are a DIFFERENT
+# selected sample per direction -- shifting jet pT before selection changes
+# which events/jets pass cuts, so the Up/Down variant must come from an
+# independently-reprocessed-and-rescored parquet tree
+# (hplusc_mva_4class_ctag2d_jecshifts workflow), not a weight column on the
+# nominal tree. Loaded and histogrammed separately (load_jecshifts_scored_
+# parquets / build_histograms's jec_data argument) but written into the same
+# `histograms` dict under the same f"{proc}_{syst}{direction}" convention as
+# every other shape systematic, so write_root_file/write_datacard need only
+# know the systematic names below, not the mechanism.
+#
+# Real category directory naming (confirmed against the live jecshifts
+# production, 2026-09-08): <era>/<dataset>_<n>/base/<name>_<year>{Up,Down}/,
+# year = "2022" (shared by 2022preEE+2022postEE) or "2023" (shared by
+# 2023preBPix+2023postBPix) -- same era_year() convention as the era_dep
+# entries in SYSTEMATICS above, just realized as a directory/file split
+# instead of a column-name split.
+JECSHIFTS_SYSTEMATICS = ["CMS_scale_j", "CMS_res_j", "CMS_scale_m", "CMS_res_m"]
+
+# All 4 process classes were reprocessed under the same 84 (era,dataset)
+# target list as the main ctag2d campaign (see second-brain memory
+# hczz_jesjer_campaign_status) -- no per-process exclusion known yet, unlike
+# the LHE-weight systematics above. Revisit if a process is found missing
+# jecshifts coverage.
+JECSHIFTS_USABLE_PROCS = {"Signal", "ggZZ", "qqZZ", "Other_Higgs"}
+
+
 def era_year(era):
     return "2022" if era.startswith("2022") else "2023"
 
@@ -471,6 +502,103 @@ def load_mc_scored_parquets(scored_dir, sumw_by_proc):
 
 
 # ---------------------------------------------------------------------------
+# Load JES/JER (object-shift) systematics
+# ---------------------------------------------------------------------------
+
+def load_jecshifts_scored_parquets(jecshifts_dir, sumw_by_proc):
+    """
+    Walk <jecshifts_dir>/<era>/<sample>/base/<syst>_<year>{Up,Down}/*.parquet
+    for each of JECSHIFTS_SYSTEMATICS and build raw (scores, weights) arrays
+    per process/systematic/direction -- same xs*lumi/sumw normalization as
+    load_mc_scored_parquets, and reusing the SAME sumw_by_proc (genWeight is a
+    generator-level quantity, unaffected by reco-level jet/muon corrections,
+    so the true-sumw denominator computed once from the un-shifted raw
+    production is valid for every shift variant too -- no separate sumw
+    sidecar needed for jecshifts output).
+
+    Unlike the SYSTEMATICS mechanism (a weight-ratio column on the SAME
+    selected sample), each direction here comes from an independently
+    reprocessed-and-rescored sample (shifting jet pT before selection changes
+    which events pass cuts) -- these Up/Down histograms stand alone as
+    absolute-normalization templates, paired against the ordinary nominal
+    histogram from the main (non-jecshifts) production, exactly like any
+    other CMS shape systematic; jecshifts' own nominal-conditions
+    reprocessing (the loose files directly under base/, sibling to the
+    per-category subdirs) is not read here and is not needed for the
+    datacard.
+
+    Returns dict: proc -> syst -> direction -> (scores array, scaled weights array)
+    """
+    # proc -> syst -> direction -> list of (scores_arr, weights_arr) per file
+    raw = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {"scores": [], "weights": []})))
+    raw_sum = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+
+    for era in ERAS:
+        era_dir = os.path.join(jecshifts_dir, era)
+        if not os.path.isdir(era_dir):
+            print(f"  WARNING: jecshifts era dir not found: {era_dir}")
+            continue
+        year = era_year(era)
+
+        for sample_name in os.listdir(era_dir):
+            proc = get_process_from_path(sample_name)
+            if proc is None or proc not in JECSHIFTS_USABLE_PROCS:
+                continue
+
+            for syst in JECSHIFTS_SYSTEMATICS:
+                for direction in ("Up", "Down"):
+                    cat_dir = os.path.join(
+                        era_dir, sample_name, "base", f"{syst}_{year}{direction}"
+                    )
+                    if not os.path.isdir(cat_dir):
+                        continue
+
+                    for pq_file in glob.glob(os.path.join(cat_dir, "*.parquet")):
+                        cols = ["zz_mass_inclusive", "mva_score_Signal", "weight_nominal"]
+                        try:
+                            df = pq.read_table(pq_file, columns=cols).to_pandas()
+                        except Exception as e:
+                            print(f"  WARNING: {pq_file}: {e}")
+                            continue
+
+                        raw_sum[proc][syst][direction] += df["weight_nominal"].fillna(0).values.sum()
+
+                        mask = (df["zz_mass_inclusive"] >= MASS_WINDOW[0]) & \
+                               (df["zz_mass_inclusive"] < MASS_WINDOW[1])
+                        df_win = df[mask]
+                        df_win = df_win[df_win["mva_score_Signal"] >= 0]
+                        if len(df_win) == 0:
+                            continue
+
+                        raw[proc][syst][direction]["scores"].append(df_win["mva_score_Signal"].values)
+                        raw[proc][syst][direction]["weights"].append(df_win["weight_nominal"].fillna(0).values)
+
+    jec_data = defaultdict(lambda: defaultdict(dict))
+    print(f"\n  {'Process':<15} {'Systematic':<16} {'Dir':<6} {'n_files_sum':>12} {'in_win_yield':>14}")
+    print("  " + "-" * 66)
+    for proc in JECSHIFTS_USABLE_PROCS:
+        sumw_gen = sumw_by_proc.get(proc, 0.0)
+        exp = EXPECTED_YIELDS.get(proc, 0.0)
+        scale = exp / sumw_gen if sumw_gen > 0 and exp > 0 else 1.0
+
+        for syst in JECSHIFTS_SYSTEMATICS:
+            for direction in ("Up", "Down"):
+                scores_list = raw[proc][syst][direction]["scores"]
+                weights_list = raw[proc][syst][direction]["weights"]
+                if not scores_list:
+                    print(f"  WARNING: no jecshifts events for {proc}/{syst}{direction}")
+                    jec_data[proc][syst][direction] = (np.array([]), np.array([]))
+                    continue
+                scores = np.concatenate(scores_list)
+                weights = np.concatenate(weights_list) * scale
+                jec_data[proc][syst][direction] = (scores, weights)
+                print(f"  {proc:<15} {syst:<16} {direction:<6} "
+                      f"{raw_sum[proc][syst][direction]:>12.2f} {weights.sum():>14.4f}")
+
+    return jec_data
+
+
+# ---------------------------------------------------------------------------
 # Load Z+X
 # ---------------------------------------------------------------------------
 
@@ -599,7 +727,7 @@ def merge_bin_edges(edges, merge_ranges):
 # Build histograms
 # ---------------------------------------------------------------------------
 
-def build_histograms(mc_data, zx_scores, zx_weights):
+def build_histograms(mc_data, zx_scores, zx_weights, jec_data=None):
     histograms = {}
     n_bins = len(MVA_BINS) - 1
 
@@ -624,6 +752,20 @@ def build_histograms(mc_data, zx_scores, zx_weights):
                     continue
                 hs, _ = np.histogram(scores, bins=MVA_BINS, weights=w)
                 histograms[f"{proc}_{syst}{direction}"] = hs.astype(np.float64)
+
+        # JES/JER (and other object-shift) systematics: independent samples,
+        # not a weight ratio on `scores`/`weights` above -- histogram their
+        # own (scores, weights) arrays directly against the same MVA_BINS.
+        if jec_data is not None:
+            for syst in JECSHIFTS_SYSTEMATICS:
+                for direction in ("Up", "Down"):
+                    jscores, jweights = jec_data.get(proc, {}).get(syst, {}).get(
+                        direction, (np.array([]), np.array([]))
+                    )
+                    if len(jscores) == 0:
+                        continue
+                    hs, _ = np.histogram(jscores, bins=MVA_BINS, weights=jweights)
+                    histograms[f"{proc}_{syst}{direction}"] = hs.astype(np.float64)
 
     if len(zx_scores) > 0:
         h, _ = np.histogram(zx_scores, bins=MVA_BINS, weights=zx_weights)
@@ -734,6 +876,26 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
                 continue
             dc.write(syst_row(syst, "shape", vals))
 
+        # JES/JER (object-shift) shape systematics -- independent-sample
+        # templates, not per-event weight ratios (see JECSHIFTS_SYSTEMATICS'
+        # docstring). Only written for a (process, syst) pair whose Up/Down
+        # histograms actually exist (i.e. --jecshifts-dir was passed and real
+        # events were found there) -- silently absent otherwise, so this is a
+        # no-op, backward-compatible default when the flag isn't used.
+        jec_rows_written = False
+        for syst in JECSHIFTS_SYSTEMATICS:
+            vals = {
+                p: "1" for p in procs
+                if f"{p}_{syst}Up" in histograms and f"{p}_{syst}Down" in histograms
+            }
+            if not vals:
+                continue
+            if not jec_rows_written:
+                dc.write(f"\n# JES/JER object-shift shape systematics (independently\n")
+                dc.write(f"# reprocessed-and-rescored samples, not weight ratios)\n")
+                jec_rows_written = True
+            dc.write(syst_row(syst, "shape", vals))
+
         if include_zx:
             dc.write(f"\n# ZX normalization floats freely in the fit (data-driven)\n")
             dc.write(f"ZX_rate  rateParam  hczz  ZX  1.0  [0.1,10.0]\n")
@@ -829,6 +991,18 @@ def main():
         help="Base parquet production directory (ctag2d workflow variant) containing "
              "<era>/<dataset>/sumw/*.json sidecars (true pre-selection sum of genWeight "
              "per chunk)",
+    )
+    parser.add_argument(
+        "--jecshifts-dir",
+        default=None,
+        help="Directory with JES/JER (object-shift) MVA-scored parquets from the "
+             "hplusc_mva_4class_ctag2d_jecshifts workflow "
+             "(<era>/<dataset>_<n>/base/<syst>_<year>{Up,Down}/*.parquet). Adds "
+             "CMS_scale_j/CMS_res_j/CMS_scale_m/CMS_res_m as shape systematics, built "
+             "from independently reprocessed-and-rescored samples rather than a "
+             "weight-ratio column (see JECSHIFTS_SYSTEMATICS docstring). Default: not "
+             "included (backward-compatible; the datacard/combine numbers are "
+             "unaffected unless this is passed).",
     )
     parser.add_argument(
         "--zx-dir",
@@ -936,9 +1110,17 @@ def main():
         print(f"\n[2] Z+X background\n    Dir: {args.zx_dir}")
         zx_scores, zx_weights = load_zx_parquets(args.zx_dir)
 
+    # 2b. JES/JER (object-shift systematics), optional
+    if args.jecshifts_dir:
+        print(f"\n[2b] JES/JER object-shift systematics\n    Dir: {args.jecshifts_dir}")
+        jec_data = load_jecshifts_scored_parquets(args.jecshifts_dir, sumw_by_proc)
+    else:
+        print("\n[2b] JES/JER object-shift systematics: SKIPPED (--jecshifts-dir not set)")
+        jec_data = None
+
     # 3. Build histograms
     print("\n[3] Building histograms")
-    histograms = build_histograms(mc_data, zx_scores, zx_weights)
+    histograms = build_histograms(mc_data, zx_scores, zx_weights, jec_data=jec_data)
     if args.skip_zx:
         histograms.pop("ZX", None)
 
