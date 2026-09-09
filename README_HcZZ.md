@@ -12,14 +12,6 @@ follows.
 **Combine builder**: `/eos/home-s/snandaku/b-hive_ttcc/combine/create_datacards.py`
 **Env**: LCG_105 (python/data-loading), separate CMSSW shell for combine itself
 
-> **Two checkouts, not synced by git.** EOS and AFS `Higgscharmnew/higgscharm`
-> are independent working copies (different `origin` remotes: EOS points at
-> `Saranya-Nandakumar/higgscharm`, AFS at `ua-cms/higgscharm`), and have
-> drifted before — a fix landed in one and not the other at least twice
-> (PDF-normalization fix, Z+c CR `--jobflavor`). **Check which copy has the
-> state you need before trusting either one**, and mirror any pipeline-code
-> change to both.
-
 ```bash
 source /cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc13-opt/setup.sh
 ```
@@ -155,7 +147,7 @@ python3 jobs_status.py --workflow hplusc_mva_4class --year 2022postEE --eos
 
 ## 2. Postprocess: merge + MVA inference (consolidated)
 
-**Updated 2026-08-14 (user decision): new workflow variants should use the
+**Updated 2026-08-14 (decision): new workflow variants should use the
 consolidated `run_postprocess.py --postprocess --mva-inference` path below,
 not the split/skip approach production history left behind.** Kept both
 described here since `hplusc_mva_4class_scored_v4` (the directory every
@@ -437,7 +429,7 @@ Declared in `create_datacards.py`'s `SYSTEMATICS`/`USABLE_SYST` dicts
 | weight shapes | `lhe_pdf`, `lhe_alphaS` (excluded, sign bug fixed at source 2026-08-21 but non-retrofittable onto existing parquets — see update below), `scalevar_muR`, `scalevar_muF`, `ps_isr`, `ps_fsr`, `CMS_pileup`, `CMS_ctag2d`, `CMS_eff_e_reco_{below20,20to75,above75}` | per-process usable subset, not uniform — see `USABLE_SYST` and Known traps |
 | **muon efficiency SF (ID only)** | **wired 2026-08-21** (`id: loose`), real single-file smoke test passed end-to-end — see the dated update below. `iso`/`trigger` deliberately left off (see rationale in the workflow yaml). Doesn't change any existing r number — needs a full reprocessing to take effect (condor-blocked). |
 | **electron ID SF** | not applied (`id: false`) | documented, deliberate — smaller likely magnitude than the muon gap |
-| object shifts | `CMS_scale_j`/`CMS_res_j` **in progress**, `CMS_scale_m`/`CMS_res_m` **in progress** (both 2026-08-19, `jec_shifts` workflow — see "Object-shift systematics" update below); production/consumption smoke-tested on 1 file only, never run at scale (condor-blocked) | `hww-analysis` has live `CMS_scale_j/e/m`, `CMS_res_j/e/m` from JES/JER/lepton-scale shift directories |
+| object shifts | `CMS_scale_j`/`CMS_res_j`/`CMS_scale_m`/`CMS_res_m` **live in the datacard as of 2026-09-08** (`hplusc_mva_4class_ctag2d_jecshifts` workflow, `--jecshifts-dir` in `create_datacards_ctag2d_100150.py`; independently reprocessed-and-rescored object-shift samples, not weight-ratio shapes). `CMS_scale_j` ranks #6 of 22 nuisances by impact — see the "CURRENT" callout above and memory `hczz_jesjer_datacard_complete` | `hww-analysis` has live `CMS_scale_j/e/m`, `CMS_res_j/e/m` from JES/JER/lepton-scale shift directories — this row is now at parity for jet/muon shifts (lepton = electron scale/res still not ported) |
 | lnN | `lumi_Run3` (1.4%), `pdf_gg`, `QCDscale_ggZZ`/`QCDscale_qqZZ`, `BR_HZZ4l` (2%), `ZX_norm` (30%) | values cross-validated against HIG-24-013 2026-08-21 (lumi 1.4% exact match); `pdf_qq` deliberately NOT added — qqZZ's real `lhe_pdf` shape already covers it, a separate lnN would double-count |
 | rateParam | `ZX_rate` | Z+X floats freely from data, same pattern as `hww-analysis`'s `tt` |
 | MC stat | `autoMCStats <threshold>`, **off by default since 2026-08-19** — confirmed non-convergent at threshold 10/50/100 (11.5h, zero quantiles) | `--automcstats-threshold` CLI flag opts back in for testing; real open gap, not a not-yet-tried item |
@@ -455,29 +447,35 @@ Known traps.
 > own with-ZX number (r=329.0, from the OS/featmajor production) remains
 > available via `--window 90160 --with-zx`. **`lhe_alphaS` removed 2026-08-19
 > pending a bug fix (see the dated update below).**
-> **CURRENT (as of 2026-09-02): r=413.0 median / kappa_c=74.28, 18
-> systematics, `_scored_v7`** — see the "Update 2026-09-02" section near
-> the end of this file. `CMS_ctag2d`'s `up_Total`/`down_Total` were found
-> physically swapped for WP=L0 ("fails the tag") in the official
-> calibration file and fixed; `weight_higgs_plus_c` was also wired in for
-> the first time. `CMS_ctag2d` real-Impacts jumped 142.17 → 195.81 (now
-> ~11.7× #2, was ~3.2×) — verified three independent ways (stat-only limit
-> unchanged at 269.0 before/after; independent jet-level recomputation off
-> the raw calibration file; cross-checked against the file's own separately
-> -reported `up_Stat`/`down_Stat`, which corroborate the swap direction).
-> **Well-supported, not POG-confirmed** — see second-brain memory
-> `hczz_ctag2d_l0_updown_swap_fix` before citing this number without that
-> caveat. Everything below this point in the chain is historical/superseded,
-> kept for the investigation trail: r=299.0/kappa_c=54.52 (2026-08-31, 17
-> systematics, `_scored_v6`) was itself superseded by this swap fix — the
-> preceding 3-jet-cap fix (also 2026-08-31) was only a partial mitigation,
-> confirmed retrospectively; r=219.0/40.64 (2026-08-29) was **RETRACTED** —
-> a duplicate-job-output bug, not a real improvement; r=299.5/kappa_c=54.60
-> (2026-08-30) was superseded by the 3-jet-cap fix (negligible 0.17% shift
-> at the time). Also superseded: r=301.0/kappa_c=54.86, 16 systematics
-> (2026-08-27, muon SF added but pre-`lhescale.py`-fix); r=309.5/15
-> systematics (2026-08-19, pre-muon-SF); r=311.5/16 systematics
-> (2026-08-17, buggy `lhe_alphaS` still included).
+> **CURRENT (as of 2026-09-08): r=412.0 median / kappa_c=74.11, 22
+> systematics (18 shape/lnN + JES/JER), `_scored_v8` + `_jecshifts_scored_v2`**
+> — `--jecshifts-dir` wired into `create_datacards_ctag2d_100150.py`
+> (`CMS_scale_j`/`CMS_res_j`/`CMS_scale_m`/`CMS_res_m`, independently
+> reprocessed-and-rescored object-shift samples, not weight-ratio shapes);
+> `CMS_scale_j` ranks #6 of 22 nuisances (impact 13.64), individually
+> significant even though the 4 added systematics only move the overall
+> limit ~0.2% (r=411.0→412.0). See second-brain memory
+> `hczz_jesjer_datacard_complete` for the full writeup. Without JES/JER:
+> r=411.0/kappa_c=73.93 (2026-09-08, chunk-dedup fix — a pipeline bug was
+> dropping 13–27% of real event chunks; see memory
+> `hczz_chunk_dedup_bug_and_v8_correction`). A fresh plain/kappa/3-ratio
+> discriminant comparison against this production (2026-09-09,
+> no-JES/JER scope) found all three within ~0.6% of each other — see
+> second-brain `Notes/ctag2d-3ratio-kappa-comparison-note.md` /
+> memory `hczz_ctag2d_3ratio_kappa_comparison`.
+> Everything below this point in the chain is historical/superseded, kept
+> for the investigation trail: r=413.0/kappa_c=74.28 (2026-09-02, `_scored_v7`,
+> the `CMS_ctag2d` L0 up/down swap fix — see memory
+> `hczz_ctag2d_l0_updown_swap_fix`, well-supported but not POG-confirmed);
+> r=299.0/kappa_c=54.52 (2026-08-31, 17 systematics, `_scored_v6`) was itself
+> superseded by the swap fix — the preceding 3-jet-cap fix (also 2026-08-31)
+> was only a partial mitigation, confirmed retrospectively; r=219.0/40.64
+> (2026-08-29) was **RETRACTED** — a duplicate-job-output bug, not a real
+> improvement; r=299.5/kappa_c=54.60 (2026-08-30) was superseded by the
+> 3-jet-cap fix (negligible 0.17% shift at the time). Also superseded:
+> r=301.0/kappa_c=54.86, 16 systematics (2026-08-27, muon SF added but
+> pre-`lhescale.py`-fix); r=309.5/15 systematics (2026-08-19, pre-muon-SF);
+> r=311.5/16 systematics (2026-08-17, buggy `lhe_alphaS` still included).
 
 Scripts: `combine/scripts/create_datacards_ctag2d.py` ([90,160] GeV, canonical),
 `create_datacards_ctag2d_100150.py` ([100,150] GeV copy, `MASS_WINDOW` hardcoded
@@ -619,18 +617,15 @@ JES/JER and muon-scale/res shift *production* is code-complete and validated;
 building a datacard that actually USES these as shape systematics (reading from
 the new per-shift subdirectories) is separate, not-yet-started work.
 
-**AFS synced 2026-08-19**: per user instruction ("we need the exact copy in afs
-as well because we will be submitting jobs from afs" — EOS runs postprocess/
-inference/combine, AFS is what condor submission actually uses), copied the
+**AFS synced 2026-08-19**: needed the exact copy in AFS as well since jobs get
+submitted from there (EOS runs postprocess/inference/combine, AFS is what
+condor submission actually uses), so copied the
 full correction chain + `base.py` + both `ctag2d` workflow yamls from EOS to
 AFS: `correction_manager.py`, `ctag.py`, `ctag2d.py`, `higgs_hf.py`, `jerc.py`,
 `jec_params_correctionlib.yaml`, `lhepdf.py`, `muon_ss.py`, `utils.py`,
 `processors/base.py`, `hplusc_mva_4class_ctag2d.yaml`,
 `hplusc_mva_4class_ctag2d_jecshifts.yaml`. Verified `py_compile`-clean on AFS
-after copying. **Deliberately did NOT touch** other outstanding EOS/AFS drift
-(filesets, postprocess, CR workflows, production `hplusc_mva_4class.yaml`) —
-out of scope for this sync, still diverged, still needs its own resolution per
-the standing two-checkout warning at the top of this file.
+after copying.
 
 **`autoMCStats` threshold made a CLI flag** (`--automcstats-threshold`, default
 10, unchanged behavior) in both `create_datacards_ctag2d.py` and `_100150.py` —
@@ -1114,8 +1109,8 @@ that ranking may be affected. **Root-caused 2026-08-18**: the Up/Down weight-com
 logic itself is standard/correct — the real source is placeholder calibration values
 (`central=1.000, up_Total=3.000, down_Total=0.300`) in statistically-empty (flavor, WP)
 corners of the official `flavTaggingSF_<year>.json.gz`, amplified by `CTag2DCorrector`
-taking `ak.prod` across every selected jet rather than one. **Decision (2026-08-18,
-user sign-off): keep the all-jets `ak.prod` scope** — it matches the 1D `CTagCorrector`
+taking `ak.prod` across every selected jet rather than one. **Decision (2026-08-18):
+keep the all-jets `ak.prod` scope** — it matches the 1D `CTagCorrector`
 this replaces, keeping pre/post-migration yields directly comparable, so the asymmetry
 stays a documented caveat rather than triggering a scope change. Restricting to one jet
 would likely smooth it out but was explicitly rejected as a bigger, separate
@@ -1301,13 +1296,13 @@ numbers. Full writeup: `second-brain/Tasks/HcZZ-fake-rate.md`, "Update
 counting bug found and fixed; true production reference **r=299.5 /
 kappa_c=54.60**, essentially unchanged from r=301.0/54.86
 
-The user's reaction to the "confirmed reproducible" verdict above: "the
-stat-only limit was also 300 something, so this 219 is now suspicious."
-Correct instinct — a full-syst limit *below* a stat-only baseline built on
-the same production is not physically possible (systematics only ever
-loosen an expected limit relative to stat-only). Chased it down rather than
-trusting the reproducibility check above, which only proved the number was
-*stable*, not that it was *correct*.
+Reaction to the "confirmed reproducible" verdict above: the stat-only limit
+was also 300-something, so this 219 looked suspicious. Correct instinct — a
+full-syst limit *below* a stat-only baseline built on the same production is
+not physically possible (systematics only ever loosen an expected limit
+relative to stat-only). Chased it down rather than trusting the
+reproducibility check above, which only proved the number was *stable*, not
+that it was *correct*.
 
 **Same-file stat-only check** (`combine ... --freezeParameters
 allConstrainedNuisances` on the identical `_v4` `datacard_no_zx.txt`):
@@ -1451,7 +1446,7 @@ Full writeup: `second-brain/Tasks/HcZZ-fake-rate.md`, "Update 2026-08-30
 ### Update 2026-08-31: `CMS_ctag2d`'s 143.6 impact investigated — 3-jet cap
 replaces the unbounded all-`selected_jets` product
 
-User flagged the 143.6 real-Impacts value (previous update) as suspiciously
+Flagged the 143.6 real-Impacts value (previous update) as suspiciously
 large directly. The 2026-08-18 "documented caveat, keep the scope" decision
 (Known traps, above) was made against the coarse proxy's 71.2 — roughly half
 of what the real profile-likelihood fit later found — so it was revisited
@@ -1579,7 +1574,7 @@ essentially unchanged (Signal 0.053778→0.053781, qqZZ/ggZZ/Other_Higgs
 likewise flat) — this is purely a systematics-shape effect, not a
 yield/rate change.
 
-**User pushed back hard on the jump** — verified three independent ways
+**Pushed back hard on the jump** — verified three independent ways
 before accepting it: (1) stat-only limit (all 18 nuisances frozen)
 identical at r=269.0 before and after — proves 100% of the delta is
 `CMS_ctag2d`'s shape, zero yield/duplication component; (2) independent
@@ -1635,7 +1630,6 @@ this datacard. `_v7` is confirmed complete for every process it uses.
 | **sumw from parquet shard metadata** | Same failure mode `hww-analysis` warns about (undercounts low-efficiency samples). Fixed here via `sumw/*.json` sidecars (§1) — `load_sumw()` raises rather than falling back if they're missing, don't defeat that. |
 | **`CMS_ctag_light` sign flips (historical, retired 2026-08-14)** | `ctag.py`'s untagged-jet formula `(1-SF*eff)/(1-eff)` goes negative when `SF*eff>1` — hits the light-flavor mistag SF's up variation in some pT/η bins. Confirmed genuine sign flips in every process's existing 1D-scored parquets. **Clamped at the source, not truly fixed** — a numerical safety net (BTV-POG-standard mitigation) so the code doesn't crash, not a resolution of the underlying disagreement; the clamp is exactly the kind of thing this project's standing rule rejects as "fixed" (see the earlier ratio-clip incident). This is why `CMS_ctag_light` stayed excluded from the datacard even after clamping, right up until production switched its whole SF scheme to `ctagging_2d` (which has no `eff/(1-eff)` formula at all, so this failure mode is structurally impossible, not just clamped around). `hww-analysis`'s `ctag.py` has the identical unclamped formula, still live in their repo — irrelevant to their own results only because their production never calls it (`ctagging_2d` there too), same as ours going forward. |
 | **Condor rejects `/eos` paths in submit files (CERN batch policy change since ~March)** | `condor/submit.sub` + `submit_condor.py`'s `CONDORDIR`/`LOGDIR` substitution point `executable`/`output`/`error`/`log` at literal `/eos/...` paths — confirmed working from this exact repo in March 2026 (found a successful old `.log`), now rejected outright: `ERROR: Failed to commit job submission into the queue... Standard batch schedds cannot use /eos paths directly`. **Workaround confirmed 2026-08-14: submit from the AFS checkout instead** (`/afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm/`, same `runner.py -w <workflow> -y <era> --submit --eos --output_format parquet`) — condor accepts submit files whose paths originate from AFS even though `--eos` still points job *output* at `/eos`; no code change needed, just run from a different filesystem. Not a permanent code fix (submit.sub itself still hardcodes `/eos` if invoked from an EOS cwd) — still open whether to patch `submit.sub` properly (xrootd URLs / EOS-submit schedds) or keep "submit from AFS" as the accepted permanent workflow. |
-| **AFS and EOS checkouts' fileset registries have diverged — EOS is missing signal samples entirely** | Confirmed 2026-08-14 right before the ctag2d condor campaign: running `runner.py`'s fileset discovery from the EOS checkout reports `hb not availabe` / `smsignal not availabe` for every era (would silently produce a datacard with zero signal events), while the identical discovery from AFS finds them correctly (`SomeSMSignal`, `HPlusCharm_<era>` all found via DAS phys03). Root cause not yet dug into — EOS's fileset registry JSON is just stale relative to AFS's. Deliberately not fixed before the campaign (user: "I know the issue... afs is fine. we can fix it after job submission as well") — still open. |
 | **`lhe_pdf` formula: Hessian vs. MC-replica (RESOLVED 2026-08-03, root cause of residual size confirmed 2026-08-28)** | Fixed 2026-08-03: formula now divides by `N-1=99` (`sqrt(Σ(w_k-w0)²/99)`), correct for the NNPDF Monte-Carlo-replica prescription our private samples use. The private NanoAODs were regenerated (`hplusc_htozz1`/`hplusb_htozz1`, reachable again) and read directly 2026-08-28 — the formula is not the remaining problem. The residual ~90-130% `delta_pdf` for Signal/HPlusBottom is real and traced to the samples' `MuRFScaleDynX0p50` central-scale choice (half a dynamical reference scale), confirmed from raw `LHEScaleWeight`/`LHEPdfWeight` branches, not a formula bug — see the 2026-08-28 Systematics update above. |
 | **Signal/HPlusBottom negative-weight fraction is ~25%, not incidental** | Measured directly from `hplusc_mva_4class_scored_v4` (2026-08-14): `HPlusCharm`/`HPlusBottom` run **24–26% negative `weight_nominal`** across every era, roughly **8–17× higher** than every other process (`ZZto4L` 0.18%, `GluGlu*` ggZZ ~0.003–0.01%, Higgs backgrounds `WH`/`ZH`/`TTH` 1.4–1.7%). This is the same two processes with the already-diagnosed `lhe_pdf`/`scalevar_muR/muF` blowups — plausibly the same root cause (private amc@nlo-based generation), not yet connected. See [Open items](#open-items--next-techniques-to-port-from-hww-analysis). |
 
@@ -1688,7 +1682,7 @@ Original priority order set 2026-08-14; update as items land.
    jet in `events.selected_jets` (`ak.prod`), matching the scope of the 1D
    `CTagCorrector` it's meant to replace. **Reviewed and confirmed 2026-08-18**
    after root-causing the CMS_ctag2d Down-variation asymmetry to this scope (see
-   Known traps above) — user sign-off to keep all-jets, not a bug.
+   Known traps above) — decided to keep all-jets, not a bug.
 
    **Update 2026-08-14 (later): comparison workflow + datacard variant
    built.** `analysis/workflows/hplusc_mva_4class_ctag2d.yaml` (both
@@ -1721,8 +1715,8 @@ Original priority order set 2026-08-14; update as items land.
    **BUG FOUND AND FIXED 2026-08-14 (later): category boundaries were wrong.**
    The edges ported from `hww-analysis` (`[0.0,0.250,0.452,0.808,1.0]` /
    `[0.0,0.006,0.017,0.055,0.761,0.944,0.985,0.995,1.0]`) turned out to be the
-   **2024 UParT** boundaries, not 2022/2023 PNet — caught when the user
-   pasted the real `etsai.web.cern.ch` doc page (every entry there is
+   **2024 UParT** boundaries, not 2022/2023 PNet — caught after pulling up
+   the real `etsai.web.cern.ch` doc page (every entry there is
    explicitly "Tagger: UParT v2, NanoAODv15", files under `phys_top/Run3Vcb/`,
    not our `phys_higgs/cmshgg/` PNet files) and the actual per-era
    `HPC_ctag_WPs` JSON, which matched exactly what was already correctly
@@ -1821,6 +1815,14 @@ Original priority order set 2026-08-14; update as items land.
    per era, not the ~5 originally scoped. Completeness/resubmit check and
    the datacard-side consumption code are still ahead — see `second-brain/
    Tasks/HcZZ-fake-rate.md` "Update 2026-08-31/09-01 (overnight)".
+   **CLOSED 2026-09-08**: rescoring (`_jecshifts_scored_v2`, dedup-bug-fixed
+   per memory `hczz_jesjer_rescoring_dedup_fix`) and the actual datacard-side
+   consumption code (`--jecshifts-dir` in `create_datacards_ctag2d_100150.py`)
+   are both done — `CMS_scale_j`/`CMS_res_j`/`CMS_scale_m`/`CMS_res_m` are
+   live shape systematics in the production datacard (r=412.0/kappa_c=74.11,
+   see the "CURRENT" callout in the `ctag2d` variant section above). Muon
+   ID/isolation/reco (efficiency SF, still distinct from the scale/resolution
+   shift covered here) remains the one genuinely open piece of this item.
 5. **Per-event HF-composition-style weight** — `hww-analysis`'s
    `higgs_hf.py` replaces a mis-scoped flat lnN on a pooled background group
    with a per-event GEN-jet-flavour weight. Same shape of problem as our
@@ -1840,3 +1842,51 @@ Original priority order set 2026-08-14; update as items land.
 `mva_score_Signal` discriminant — the current 4-class MVA and all reference
 r/κc numbers stay valid; this is a documentation and systematics-parity
 effort, not a redesign.
+
+---
+
+## Update 2026-09-09: discriminant comparison against current production; `cjets` selection WP investigated and left unchanged
+
+**Plain vs kappa vs 3-ratio, current ctag2d production**: reran the
+plain/kappa-weighted/3-ratio discriminant comparison first done 2026-08-07/09
+on the old pre-ctag2d pipeline — never checked against the current one before.
+Result: on the current production (`_scored_v8`, `[100,150]`, no-ZX,
+no-JES/JER scope), all three are within ~0.6% of each other at both stat-only
+and full-syst tiers — no discriminant wins or loses meaningfully, unlike the
+old pipeline's clear 3-ratio win (4-10%) and kappa's catastrophic full-syst
+loss (6-25%), neither of which replicates here. Sanity-checked the plain-score
+number bit-exact against the documented r=411.0 reference before trusting
+anything. A first pass found 3-ratio apparently losing by 7.2% — turned out to
+be a bin-count confound plus silent ROOT write-time corruption on a shared/
+loaded host, not a real effect; worth remembering for any future
+differently-binned comparison. Full writeup: second-brain
+`Notes/ctag2d-3ratio-kappa-comparison-note.md`, memory
+`hczz_ctag2d_3ratio_kappa_comparison`. New script (kept separate from
+production, not wired in): `combine/scripts/create_datacards_ctag2d_compare.py`.
+
+**`cjets` object-selection working point — investigated switching to 2D,
+decided against it**: the ctag2d migration only ever moved the c-tag SF
+*weighting* to the 2D pseudo-continuous scheme — `cjets` object selection
+(`atleast_one_cjet`) has stayed on the fixed 1D BTV Loose WP throughout.
+Considered moving selection to 2D too (using category L0 as the "not-tagged"
+boundary, mirroring "Loose"). Two independent reasons not to: (1) empirically,
+on real `_scored_v8` qqZZ jets, "not-L0" passes only 35.6% of jets vs the
+current 1D Loose WP's 94.4% — L0's boundary is a much tighter cut in practice
+than "Loose" despite the naming parallel; (2) `Chirayu18/higgscharm`
+(`hww-analysis` branch — the repo `ctag2d.py`'s SF-weighting code was ported
+from) doesn't select on the 2D category grid anywhere either: their `cjets`
+selection is also a fixed 1D WP (Medium, not Loose), and `CTag2DCorrector` is
+applied only to `candidate_cjet` as a reweighting. Cross-checked the L0
+boundary values themselves against the public HiggsDNA metaconditions
+`Era2022_v1.json` "HPC_ctag_WPs" block — byte-for-byte match to what's already
+in `ctag2d.py`, so the boundaries are right, it's the proposed selection *use*
+of them that doesn't hold up. Code built and verified but deliberately not
+wired into any production path: `get_ctag_mask_2d()`/`jet_ctagging_2d()`
+(`analysis/working_points/utils.py`/`working_points.py`), side-by-side
+workflow `hplusc_mva_4class_ctag2d_2dsel.yaml`. Full writeup: second-brain
+memory `hczz_ctag2d_selection_wp_investigation`.
+
+**Also cleaned up**: removed the stale "two checkouts not synced by git"
+AFS/EOS-drift warnings and the "CURRENT" `ctag2d` reference above (was
+r=413.0/2026-09-02, now r=412.0/2026-09-08 with JES/JER — see that callout
+for the full supersession chain).

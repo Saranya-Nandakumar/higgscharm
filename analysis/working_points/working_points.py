@@ -1,7 +1,7 @@
 import numpy as np
 import awkward as ak
 from analysis.filesets.utils import get_nano_version
-from analysis.working_points.utils import get_ctag_mask
+from analysis.working_points.utils import get_ctag_mask, get_ctag_mask_2d
 
     
 class WorkingPoints:
@@ -241,3 +241,6 @@ class WorkingPoints:
 
     def jet_ctagging(self, events, wp, year):
         return get_ctag_mask(events.Jet, year, wp)
+
+    def jet_ctagging_2d(self, events, wp, year):
+        return get_ctag_mask_2d(events.Jet, year, wp)
