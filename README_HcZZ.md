@@ -108,9 +108,17 @@ validated 2026-08-14**, not just a version-string check: ran
 `combine -M AsymptoticLimits` on this new environment against the real
 `combine_run3_100150_noZX/datacard_100150_fullsyst_noZX.txt` datacard and
 got median r = **312.5000**, an exact bit-for-bit match to the documented
-reference number. The older `Analysis/combine/` copy still exists and still
-works — this doesn't replace it, just adds a copy inside the consolidated
-pipeline location.
+reference number.
+
+**Gone as of 2026-09-09**: `/eos/user/s/snandaku/Higgscharmnew/combine/`
+no longer exists on disk (checked directly — the `Higgscharmnew/` directory
+now only contains `higgscharm/`, not a sibling `combine/`). Cause not dug
+into (possibly an EOS quota cleanup — see the standing quota warning above).
+**Use the older `/eos/user/s/snandaku/Analysis/combine/CMSSW_14_1_0_pre4/src`
+copy instead**, confirmed still present and working 2026-09-09 (reproduced
+r=412.0000 bit-exact against the documented JES/JER reference). If the
+in-repo copy is ever wanted back, rebuild it fresh rather than looking for
+a relocated one — same reasoning as the original 2026-08-14 build.
 
 **Long jobs** run in `tmux`, not `nohup`.
 
@@ -1863,6 +1871,20 @@ differently-binned comparison. Full writeup: second-brain
 `Notes/ctag2d-3ratio-kappa-comparison-note.md`, memory
 `hczz_ctag2d_3ratio_kappa_comparison`. New script (kept separate from
 production, not wired in): `combine/scripts/create_datacards_ctag2d_compare.py`.
+
+**Plain, WITH JES/JER, closing the scope gap above**: reran the production
+script itself (`create_datacards_ctag2d_100150.py`, `--jecshifts-dir
+.../hplusc_mva_4class_ctag2d_jecshifts_scored_v2`, no `--merge-bin-ranges`
+so it lands on the same matched 20 bins as the comparison above) rather than
+extending the compare script — only needs the one `mva_score_Signal` column,
+same memory footprint as the JES/JER run that already succeeded 2026-09-08,
+so no OOM risk this time. Both numbers reproduce the documented reference
+bit-exact despite the different bin count: stat-only r=271.75/κc=49.79
+(identical to the no-JES/JER stat-only number above, as expected — freezing
+all constrained nuisances removes JES/JER's contribution along with
+everything else), full-syst **r=412.0000/κc=74.11**, exact match to the
+`_v8`/15-bin production reference. Kappa and 3-ratio with JES/JER are not
+done yet — next step when picked back up.
 
 **`cjets` object-selection working point — investigated switching to 2D,
 decided against it**: the ctag2d migration only ever moved the c-tag SF
