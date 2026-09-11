@@ -182,7 +182,12 @@ SYSTEMATICS = {
 # since that observation was specific to the 1D corrector's per-flavor SF
 # lookup; re-check once real ctag2d-reprocessed Signal parquets exist before
 # trusting this systematic for Signal. ggZZ has no LHEScaleWeight branch at
-# all and degenerate lhe_pdf/lhe_alphaS.
+# all and degenerate lhe_pdf/lhe_alphaS -- verified directly 2026-09-11 (v8
+# production): weight_lhe_pdfUp == weight_lhe_alphaSUp == weight_lhe_pdf_alphaSUp
+# == weight_nominal exactly, for every ggZZ event, because each modifier's own
+# contribution is flat 1.0 (lhepdf.py's no-real-PDF-variation fallback), not a
+# column-aliasing bug -- weight_CMS_pileupUp/weight_ps_isrUp on the same events
+# genuinely differ from nominal, ruling out a broader aliasing issue.
 #
 # Other_Higgs is a pooled process that includes HPlusBottom (private H+b,
 # same LHE production chain as Signal/HPlusCharm) alongside official
