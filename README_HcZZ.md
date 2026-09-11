@@ -497,10 +497,10 @@ All three share the same `SYSTEMATICS`/`USABLE_SYST` dicts and sumw/xs-scaling
 logic as `create_datacards_ctag2d.py` — edit all three together when changing
 the systematics model.
 
-**18 systematics total** (was 17 as of 2026-08-28; `higgs_plus_c` added
-2026-09-02 alongside the `CMS_ctag2d` L0 swap fix — see the "Update
-2026-09-02" section below; `lhe_alphaS` still removed everywhere pending a
-bug fix): 6 `lnN` + 12 shape.
+**19 systematics total** (was 18 as of 2026-09-02; `lhe_alphaS` re-included
+2026-09-11 for qqZZ/Other_Higgs once its abs()-before-symmetrizing bug was
+confirmed fixed — see the "Update 2026-09-11: PDF/scale systematics audit"
+section below): 6 `lnN` + 13 shape.
 
 | kind | name | size/processes | notes |
 |---|---|---|---|
@@ -509,9 +509,9 @@ bug fix): 6 `lnN` + 12 shape.
 | lnN | `pdf_gg` | 3.2%, ggZZ+Signal | **value corrected 2026-08-28** to HIG-24-013's real PDF(gg) number (was a 5% round placeholder) |
 | lnN | `kfactor_ggZZ` | 10%, ggZZ | **renamed 2026-08-28** from `QCDscale_ggZZ` — value (10%) was already numerically correct, just named after the wrong physics quantity (it's HIG-24-013's gg→ZZ k-factor, not a QCD-scale term) |
 | lnN | `BR_HZZ4l` | 2%, Signal+Other_Higgs | **added 2026-08-17**, sourced from Felix Heyen thesis Appendix D; no per-event weight column exists, pure rate lnN |
-| lnN | `QCDscale_qqZZ` | 4%, qqZZ | **added 2026-08-17**, same source; separate from `kfactor_ggZZ`, not a duplicate |
-| shape | `lhe_pdf`/`scalevar_muR`/`scalevar_muF` | qqZZ only | excluded for Signal/ggZZ/most of Other_Higgs — see per-process reasons below |
-| shape | ~~`lhe_alphaS`~~ | **removed everywhere, 2026-08-19** | not a per-process exclusion — a genuine bug in the weight-computation code itself, see the dated update below |
+| lnN | `QCDscale_qqZZ` | 4%, qqZZ | **added 2026-08-17**, same source; separate from `kfactor_ggZZ`, not a duplicate. **Decoupled 2026-09-11** from qqZZ's `scalevar_muR`/`scalevar_muF` shape templates (previously double-counted the same ~4% normalization via both an lnN and an un-decoupled shape template — see the dated update below) |
+| shape | `lhe_pdf`/`scalevar_muR`/`scalevar_muF` | qqZZ only | excluded for Signal/ggZZ/most of Other_Higgs — see per-process reasons below. `scalevar_muR`/`muF` are normalization-decoupled for qqZZ as of 2026-09-11 (rescaled to nominal integral, acceptance+shape only — see `QCDscale_qqZZ` row above) |
+| shape | `lhe_alphaS` | qqZZ, Other_Higgs | **re-included 2026-09-11** — the abs()-before-symmetrizing bug (removed everywhere 2026-08-19) was fixed in `lhepdf.py` 2026-08-28 but the datacard exclusion was never revisited until now. Excluded for ggZZ/Signal (separately degenerate, unrelated to this bug — see dated update below) |
 | shape | `ps_isr`/`ps_fsr`/`CMS_pileup`/`CMS_ctag2d` | all 4 processes | |
 | shape | `CMS_eff_e_reco_20to75`/`above75`/`below20` | all 4 processes | **added 2026-08-17** — already computed and stored in the scored parquets (`weight_CMS_eff_e_reco_*_<year>Up/Down`), never wired into `USABLE_SYST` before. Verified sane (≤6%, symmetric) for every process incl. Signal/HPlusBottom via direct per-event ratio check — a detector-level correction, unaffected by the private-LHE-sample bugs below. |
 | shape | `higgs_plus_c` | **Other_Higgs only** | **added 2026-09-02**, alongside the `CMS_ctag2d` L0 swap fix. Higgs+HF (ggH/VBF heavy-flavor-composition) uncertainty from `analysis/corrections/higgs_hf.py` (ported from HiggsDNA, AN-23-102 §7.1); present in scored parquets since `higgsHFWeight: true` (2026-08-28) but never wired into `USABLE_SYST` until now. Deliberately narrow-scoped — flat ±50% on ggH/VBF events with a true gen-level c-jet, exactly 1.0 elsewhere, column absent entirely from qqZZ — so excluded for qqZZ/ggZZ/Signal explicitly and only left in for the pooled `Other_Higgs` process (which includes ggH/VBF). Real impact ranking: #11, 7.51. |
@@ -2005,3 +2005,125 @@ the bulk of the gap between the stat-only and full-syst Z+X effect. Output:
 `combine_result_statonly.log` in both output directories (`_with_zx_pkatris`
 and the no-ZX `_v8_jecshifts` dir). Table also on page 7 of
 `docs/hczz_ctag2d_jesjer_results.pdf`.
+
+## Update 2026-09-11: PDF/scale systematics audit against CMS's own recipe
+deck — 2 real fixes applied + reverified, 1 anomaly resolved as benign, 1
+open question flagged (not fixed)
+
+Triggered by reading a CMS internal talk on PDF/PS/scale-uncertainty
+recipes (Markus Seidel, "CMS recipes for higher order, PS, and PDF
+uncertainties" — `second-brain/slides/physicsdays_systematics.pdf`) and
+checking this analysis's actual systematics code against it point by point.
+
+**Fix 1 — `lhe_alphaS` re-included for `qqZZ`/`Other_Higgs`.** The
+abs()-before-symmetrizing bug that forced this nuisance's Up to always raise
+and Down to always lower every process's yield (documented in the
+"Update 2026-08-19" section above, excluded everywhere as a result) was
+actually fixed in `analysis/corrections/lhepdf.py` on **2026-08-28**
+(commit `167ebca`) — 9 days after the exclusion was written — but
+`create_datacards_ctag2d_100150.py`'s `USABLE_SYST` exclusion was never
+revisited. Re-verified directly against the current v8 production (scored
+2026-09-08, i.e. built from the already-fixed `lhepdf.py`):
+`weight_lhe_alphaSUp >= 1` for only 57% of qqZZ events in `[100,150]` (not
+the bug's forced 100%), confirming the sign is genuinely mixed again. Every
+`Other_Higgs` sub-sample spot-checked sane in the same window (official
+samples ±0.9-2.7%, `HPlusBottom` ±7.7%, consistent with the pre-bug
+2026-08-04 characterization already on record). `ggZZ`/`Signal` stay
+excluded — see the anomaly-resolution paragraph below. Commit `31b3df3` on
+`HcZZ-zx-estimation`.
+
+**Fix 2 — qqZZ `scalevar_muR`/`scalevar_muF` decoupled from `QCDscale_qqZZ`.**
+Measured the actual normalization shift these two shape systematics imply
+for qqZZ in `[100,150]`: `scalevar_muR` +1.9%/−1.5%, `scalevar_muF`
++2.8%/−3.9%, combining in quadrature to ~+3.4%/−4.2% — almost exactly on
+top of the separate flat `QCDscale_qqZZ` lnN (4%). Traced the cause: the
+shape templates were built as full replacement weights (norm+acceptance+
+shape together, never decoupled), so the same ~4% normalization uncertainty
+was being counted twice — once via the lnN, once baked into the shape.
+This is the same double-counting the codebase already checks for and avoids
+on the PDF side (`pdf_gg`/`lhe_pdf`, see the "no gap here" note above `qqZZ`
+in `USABLE_SYST`) but had never been checked for the QCD-scale side. Fixed
+by rescaling `scalevar_muR`/`muF`'s Up/Down histograms to the nominal
+integral before writing them out (`NORM_DECOUPLED` set in
+`build_histograms`), matching the CMS-recommended 3-way LHE-scale
+decoupling (`physicsdays_systematics.pdf` slide 5 / HIG XS handbook
+§I.4.2: normalization / acceptance / shape, drop normalization from the
+shape template when a separate rate uncertainty already covers it). Commit
+`9cd16b0`.
+
+**Anomaly resolved as benign — ggZZ's `lhe_pdf`/`lhe_alphaS`/
+`lhe_pdf_alphaS` degeneracy.** While re-verifying `lhe_alphaS`, found that
+`weight_lhe_pdfUp`, `weight_lhe_alphaSUp` and `weight_lhe_pdf_alphaSUp` are
+all *identical* for every ggZZ event — initially looked like a
+column-aliasing bug (didn't match any branch in `lhepdf.py` on first read).
+Traced it: all three are also identical to `weight_nominal` itself, because
+each modifier's own per-event contribution is exactly `1.0` — genuinely no
+PDF/αs variation for ggZZ (consistent with `lhepdf.py`'s no-real-variation
+fallback, and with the existing "ggZZ has no LHEScaleWeight branch at all
+and degenerate lhe_pdf/lhe_alphaS" note above). Ruled out a broader
+aliasing bug by checking `weight_CMS_pileupUp`/`weight_ps_isrUp` on the same
+events — those differ from nominal normally. No code change; `ggZZ`'s
+narrow allow-list (already excluding `lhe_pdf`/`lhe_alphaS`) was already
+correct. Commit `982f857`.
+
+**Open question, flagged not fixed — `lhe_pdf`'s Hessian-vs-MC-replica
+formula.** `lhepdf.py`'s own docstring cites LHA IDs `306000`–`306102` for
+the `LHEPdfWeight` branch. Verified directly against the authoritative
+LHAPDF `.info` files (`lhapdfsets.web.cern.ch`):
+
+| LHA ID | Set | NumMembers | ErrorType |
+|---|---|---|---|
+| `306000` | `NNPDF31_nnlo_hessian_pdfas` — cited by `lhepdf.py` | 103 | `symmhessian+as` |
+| `325300` | `NNPDF31_nnlo_as_0118_mc_hessian_pdfas` — CMS's documented default (`physicsdays_systematics.pdf` slide 4) | 103 | `symmhessian+as` |
+| `303600` | `NNPDF31_nnlo_as_0118` — the genuine MC-replica base set | 101 | `replicas` |
+
+Both sets actually plausible here are **Symmetric Hessian**
+(`ErrorType: symmhessian+as`), not MC-replica — the "`_mc_`" in `325300`'s
+name refers to how it was *derived* (Hessian-reduced from an MC-replica
+fit), not its `ErrorType`. Per the CMS recipe deck's slide 3, symmetric
+Hessian combination is `ΔX = sqrt(Σ(Xi − Xnom)²)` — **no division**.
+`lhepdf.py`'s `delta_pdf = sqrt(Σ(diffs)² / 99)` divides by `N−1=99`, the
+MC-replica statistical-variance formula (correct only for a set like
+`303600`, `ErrorType: replicas`, which — being 101 members, not 103 — can't
+be what's actually hitting the `Case 2 (103 members)` branch every process
+here uses). This suggests the "2026-08-03" fix (which *added* the `/99`
+division, framed as correcting an MC-replica-vs-Hessian mismatch — see the
+2026-08-03 entry above) may have applied the wrong correction.
+
+**Not fixed, deliberately**: reverting the `/99` division would inflate
+every currently-used `lhe_pdf` value by `√99 ≈ 9.95×` — qqZZ's
+currently-measured ~2.8% (already cited elsewhere in this doc as consistent
+with HIG-24-013's official ~3.1-3.4% PDF(qq→ZZ) number) would balloon to an
+implausible ~28%, contradicting the very official reference this doc uses
+to justify not adding a redundant `pdf_qq` lnN. That tension means either
+the eigenvector-vs-replica reasoning above is missing a convention specific
+to how this analysis's `LHEPdfWeight` branch is laid out, or something else
+is compensating — not resolved. Testing the corrected formula properly
+needs the raw ~100-member `LHEPdfWeight` array from NanoAOD directly (not
+retained in the scored parquets, which only keep the already-collapsed
+`weight_lhe_pdfUp/Down` summary columns), so this is a reprocessing-level
+investigation, not a script fix. **Left as-is pending that investigation.**
+
+**Validation — reran the datacard build + combine with fixes 1 and 2
+applied**, same v8+JES/JER+4-era-ZX configuration as the "Update 2026-09-11:
+true 4-era Z+X" section above:
+
+| Quantile | r (pre-fix) | r (post-fix) | κc (post-fix) |
+|---|---|---|---|
+| 2.5% | 219.3750 | 219.3750 | 40.70 |
+| 16% | 311.0010 | 311.0010 | 56.60 |
+| **50% (median)** | **480.0000** | **480.0000** | **85.89** |
+| 84% | 788.0414 | 787.0847 | 139.10 |
+| 97.5% | 1283.8478 | 1283.5974 | 225.11 |
+
+**Median unchanged to 4 decimal places; 84%/97.5% shift by <0.15%.**
+`CMS_ctag2d` dominates the total uncertainty by ~10× over the next-ranked
+nuisance, so correcting these two subdominant nuisances doesn't move the
+headline — a useful confirmation that r=480.0/κc=85.89 is robust to both
+issues, not that the fixes were pointless. Output:
+`combine/outputs/combine_run3_100150_ctag2d_v8_jecshifts_with_zx_pkatris_systfix/`
+(`datacard_mva_with_zx.txt`, `histograms_mva_with_zx.root`,
+`combine_result.log`). Commits: `31b3df3`, `9cd16b0`, `982f857` on
+`HcZZ-zx-estimation` (no code change for the third — comment/verification
+only). Full session narrative:
+`second-brain/Tasks/HcZZ-fake-rate.md` (2026-09-11 continued entry).
