@@ -1981,3 +1981,27 @@ Asimov fit. Output: `impacts_real.json`, `impacts_real.pdf` in the same
 directory. Full ranked table and the plot are in
 `docs/hczz_ctag2d_jesjer_results.pdf` (pages 5–6, appended alongside the
 yields/limits page for this result).
+
+**Stat-only comparison, with vs. without Z+X** (`combine -M AsymptoticLimits
+--freezeParameters allConstrainedNuisances` on both cards; `ZX_rate` still
+floats since it's unconstrained, not frozen by this flag — re-verified
+2026-09-11, both cards rerun fresh rather than trusting the earlier
+documented no-ZX number):
+
+| Quantile | r (no ZX) | κc (no ZX) | r (with ZX) | κc (with ZX) | Δr | Δr % |
+|---|---|---|---|---|---|---|
+| 2.5% | 140.12 | 26.92 | 144.30 | 27.65 | +4.18 | +3.0% |
+| 16% | 189.48 | 35.51 | 197.02 | 36.82 | +7.53 | +4.0% |
+| **50% (median)** | **271.75** | **49.79** | **282.00** | **51.57** | **+10.25** | **+3.8%** |
+| 84% | 394.69 | 71.11 | 410.14 | 73.79 | +15.45 | +3.9% |
+| 97.5% | 550.66 | 98.14 | 573.54 | 102.10 | +22.88 | +4.2% |
+
+**Stat-only, Z+X only loosens the median limit by ~3.8%** — much smaller than
+the ~16.5% full-syst loosening (r=412.0→480.0). Most of the with-ZX effect is
+therefore driven by systematics, not the added statistical background
+itself: the `ZX_norm` 30% lnN and the free-floating `ZX_rate` rateParam
+(impact 34.23, ranked #2 in the full-syst impact table above) account for
+the bulk of the gap between the stat-only and full-syst Z+X effect. Output:
+`combine_result_statonly.log` in both output directories (`_with_zx_pkatris`
+and the no-ZX `_v8_jecshifts` dir). Table also on page 7 of
+`docs/hczz_ctag2d_jesjer_results.pdf`.
