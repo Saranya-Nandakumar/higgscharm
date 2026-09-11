@@ -742,6 +742,23 @@ def merge_bin_edges(edges, merge_ranges):
 # Build histograms
 # ---------------------------------------------------------------------------
 
+# Systematics whose normalization component is already covered by a separate
+# flat lnN row (see write_datacard's QCDscale_qqZZ) -- decoupled here per the
+# standard CMS LHE-scale treatment (drop normalization, keep acceptance+shape
+# only: physicsdays_systematics.pdf slide 5 / HIG XS handbook Sec I.4.2) by
+# rescaling the varied histogram back to the nominal integral before writing
+# it out. Confirmed 2026-09-11 this was needed: qqZZ's scalevar_muR/muF
+# combined normalization shift (quadrature ~+3.4%/-4.2%) closely matches the
+# flat QCDscale_qqZZ lnN (4%) -- without this, Combine would see the same
+# ~4% normalization uncertainty twice, once via the lnN and once baked into
+# the shape template. Every other shape systematic here has no matching lnN
+# and correctly keeps its full norm+acceptance+shape effect undecoupled.
+NORM_DECOUPLED = {
+    ("qqZZ", "scalevar_muR"),
+    ("qqZZ", "scalevar_muF"),
+}
+
+
 def build_histograms(mc_data, zx_scores, zx_weights, jec_data=None):
     histograms = {}
     n_bins = len(MVA_BINS) - 1
@@ -766,6 +783,12 @@ def build_histograms(mc_data, zx_scores, zx_weights, jec_data=None):
                           f"({len(w)} vs {len(scores)}) -- skipping")
                     continue
                 hs, _ = np.histogram(scores, bins=MVA_BINS, weights=w)
+                if (proc, syst) in NORM_DECOUPLED and hs.sum() > 0:
+                    # Rescale the whole template to the nominal integral --
+                    # removes the normalization shift (already covered by
+                    # this (proc,syst)'s matching flat lnN), keeps only the
+                    # per-bin acceptance+shape distortion.
+                    hs = hs * (h.sum() / hs.sum())
                 histograms[f"{proc}_{syst}{direction}"] = hs.astype(np.float64)
 
         # JES/JER (and other object-shift) systematics: independent samples,
@@ -871,6 +894,14 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
         # per-event weight column exists for either -- pure rate lnN):
         dc.write(syst_row("BR_HZZ4l",      "lnN", {"Signal": "1.02", "Other_Higgs": "1.02"}))
         dc.write(syst_row("QCDscale_qqZZ", "lnN", {"qqZZ": "1.04"}))
+        # DECOUPLED from scalevar_muR/muF 2026-09-11 (see NORM_DECOUPLED in
+        # build_histograms): this lnN carries the qqZZ QCD-scale
+        # NORMALIZATION only; the matching per-event scalevar_muR/muF shape
+        # templates are rescaled to the nominal integral before being
+        # written, so they contribute acceptance+shape only. Before this fix
+        # the two nuisances double-counted the same ~4% normalization
+        # uncertainty (scalevar_muR/muF's own undecoupled normalization shift
+        # measured at quadrature ~+3.4%/-4.2%, right on top of this lnN).
         # NOTE (checked 2026-08-21, no code change): HIG-24-013 (AN2023_157_v10,
         # Table 15) quotes a separate "PDF set (qq->ZZ): +3.1/-3.4%" rate
         # uncertainty alongside pdf_gg above -- but unlike ggZZ/Signal (whose
