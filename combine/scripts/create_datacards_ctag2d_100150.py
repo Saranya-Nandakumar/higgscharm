@@ -200,21 +200,32 @@ SYSTEMATICS = {
 # the same underlying private-sample production bug. lhe_alphaS and
 # CMS_ctag_b are larger for HPlusBottom than the official samples but not
 # pathological (no sign flip, no same-direction Up/Down) -- kept.
-# lhe_alphaS EXCLUDED EVERYWHERE, 2026-08-19 (under investigation, not yet
-# fixed): analysis/corrections/lhepdf.py's delta_alpha = 0.5 * np.abs(w_as_high
-# - w_as_low) takes an absolute value before symmetrizing, which forces
+# lhe_alphaS was EXCLUDED EVERYWHERE from 2026-08-19 to 2026-09-11:
+# analysis/corrections/lhepdf.py's delta_alpha = 0.5 * np.abs(w_as_high -
+# w_as_low) took an absolute value before symmetrizing, which forced
 # w_up_alpha = 1 + delta_alpha >= 1 and w_down_alpha = 1 - delta_alpha <= 1 for
 # EVERY event of EVERY process unconditionally -- the true sign of the alphaS
-# variation is destroyed, so "Up" is mathematically guaranteed to raise every
-# process's yield and "Down" to lower it, regardless of actual physics. This
-# is why qqZZ and Other_Higgs were seen moving in lockstep (rank #3 impact,
-# 17.6) -- not a real correlated physics effect, an artifact of the abs().
-# lhe_pdf's use of a symmetric envelope (sqrt(sum of squared diffs)) is
+# variation was destroyed, so "Up" was mathematically guaranteed to raise
+# every process's yield and "Down" to lower it, regardless of actual physics.
+# This is why qqZZ and Other_Higgs were seen moving in lockstep (rank #3
+# impact, 17.6) -- not a real correlated physics effect, an artifact of the
+# abs(). lhe_pdf's use of a symmetric envelope (sqrt(sum of squared diffs)) is
 # correct for its 100-eigenvector PDF4LHC convention; alphaS has only 2
 # members and needs a genuinely signed shift instead -- different case, same
-# function, only alphaS is broken. See README_HcZZ.md's 2026-08-19 dated
-# update under Systematics for the full writeup. Re-include once
-# lhepdf.py's delta_alpha is fixed (drop the np.abs()) and re-verified.
+# function, only alphaS was broken. See README_HcZZ.md's 2026-08-19 dated
+# update under Systematics for the original writeup.
+#
+# RE-INCLUDED 2026-09-11: the np.abs() was dropped in commit 167ebca
+# (2026-08-28), 9 days after the exclusion above was written -- the exclusion
+# was never revisited once the fix landed. Re-verified directly against the
+# current v8 production (scored 2026-09-08, i.e. built from the already-fixed
+# lhepdf.py): weight_lhe_alphaSUp >= 1 for only 57% of qqZZ events (not the
+# 100% the bug forced), confirming the sign is genuinely mixed again. Spot-
+# checked every Other_Higgs sub-sample in the [100,150] window -- all sane,
+# signed, small variations (GluGluHtoZZto4L/TTH ~+-2.7%, VBF/WH/ZH ~+-0.9%,
+# HPlusBottom ~+-7.7%, same private-sample-elevated-but-not-pathological
+# pattern already noted for it above) -- none of the same-direction-Up/Down
+# signature that flagged the original bug.
 EFF_E_RECO = {"CMS_eff_e_reco_20to75", "CMS_eff_e_reco_above75", "CMS_eff_e_reco_below20"}
 USABLE_SYST = {
     # higgs_plus_c is deliberately narrow-scoped to ggH/VBF only (see
@@ -222,9 +233,13 @@ USABLE_SYST = {
     # sub-component; Other_Higgs pools ggH+VBF so it's left in (not excluded)
     # and correctly falls back to nominal for its non-ggH/VBF sub-samples via
     # load_mc_scored_parquets' existing missing-column handling. ggZZ/Signal
-    # use an explicit allow-list below and already don't include it.
-    "qqZZ":        set(SYSTEMATICS.keys()) - {"lhe_alphaS", "higgs_plus_c"},
-    "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF", "lhe_alphaS"},
+    # use an explicit allow-list below and already don't include it (their
+    # lhe_alphaS is separately degenerate -- Signal's PDF set has only 101
+    # members with no alphaS variation at all, and ggZZ has no LHEScaleWeight
+    # branch and degenerate lhe_pdf/lhe_alphaS -- unrelated to the abs() bug,
+    # re-including wouldn't add real information for either).
+    "qqZZ":        set(SYSTEMATICS.keys()) - {"higgs_plus_c"},
+    "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF"},
     "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"} | EFF_E_RECO,
     "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"} | EFF_E_RECO,
 }
