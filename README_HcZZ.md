@@ -1964,3 +1964,20 @@ Output: `combine/outputs/combine_run3_100150_ctag2d_v8_jecshifts_with_zx_pkatris
 (`datacard_mva_with_zx.txt`, `histograms_mva_with_zx.root`,
 `combine_result.log`). Full reproducible step-by-step (exact commands for
 every stage above): `second-brain/Notes/hczz-zx-pkatris-4era-verification-2026-09-10.md`.
+
+**Impact ranking, same datacard** (`b-hive_ttcc/combine/impact_ranking.py --real
+--expect-signal 480.0 --r-range 0,1000 --parallel 4`, the real
+`combineTool.py -M Impacts` profile-likelihood workflow, §7 above): 24
+nuisances total (the 22 from the no-ZX headline plus `ZX_norm` and the
+free-floating `ZX_rate` rateParam). **`CMS_ctag2d` still dominates by a wide
+margin** (impact 252.66, ~7× the #2 nuisance) — even larger in absolute terms
+than the no-ZX headline's 180.46, consistent with `CMS_ctag2d` reweighting
+every MC background process that Z+X now sits alongside. **`ZX_rate` itself
+ranks #2** (impact 34.23, post-fit 1.00 +0.33/−0.25) — expected, since it is
+the one parameter directly controlling the newly-added background's
+normalization. `CMS_scale_j` (JES/JER) ranks #3 (26.55), ahead of every lnN
+row. All pulls ≈0 with post-fit uncertainty ≈ prefit, as expected for a blind
+Asimov fit. Output: `impacts_real.json`, `impacts_real.pdf` in the same
+directory. Full ranked table and the plot are in
+`docs/hczz_ctag2d_jesjer_results.pdf` (pages 5–6, appended alongside the
+yields/limits page for this result).
