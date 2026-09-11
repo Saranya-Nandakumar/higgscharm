@@ -449,13 +449,17 @@ Known traps.
 
 > **Default mass window changed to `[100,150]` GeV, 2026-08-18** (tighter S/√B,
 > 0.0054 vs 0.0043 at `[90,160]`). `combine/run_pipeline.sh` with no args now
-> builds `[100,150]` by default (`--window 90160` for the older window). **Z+X
-> (fake-rate background) is deliberately excluded from scope for now** (decision
-> 2026-08-18) — the production default at this window is MC-only. `[90,160]`'s
+> builds `[100,150]` by default (`--window 90160` for the older window), and
+> the production default at this window remains **MC-only** — Z+X is not
+> wired into `run_pipeline.sh`'s own `--with-zx` preset, only built via direct
+> script invocation. **A true 4-era with-ZX number at `[100,150]` now exists
+> against the current `_v8` + JES/JER production (2026-09-11): r=480.0
+> median/κc=85.89** — see the dated update below for the full chain. `[90,160]`'s
 > own with-ZX number (r=329.0, from the OS/featmajor production) remains
-> available via `--window 90160 --with-zx`. **`lhe_alphaS` removed 2026-08-19
+> available via `--window 90160 --with-zx` but is now stale relative to the
+> `[100,150]` result above. **`lhe_alphaS` removed 2026-08-19
 > pending a bug fix (see the dated update below).**
-> **CURRENT (as of 2026-09-08): r=412.0 median / kappa_c=74.11, 22
+> **CURRENT (as of 2026-09-08, no-ZX): r=412.0 median / kappa_c=74.11, 22
 > systematics (18 shape/lnN + JES/JER), `_scored_v8` + `_jecshifts_scored_v2`**
 > — `--jecshifts-dir` wired into `create_datacards_ctag2d_100150.py`
 > (`CMS_scale_j`/`CMS_res_j`/`CMS_scale_m`/`CMS_res_m`, independently
@@ -1912,3 +1916,51 @@ memory `hczz_ctag2d_selection_wp_investigation`.
 AFS/EOS-drift warnings and the "CURRENT" `ctag2d` reference above (was
 r=413.0/2026-09-02, now r=412.0/2026-09-08 with JES/JER — see that callout
 for the full supersession chain).
+
+---
+
+## Update 2026-09-11: true 4-era Z+X now included in the current (`_v8` + JES/JER) production
+
+**Z+X (reducible background) inputs now cover all 4 Run 3 eras**, closing the
+gap that had left every with-ZX number on record as a 2022-only (or older,
+pre-muon-SF/pre-ctag2d) floor. The full chain, end to end:
+
+1. **Raw Z+X control-region events** (fake-rate-weighted 3P1F/2P2F, all 4 eras
+   — 2022preEE, 2022postEE, 2023preBPix, 2023postBPix) come from the standard
+   `estimate_zx_background.py`-style output format, same schema
+   `run_zx_inference.py` already expects.
+2. **MVA-scored with this analysis's own model**: ran
+   `scripts/run_zx_inference.py` over all 4 eras with the documented,
+   checkpoint/config-verified pair (`models/best_model.pt` +
+   `models/hc_zzto4l_mw_training_4class_nomass.yml`, MD5- and
+   `global_features`-confirmed against the canonical config — see "Use
+   `models/best_model.pt`..." in Known traps) to produce
+   `mva_signal_score` per event for every era, output under
+   `zx_background_mva_pkatris/{era}/zx_{3p1f,2p2f}_{era}_mva.parquet`.
+3. **Datacard build** with the current signal-region production
+   (`create_datacards_ctag2d_100150.py --scored-dir
+   hplusc_mva_4class_ctag2d_scored_v8 --jecshifts-dir
+   hplusc_mva_4class_ctag2d_jecshifts_scored_v2 --zx-dir
+   zx_background_mva_pkatris --merge-bin-ranges "2-4,7-10"`) — i.e. the true
+   4-era Z+X alongside the full `_v8` + JES/JER signal-region chain, not a
+   partial-era substitute. Z+X yield in `[100,150]`~GeV: **133.24** (43% of
+   an inflated bkg total once ZX is counted; roughly 2× the yield from an
+   earlier 2-era-only pass, consistent with adding two more eras of real
+   background rather than a small correction).
+4. **`combine -M AsymptoticLimits -m 120 --run blind --rAbsAcc 0.00001
+   --rRelAcc 0.00001`** on the resulting datacard.
+
+**Result: r=480.0 (median), κc=85.89** — full quantile band 2.5%: r=219.4/
+κc=40.70; 16%: r=311.0/κc=56.60; 50%: r=480.0/κc=85.89; 84%: r=788.0/
+κc=139.26; 97.5%: r=1283.8/κc=225.15. This is looser than the no-ZX headline
+(r=412.0/κc=74.11) and the earlier 2-era-only with-ZX floor (r=460.0/
+κc=82.43), as expected — adding real background loosens the limit, it
+doesn't tighten it. This supersedes every earlier with-ZX number on record
+(r=368.0/329.0 at `[90,160]`, both pre-muon-SF and pre-every-ctag2d-fix; the
+2-era-only r=460.0 floor above) as the current with-ZX reference for
+`[100,150]`.
+
+Output: `combine/outputs/combine_run3_100150_ctag2d_v8_jecshifts_with_zx_pkatris/`
+(`datacard_mva_with_zx.txt`, `histograms_mva_with_zx.root`,
+`combine_result.log`). Full reproducible step-by-step (exact commands for
+every stage above): `second-brain/Notes/hczz-zx-pkatris-4era-verification-2026-09-10.md`.
