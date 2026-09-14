@@ -2127,3 +2127,95 @@ issues, not that the fixes were pointless. Output:
 `HcZZ-zx-estimation` (no code change for the third — comment/verification
 only). Full session narrative:
 `second-brain/Tasks/HcZZ-fake-rate.md` (2026-09-11 continued entry).
+
+---
+
+## Update 2026-09-13: full framework-vs-slide-deck audit — ggZZ central-value
+k-factor was silently missing (~2.27×), now fixed and validated
+
+Followed up the 2026-09-11 PDF/scale audit above with a from-scratch,
+slide-by-slide consistency check of the entire framework against
+`physicsdays_systematics.pdf` (all 16 slides, not just PDF/scale), not just
+the two nuisances already touched. Confirmed correct: αs-member handling
+(101/102 split cleanly from the 100 eigenvector members), ME/LHE
+anti-correlated scale-corner discarding (`lhescale.py`), inclusive
+cross-section normalization sourcing, and — notably, given this project's
+history of up/down-swap bugs — the `ps_isr`/`ps_fsr` PSWeight index mapping
+(`PSWeight[0]/[2]` and `[1]/[3]`, matches slide 12 exactly, no swap here).
+Two gaps found:
+
+**Hadronization / UE-color-reconnection (slides 14-15)**: no CR1/CR2/ERD
+anywhere in the codebase — judged a legitimate omission for a 4ℓ +
+jet-multiplicity analysis (CR/ERD matters most for top-mass-like or
+substructure-sensitive measurements). b/c-fragmentation coverage is murkier:
+`CMS_ctag2d`'s correctionlib JSON only exposes a combined `up_Total`/
+`down_Total` (no per-source breakout used anywhere in the code, consistent
+with the "13 sources missing" finding on record), and while the reference
+charm-tag calibration paper (arXiv:2111.03027) lists c-fragmentation as a
+distinct systematic source for this measurement type, nothing in the JSON is
+explicitly labeled as such — can't resolve whether it's folded into `Total`
+or simply absent without asking BTV/the calibration owners. Accepted as-is;
+not worth chasing further given `CMS_ctag2d` already dominates the fit by
+~10× and this sub-component wouldn't move the ranking either way.
+
+**ggZZ k-factor (slides 9-10, "higher-order reweighting") — real bug,
+fixed.** `create_datacards_ctag2d_100150.py` already carried a
+`kfactor_ggZZ` = 1.10 `lnN`, correctly cited from HIG-24-013 Table 15
+("gg→ZZ k-factor 10%") — but that 10% is the **uncertainty on** CMS's actual
+gg→ZZ NNLO/LO k-factor, not the k-factor itself. The real central-value
+correction (HNNLO-computed, standard CMS-PAS-HIG-19-001-style H→ZZ→4ℓ
+convention) is **≈2.27 at m(ZZ)=125 GeV** — and it was never applied
+anywhere: the ggZZ sample (`GluGluToContinto2Z*_mcfm701-pythia8`) is the
+standard **LO** loop-induced MCFM701 sample, and an exhaustive grep for
+`kfactor`/`k_factor`/`weight_kfactor`/`ggzz_weight` across `analysis/`
+turned up zero hits outside that one `lnN` line. The analysis had been
+silently under-normalizing its ggZZ background by a factor of ~2.27 for its
+entire history.
+
+**Fix** (`create_datacards_ctag2d_100150.py`, near `PROCESS_XS_PB`):
+
+```python
+GGZZ_KFACTOR = 2.27
+EXPECTED_YIELDS = {p: xs * TOTAL_LUMI_PB for p, xs in PROCESS_XS_PB.items()}
+EXPECTED_YIELDS["ggZZ"] *= GGZZ_KFACTOR
+```
+
+Applied once, to the shared `EXPECTED_YIELDS` dict that both
+`load_mc_scored_parquets` (nominal + shape systematics) and
+`load_jecshifts_scored_parquets` (JES/JER) read from — so it propagates
+consistently through every ggZZ histogram, nominal and every Up/Down
+variation alike, not just the final yield. The existing `kfactor_ggZZ` 1.10
+`lnN` is unchanged — it now correctly sits as the uncertainty *on top of*
+the corrected central value instead of being the only place the k-factor
+appeared at all. The three sibling scripts that carry the same pre-fix
+pattern (`create_datacards_ctag2d.py`, `_3ratio.py`, `_compare.py`) were
+deliberately left untouched — only `_100150.py` is the live production
+script for the current headline.
+
+**Validation — reran the datacard build + combine**, same
+v8+JES/JER+4-era-ZX configuration:
+
+| Process | Yield in [100,150] (pre-fix) | Yield in [100,150] (post-fix) |
+|---|---|---|
+| ggZZ | 2.9418 | **6.6779** (= 2.9418 × 2.27, exact) |
+| Total background | 227.58 | 231.31 |
+
+| Quantile | r (pre-fix) | r (post-fix) | κc (post-fix) |
+|---|---|---|---|
+| 2.5% | 219.3750 | 219.3750 | 40.70 |
+| 16% | 311.0010 | 311.0010 | 56.60 |
+| **50% (median)** | **480.0000** | **480.0000** | **85.89** |
+| 84% | 787.0847 | 786.1281 | 138.93 |
+| 97.5% | 1283.5974 | 1280.7163 | 224.61 |
+
+**Median unchanged to 4 decimal places; 84%/97.5% shift by <0.3%** — ggZZ is
+a small enough background component (2.9→6.7 events against ~227 total)
+that even a real, previously-missing factor-of-2.27 correction barely moves
+the fit, for the same reason as the 2026-09-11 fixes: `CMS_ctag2d`
+dominates the impact ranking by ~10×. Low headline significance, but a
+genuine correctness fix — the physical ggZZ yield used throughout the
+analysis was wrong by more than a factor of 2 until now. Output:
+`combine/outputs/combine_run3_100150_ctag2d_v8_jecshifts_with_zx_pkatris_ggzzkfactor/`
+(`datacard_mva_with_zx.txt`, `histograms_mva_with_zx.root`,
+`combine_result.log`). Not yet committed as of this writing. Memory:
+`hczz_physicsdays_systematics_audit.md`.

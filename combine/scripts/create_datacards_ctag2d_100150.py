@@ -86,7 +86,20 @@ PROCESS_XS_PB = {
         + 0.00312 + 0.000144 + 0.000173
     ),
 }
+# gg->ZZ is generated at LO (GluGluToContinto2Z*_mcfm701-pythia8, loop-induced
+# MCFM701 sample) -- the physical yield needs the NNLO/LO k-factor CMS applies
+# to this process (HNNLO-computed, ~2.0-2.6 depending on m(ZZ), ~2.27 at
+# m(ZZ)=125 GeV, per CMS-PAS-HIG-19-001 and related H->ZZ->4l convention).
+# Found missing 2026-09-13 (physicsdays_systematics.pdf audit, slides 9-10
+# "higher-order reweighting"): the "kfactor_ggZZ" 1.10 lnN below is the
+# UNCERTAINTY on this k-factor's determination (HIG-24-013 Table 15,
+# "gg->ZZ k-factor 10%"), not the k-factor itself -- it was never applied as a
+# central-value correction anywhere in the pipeline. See
+# hczz_physicsdays_systematics_audit memory for the full investigation.
+GGZZ_KFACTOR = 2.27
+
 EXPECTED_YIELDS = {p: xs * TOTAL_LUMI_PB for p, xs in PROCESS_XS_PB.items()}
+EXPECTED_YIELDS["ggZZ"] *= GGZZ_KFACTOR
 
 CLASS_NAMES = ["qqZZ", "ggZZ", "Signal", "Other_Higgs"]
 
@@ -892,6 +905,11 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
         # 5% pdf_gg placeholder plus a mislabeled "QCDscale_ggZZ" (that 10%
         # value was already correct, just named after the wrong physics --
         # it's the k-factor uncertainty, not a QCD-scale uncertainty).
+        # kfactor_ggZZ below is the UNCERTAINTY on the GGZZ_KFACTOR=2.27
+        # central-value correction now applied to ggZZ's EXPECTED_YIELDS
+        # above (fixed 2026-09-13 -- previously this 10% lnN was the only
+        # place the k-factor appeared at all, i.e. the ~2.27x central-value
+        # correction itself was silently missing from every histogram).
         dc.write(syst_row("QCDscale_gg",   "lnN", {"ggZZ": "1.039", "Signal": "1.039"}))
         dc.write(syst_row("pdf_gg",        "lnN", {"ggZZ": "1.032", "Signal": "1.032"}))
         dc.write(syst_row("kfactor_ggZZ",  "lnN", {"ggZZ": "1.10"}))
