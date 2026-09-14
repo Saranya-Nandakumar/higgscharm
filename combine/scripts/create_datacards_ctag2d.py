@@ -682,6 +682,9 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
         #     row -- the two K-factors are separate uncertainty sources, not
         #     duplicates of each other.
         dc.write(syst_row("BR_HZZ4l",      "lnN", {"Signal": "1.02", "Other_Higgs": "1.02"}))
+        # QCDscale_qqZZ=4% CONFIRMED EXACT 2026-09-14 against the real HIG-24-013
+        # text (arXiv:2501.14849): "this yields an overall 4% effect" for the
+        # qq->ZZ renorm/fact scale variation. High confidence, not a placeholder.
         dc.write(syst_row("QCDscale_qqZZ", "lnN", {"qqZZ": "1.04"}))
         # NOTE (checked 2026-08-21, no code change): HIG-24-013 (AN2023_157_v10,
         # Table 15) quotes a separate "PDF set (qq->ZZ): +3.1/-3.4%" rate
@@ -693,6 +696,15 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
         # memory). Adding a pdf_qq lnN on top would double-count the same
         # PDF uncertainty via two different nuisances. No gap here.
         if include_zx:
+            # ZX_norm=30% -- CITED 2026-09-14 (see create_datacards_ctag2d_100150.py
+            # for the full investigation): real HIG-24-013 text (arXiv:2501.14849)
+            # gives 25-46% depending on final state (CR stats + misID +/-1sigma +
+            # composition, quadrature-combined); this single-bin card doesn't split
+            # final states, so 30% is a representative point inside that range, not
+            # a precisely derived number. Independently cross-checked the CR-stats
+            # component alone from pkatris's real production data: 5.61% (all 4
+            # eras) -- much smaller than 30%, consistent with the real uncertainty
+            # being dominated by misID/composition systematics, not statistics.
             dc.write(syst_row("ZX_norm", "lnN", {"ZX": "1.30"}))
 
         dc.write(f"\n# Shape systematics from per-event weight variations (Up/Down\n")

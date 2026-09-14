@@ -916,6 +916,11 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
         # Added 2026-08-17, sourced from Felix Heyen thesis Appendix D (no
         # per-event weight column exists for either -- pure rate lnN):
         dc.write(syst_row("BR_HZZ4l",      "lnN", {"Signal": "1.02", "Other_Higgs": "1.02"}))
+        # QCDscale_qqZZ=4% CONFIRMED EXACT 2026-09-14 against the real HIG-24-013
+        # text (arXiv:2501.14849, "Measurements of Higgs boson production cross
+        # section in the four-lepton final state... 13.6 TeV"): "this yields an
+        # overall 4% effect" for the qq->ZZ renormalization/factorization scale
+        # variation. High confidence, not a placeholder.
         dc.write(syst_row("QCDscale_qqZZ", "lnN", {"qqZZ": "1.04"}))
         # DECOUPLED from scalevar_muR/muF 2026-09-11 (see NORM_DECOUPLED in
         # build_histograms): this lnN carries the qqZZ QCD-scale
@@ -935,6 +940,31 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
         # memory). Adding a pdf_qq lnN on top would double-count the same
         # PDF uncertainty via two different nuisances. No gap here.
         if include_zx:
+            # ZX_norm=30% -- previously uncited (unlike every other lnN above).
+            # Investigated + cited 2026-09-14 (physicsdays_systematics.pdf
+            # framework audit follow-up): the real HIG-24-013 text
+            # (arXiv:2501.14849) states the reducible Z+X background's
+            # normalization uncertainty is a quadrature combination of THREE
+            # sources -- CR statistics, misID-rate +/-1sigma variation, and
+            # background-composition difference -- "between 25% and 46%,
+            # depending on the final state" (per-4e/4mu/2e2mu/2mu2e in the
+            # official analysis, which this single-bin "hczz" card does not
+            # split out). 30% sits inside that real range. Independently
+            # cross-checked the CR-statistics component alone directly from
+            # pkatris's actual production data (the same
+            # zx_background_mva_pkatris parquets this datacard reads):
+            # sqrt(sum(zx_weight_sq))/sum(zx_weight) = 5.61% across all 4 eras
+            # (net yield 133.2386, matches this script's own load_zx_parquets
+            # output exactly). That's much smaller than 30%, consistent with
+            # the official uncertainty being dominated by the misID-rate/
+            # composition systematics rather than raw CR statistics for a
+            # large real dataset -- not a contradiction. The misID-variation
+            # and composition-difference components are not independently
+            # derived in this codebase; 30% is accepted as a defensible
+            # representative point in the real 25-46% range, not a precisely
+            # derived single-bin-equivalent number. See
+            # hczz_physicsdays_systematics_audit memory for the full
+            # investigation.
             dc.write(syst_row("ZX_norm", "lnN", {"ZX": "1.30"}))
 
         dc.write(f"\n# Shape systematics from per-event weight variations (Up/Down\n")

@@ -2217,5 +2217,84 @@ genuine correctness fix — the physical ggZZ yield used throughout the
 analysis was wrong by more than a factor of 2 until now. Output:
 `combine/outputs/combine_run3_100150_ctag2d_v8_jecshifts_with_zx_pkatris_ggzzkfactor/`
 (`datacard_mva_with_zx.txt`, `histograms_mva_with_zx.root`,
-`combine_result.log`). Not yet committed as of this writing. Memory:
+`combine_result.log`). Committed (`06e832b`, propagated to sibling scripts
+in `84b2282`) and pushed to `origin/HcZZ-zx-estimation`. Memory:
 `hczz_physicsdays_systematics_audit.md`.
+
+---
+
+## Update 2026-09-14: `ZX_norm`/`QCDscale_qqZZ` provenance chased down —
+`QCDscale_qqZZ` confirmed exact, `ZX_norm` cited and cross-checked against
+pkatris's real production data (no code value change)
+
+Same slide-audit follow-up as the ggZZ k-factor fix above, applied to the
+two remaining lnNs that carried no (or a weaker) citation: `ZX_norm` (30%)
+had **zero** citation anywhere in git history — every other lnN in the same
+block cites either HIG-24-013 Table 15 or the Felix Heyen thesis. A
+competing "40%" figure was found in `second-brain/Tasks/CMS-AN.md`, but that
+doc turned out to be an unreliable, never-updated generic checklist (its own
+"ggZZ cross-section 10%" entry has the *same* mislabeling the real ggZZ bug
+had — the 10% uncertainty value mistaken for the correction itself — which
+undermines it as an independent cross-check).
+
+**Found the real HIG-24-013 text — it's arXiv:2501.14849** ("Measurements of
+Higgs boson production cross section in the four-lepton final state...
+13.6 TeV"). Its systematics section:
+
+> "The following systematic effects in the reducible ZX background
+> determination are studied: the statistical uncertainty in the number of
+> events in the control regions, the effect of ±1σ variations of the
+> misidentification rates, and the difference in composition among various
+> processes that contribute to this background. The overall effect of these
+> three sources ranges between 25% and 46%, depending on the final state,
+> and is included as a nuisance parameter with a log-normal prior in the
+> fit."
+
+There is no single official number — it's per final state (4e/4μ/2e2μ/2μ2e),
+25-46%. This card uses one unsplit "hczz" bin (no per-final-state channels),
+so a flat number is a pre-existing structural simplification, not something
+this session introduced. **30% sits inside the real range.**
+
+**Same paragraph area also confirms `QCDscale_qqZZ`=4% exactly** — the paper
+states "this yields an overall 4% effect" for the qq→ZZ scale variation.
+High confidence, not a placeholder; cited in code now.
+
+**Independent cross-check of the CR-statistics component, using the actual
+production data** (not the stale pre-pkatris CR sample an earlier check
+mistakenly used — see the note below): read `zx_weight`/`zx_weight_sq`
+directly from `zx_background_mva_pkatris` (the same parquets
+`load_zx_parquets` reads for the real combine run) across all 4 eras.
+`sqrt(Σ zx_weight_sq) / Σ zx_weight` = **5.61%** (total yield 133.2386,
+matching the production's own output exactly — confirms this used the right
+dataset). Per era: 2022preEE 11.3%, 2022postEE 8.0%, 2023preBPix 11.0%,
+2023postBPix 18.3% (smallest-yield era, largest relative stat error). The
+per-event `zx_weight_up` systematic variation column shifts the total by
+−2.68%. Neither of these, even combined, approaches 25-46% — consistent
+with the real HIG-24-013 uncertainty being dominated by the misID-rate/
+composition systematics rather than raw CR statistics for a large real
+dataset, not a contradiction.
+
+**Correction to an earlier same-day cross-check**: a first pass at this used
+`estimate_zx_background.py`'s default data source
+(`hplusc_mva_4class_CR`/`hplusc_mva_4class_CR_merged`) and got 22.7%
+(2022preEE only) — this is **this project's own separate, pre-pkatris CR
+production**, not pkatris's data, so it wasn't actually validating the
+number the headline result uses. Redone correctly above.
+
+**Verdict: `ZX_norm`=30% is accepted as a defensible representative point in
+the real 25-46% range** — not precisely derived (the misID-variation and
+composition-difference components aren't independently quantified in this
+codebase), but not a placeholder needing correction either, unlike the ggZZ
+k-factor. **No numeric code change** — citations added to
+`create_datacards_ctag2d_100150.py` and `create_datacards_ctag2d.py` (the
+two scripts carrying `ZX_norm`) documenting this investigation inline.
+
+**Unrelated bug surfaced while chasing this, flagged separately, not
+investigated further**: `estimate_zx_background.py`'s
+`estimate_zx_ss_crosscheck()` function (added 2026-08-28, apparently never
+run before) gives Net Z+X(SS) = 2938 for 2022preEE — ~500× the OS method's
+5.94, clearly broken (likely the same `sumw=0.0` xs-lookup failure the OS
+method already warns about for this era, or a CR-selection mismatch). Open
+item for a future session.
+
+Memory: `hczz_physicsdays_systematics_audit.md`.
