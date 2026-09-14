@@ -85,7 +85,17 @@ PROCESS_XS_PB = {
         + 0.00312 + 0.000144 + 0.000173
     ),
 }
+# gg->ZZ is generated at LO (MCFM701) -- the physical yield needs the
+# NNLO/LO k-factor (HNNLO-computed, ~2.27 at m(ZZ)=125 GeV, CMS H->ZZ->4l
+# convention). The "kfactor_ggZZ" 1.10 lnN below is the UNCERTAINTY on this
+# k-factor, not the k-factor itself -- propagated from the fix + full
+# investigation in create_datacards_ctag2d_100150.py (2026-09-14, see
+# hczz_physicsdays_systematics_audit memory); this script isn't the live
+# production path but kept consistent with it.
+GGZZ_KFACTOR = 2.27
+
 EXPECTED_YIELDS = {p: xs * TOTAL_LUMI_PB for p, xs in PROCESS_XS_PB.items()}
+EXPECTED_YIELDS["ggZZ"] *= GGZZ_KFACTOR
 
 CLASS_NAMES = ["qqZZ", "ggZZ", "Signal", "Other_Higgs"]
 
@@ -657,6 +667,8 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
         # 5% pdf_gg placeholder plus a mislabeled "QCDscale_ggZZ" (that 10%
         # value was already correct, just named after the wrong physics --
         # it's the k-factor uncertainty, not a QCD-scale uncertainty).
+        # kfactor_ggZZ is the UNCERTAINTY on the GGZZ_KFACTOR=2.27
+        # central-value correction now applied above (2026-09-14 fix).
         dc.write(syst_row("QCDscale_gg",   "lnN", {"ggZZ": "1.039", "Signal": "1.039"}))
         dc.write(syst_row("pdf_gg",        "lnN", {"ggZZ": "1.032", "Signal": "1.032"}))
         dc.write(syst_row("kfactor_ggZZ",  "lnN", {"ggZZ": "1.10"}))
