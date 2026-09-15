@@ -260,40 +260,30 @@ class CTag2DCorrector:
         flat = self._eval_flat(syst)
         return ak.to_numpy(ak.prod(ak.unflatten(flat, self._nj), axis=1))
 
-    def _eval_flat_updown_corrected(self):
-        """FIX (2026-09-01): flavTaggingSF_<era>.json.gz has up_Total/down_Total
-        physically SWAPPED for the L0 ("fails the tag") category -- confirmed by
-        reading the raw correctionlib multibinning content directly across all 4
-        eras: up_Total < central < down_Total for ~18/198 (flavor,wp,pt) cells,
-        100% of them WP=L0 (0/198 anywhere else). Every other category in the
-        file follows the normal up_Total >= central >= down_Total convention, so
-        this is isolated and mechanical, not a "no real data" placeholder (that
-        pattern is the separate central=1.0/up=3.0/down=0.3 exact triple, NOT
-        touched by this fix -- see hczz_ctag2d_impact_investigation, still an
-        open/deferred item). Same class of bug as this analysis's own
-        lhescale.py Up/Down-swap fix (2026-08-28), except here the swap is in
-        the official calibration file, not our code -- so it's corrected here,
-        per-jet, at read time rather than at the source.
-        Detected generically (up_flat < down_flat, not hardcoded to WP=L0) so
-        it also self-corrects if the same swap appears in a future SF file
-        version or an undiscovered corner of the current one. See
-        second-brain memory hczz_ctag2d_l0_up_floor_bug for the full
-        investigation and event-level impact quantification (12.7% of Signal
-        events vs ~2.7% background hit >=1 jet in the affected category).
-        """
-        up_flat = self._eval_flat(SYST_UP)
-        dn_flat = self._eval_flat(SYST_DN)
-        swapped = up_flat < dn_flat
-        up_corrected = np.where(swapped, dn_flat, up_flat)
-        dn_corrected = np.where(swapped, up_flat, dn_flat)
-        return up_corrected, dn_corrected
-
     def add_weights(self) -> None:
+        """REVERTED 2026-09-15: the up_Total/down_Total swap-correction for
+        WP=L0 (`_eval_flat_updown_corrected`, live 2026-09-02 through
+        2026-09-15) has been removed. Component-level re-investigation found
+        the individual Stat/JES/PUWeight sources that feed into Total are
+        *inconsistent* for L0 (Stat cleanly normal at every pT point checked;
+        JES/PUWeight mixed, sometimes normal, sometimes inverted, with no
+        clean pattern) -- not the uniform signature a real swap-then-combine
+        bug would produce, and not clean evidence of an intentional
+        anti-correlated convention either. The "fix" was also only ever a
+        magnitude-based relabeling of the file's own two reported numbers
+        (whichever is larger becomes "up"), never a recomputation from the
+        underlying components -- too thin a basis to keep silently altering
+        the official calibration's reported uncertainty. Reverted pending
+        POG/BTV confirmation of what's actually happening in this file's
+        Total-combination step for L0. Official up_Total/down_Total are now
+        read and used as-is, unmodified. See second-brain memory
+        hczz_ctag2d_l0_updown_swap_fix (superseded) and the 2026-09-15
+        revert writeup for the full before/after re-investigation.
+        """
         sf_c = self._eval_event("central")
         if self._variation == "nominal":
-            up_flat, dn_flat = self._eval_flat_updown_corrected()
-            sf_up = ak.to_numpy(ak.prod(ak.unflatten(up_flat, self._nj), axis=1))
-            sf_dn = ak.to_numpy(ak.prod(ak.unflatten(dn_flat, self._nj), axis=1))
+            sf_up = self._eval_event(SYST_UP)
+            sf_dn = self._eval_event(SYST_DN)
             r_up = np.where(sf_c != 0, sf_up / sf_c, 1.0)
             r_dn = np.where(sf_c != 0, sf_dn / sf_c, 1.0)
             self._weights.add(

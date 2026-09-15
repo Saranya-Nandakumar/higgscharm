@@ -2399,3 +2399,117 @@ logs). `second-brain/slides/analysis_overview_hczz.tex` updated throughout
 mistakes-found trail, priorities table, HWW+c comparison) — not yet
 committed. Memory: `hczz_ctag2d_l0_updown_swap_fix`,
 `hczz_jesjer_datacard_complete`, `hczz_zx_pkatris_production_and_era_bug`.
+
+---
+
+## Update 2026-09-15: L0 Up/Down swap correction RETRACTED — official
+ctag2d SFs used as-is; new headline **no-ZX r=321.0/κc=58.33, with-ZX
+r=329.0/κc=59.72**
+
+**Why**: the 2026-09-02 swap "fix" (`analysis/corrections/ctag2d.py`,
+`_eval_flat_updown_corrected()`) was re-investigated at component level,
+going beyond the original `Total` vs. `Stat` comparison. Checked every
+individual source (`up/down_Stat`, `up/down_JES`, `up/down_PUWeight`) for
+L0 across a 5-point pT grid, live against the real
+`flavTaggingSF_2022preEE.json.gz`:
+
+| Component | Pattern across pT |
+|---|---|
+| `Stat` | Consistently normal (up>down) at every point |
+| `JES` | **Mixed** — inverted 4/5 points, normal at one |
+| `PUWeight` | **Mixed** — inverted 2/5 points, normal at 3/5 |
+| `Total` | Consistently inverted; `up_Total` pinned at exactly 0.3000 regardless of pT |
+
+A genuine swap-then-combine bug should leave a uniform signature across
+every component feeding `Total`; a genuine intentional anti-correlation
+(L0 as a complement category) should too. Neither holds — `Stat` alone is
+clean, `JES`/`PUWeight` are inconsistent with no pT pattern. Additionally,
+the "fix" itself was only ever a magnitude-based relabeling of the file's
+own two reported numbers (`up_corrected = max(up_flat, down_flat)`), never
+a recomputation from components — too thin a basis to keep silently
+altering an official calibration's reported uncertainty for two weeks
+without confirmation.
+
+**Action taken**:
+1. **Reverted the correction** in `analysis/corrections/ctag2d.py`
+   (`add_weights()` now calls `_eval_event(SYST_UP)`/`_eval_event(SYST_DN)`
+   directly — the swap-detection function was removed entirely, not just
+   disabled). Applied to **both** real checkouts confirmed non-identical by
+   inode: `/eos/home-s/snandaku/Higgscharmnew/...` (same inode as
+   `/eos/user/s/snandaku/Higgscharmnew/...`, i.e. one file) and the
+   genuinely separate `/afs/cern.ch/user/s/snandaku/Higgscharmnew/...`
+   checkout. A third copy, `/afs/cern.ch/user/s/snandaku/higgscharm/...`
+   (no `Higgscharmnew`), was checked and never had the swap fix at all —
+   nothing to revert there.
+2. **Reported to the calibration's maintainer** (Livio, file owner) by
+   email 2026-09-15 — full finding, evidence (`up_Stat`/`down_Stat`
+   cross-check, bit-exact `up_Total`==`down_Stat` match), and an explicit
+   note on what we did *not* claim (an earlier mechanism hypothesis about
+   L0's Stat sources being unbinned in pT was checked and found false
+   before sending). Not yet confirmed by BTV/POG either way.
+3. **Rebuilt results using the official SFs, unmodified** — without a full
+   condor reprocessing campaign. The existing `hplusc_mva_4class_ctag2d_scored_v8`
+   parquets still carry the swap-corrected `weight_CMS_ctag2d_<year>Up/Down`
+   baked in from when the correction was live, so a new script,
+   `combine/scripts/create_datacards_ctag2d_100150_rawsf.py`, recomputes
+   just that one weight column directly from the jet-level branches already
+   stored in the same parquets (`jet_btagPNetCvL/CvB/hadronFlavour/pt`),
+   using the exact 3-leading-jet cap and category logic `CTag2DCorrector`
+   uses, but reading `up_Total`/`down_Total` raw. Verified against a real
+   sample before the full run: single-jet-dominated events reproduce an
+   exact swap-back of the stored corrected values; multi-jet events show
+   the expected partial effect; unaffected events match exactly.
+
+**New results** (both cards, same v8+JES/JER+kfactor_ggZZ+lhe_alphaS+
+decoupling production, only the ctag2d treatment changed):
+
+| | no-ZX (23 syst) | with-ZX (25 syst) |
+|---|---|---|
+| Full-syst median $r$ | **321.0000** (was 411.0) | **329.0000** (was 480.0) |
+| $\kappa_c$ | **58.33** (was 73.93) | **59.72** (was 85.89) |
+| Stat-only median | 273.5 (**unchanged**) | 283.5 (**unchanged**) |
+| `CMS_ctag2d` impact | 147.74 (was 177.16), #1, ~4.1× #2 | 162.04 (was 249.98), #1, ~4.0× #2 |
+
+Stat-only limits identical to the retracted-fix version confirms this is
+100% a systematics-shape effect, not a yield change — same verification
+pattern used when the swap fix was originally applied, now applied in
+reverse.
+
+**Real ranking changes worth flagging**:
+- No-ZX: `QCDscale_qqZZ` fell from #3 (16.90) to #14 (3.45);
+  `CMS_eff_e_reco_below20`, `CMS_scale_j`, `higgs_plus_c`, `BR_HZZ4l`,
+  `lhe_alphaS` all moved up into the top 6 now that `CMS_ctag2d` isn't as
+  overwhelmingly dominant.
+- With-ZX: **`ZX_rate` collapses from #2 (35.39) to #13 (6.19)** — the
+  single biggest ranking change in the whole revert. With `CMS_ctag2d` no
+  longer artificially inflated, the fit doesn't need `ZX_rate` to absorb as
+  much slack. `QCDscale_qqZZ` similarly falls to #14 (2.63).
+
+**A real transient issue hit twice during this rebuild, for the record**:
+`text2workspace.py`/`combineTool.py -M Impacts` failed deterministically
+twice in a row reading the freshly-written EOS ROOT file (`Bogus norm 0.0`
+for `CMS_eff_m_id Down`, `qqZZ`) — but `uproot` read the exact same
+histogram correctly both times (sum=36.29, not zero), and copying the
+datacard+ROOT file to local `/tmp` first let `text2workspace.py` read it
+without error. Consistent with the documented EOS-read-race pattern
+(README "Known traps") — not real data corruption. All combine/Impacts
+runs for this update were done against local copies, then results copied
+back to the EOS output directories for permanence.
+
+**Not done, deliberately left open**: no condor resubmission, no NanoAOD
+reprocessing — this revert only needed the one recomputed weight column,
+not the full production. Still haven't separately flagged this to Chirayu
+(HWW+c), who reads the identical file/correction and would be affected the
+same way if the swap turns out to be real after all.
+
+Output: `combine/outputs/combine_run3_100150_ctag2d_v8_jecshifts_ggzzkfactor_nozx_rawsf/`
+and `combine/outputs/combine_run3_100150_ctag2d_v8_jecshifts_with_zx_pkatris_ggzzkfactor_rawsf/`
+(datacards, histograms, `impacts_real.json`/`.pdf`/`-1.png`, `workspace.root`,
+all `higgsCombine*.root`, `combine_result.log`/`combine_result_statonly.log`).
+New script: `combine/scripts/create_datacards_ctag2d_100150_rawsf.py`.
+`second-brain/slides/analysis_overview_hczz.tex` updated throughout (the
+"What the calibration costs" frame retitled and rewritten, both impacts
+frames rebuilt with new plots/tables, uncertainty-band plot's black/red
+roles swapped, "road so far"/"Where we stand"/"Mistakes found and
+fixed"/Priorities/HWW+c-comparison all updated) — not yet committed.
+Memory: `hczz_ctag2d_l0_updown_swap_fix` (superseded by this update).
