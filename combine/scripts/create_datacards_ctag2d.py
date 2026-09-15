@@ -681,6 +681,14 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
         #     "qqZZkFactor"), alongside the existing ggZZ-only QCDscale_ggZZ
         #     row -- the two K-factors are separate uncertainty sources, not
         #     duplicates of each other.
+        # BR_HZZ4l=2% CHASED 2026-09-14, inconclusive-but-plausible (see
+        # create_datacards_ctag2d_100150.py for the full note): real
+        # HIG-24-013 (arXiv:2501.14849) doesn't apply this at all ("effect of
+        # theoretical uncertainties on the signal is negligible... not
+        # included in the fit"); primary LHCHWG source (arXiv:1107.5909)
+        # gives H->ZZ total uncertainty "at the level of 1%... below 3%", a
+        # range not a point value. 2% is plausible, not independently
+        # pinned down. No numeric change.
         dc.write(syst_row("BR_HZZ4l",      "lnN", {"Signal": "1.02", "Other_Higgs": "1.02"}))
         # QCDscale_qqZZ=4% CONFIRMED EXACT 2026-09-14 against the real HIG-24-013
         # text (arXiv:2501.14849): "this yields an overall 4% effect" for the

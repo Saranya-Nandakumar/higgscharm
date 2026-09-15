@@ -915,6 +915,24 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
         dc.write(syst_row("kfactor_ggZZ",  "lnN", {"ggZZ": "1.10"}))
         # Added 2026-08-17, sourced from Felix Heyen thesis Appendix D (no
         # per-event weight column exists for either -- pure rate lnN):
+        # BR_HZZ4l=2% CHASED 2026-09-14, inconclusive-but-plausible (not a
+        # clean confirm like QCDscale_qqZZ, not a bug): the real HIG-24-013
+        # text (arXiv:2501.14849) does NOT apply this at all -- "The effect
+        # of theoretical uncertainties on the signal is negligible for the
+        # present analysis and is not included in the fit." Checked the
+        # primary source instead (LHCHWG "SM Higgs-Boson Branching Ratios
+        # with Uncertainties", arXiv:1107.5909): "Both TU and PU on the
+        # important channels H->ZZ and H->WW remain at the level of 1% over
+        # the full mass range, giving rise to a total uncertainty below 3%"
+        # -- a 1-3% range, not a single quoted point value. 2% sits inside
+        # that range (plausible) but isn't independently pinned down the way
+        # QCDscale_qqZZ was. HIG-24-013 not using this uncertainty at all
+        # doesn't make 2% wrong here -- this is a coupling-extraction search
+        # (kappa_c), more sensitive to the assumed B(H->ZZ->4l) than a
+        # fiducial-xsec measurement is, so including it (per the Heyen
+        # thesis) is a reasonable, independent methodological choice, not
+        # something HIG-24-013 itself validates or contradicts. No numeric
+        # change. See hczz_physicsdays_systematics_audit memory.
         dc.write(syst_row("BR_HZZ4l",      "lnN", {"Signal": "1.02", "Other_Higgs": "1.02"}))
         # QCDscale_qqZZ=4% CONFIRMED EXACT 2026-09-14 against the real HIG-24-013
         # text (arXiv:2501.14849, "Measurements of Higgs boson production cross

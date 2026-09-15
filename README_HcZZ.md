@@ -2297,4 +2297,105 @@ run before) gives Net Z+X(SS) = 2938 for 2022preEE — ~500× the OS method's
 method already warns about for this era, or a CR-selection mismatch). Open
 item for a future session.
 
+**`BR_HZZ4l`=2% chased the same day, inconclusive-but-plausible verdict
+(not a clean confirm like `QCDscale_qqZZ`, not a bug).** Downloaded and
+read the actual HIG-24-013 PDF (arXiv:2501.14849) directly — its systematics
+section (Section 8) states outright: *"The effect of theoretical
+uncertainties on the signal is negligible for the present analysis and is
+not included in the fit."* The paper this codebase cites for every other
+lnN doesn't apply a signal branching-ratio uncertainty at all; there's no
+number in it to match `BR_HZZ4l` against.
+
+Checked the primary source instead — the paper's own reference [84], LHCHWG
+"Standard Model Higgs-Boson Branching Ratios with Uncertainties"
+(arXiv:1107.5909): *"Both TU and PU on the important channels H→ZZ and
+H→WW remain at the level of 1% over the full mass range, giving rise to a
+total uncertainty below 3%."* That's a **1-3% range, not a single quoted
+point value** — 2% sits inside it (plausible) but isn't independently
+pinned down the way `QCDscale_qqZZ` was.
+
+**Verdict**: `BR_HZZ4l`=2% is plausible and not contradicted, but genuinely
+inconclusive rather than confirmed. HIG-24-013 not using this uncertainty
+at all doesn't make 2% wrong for *this* analysis — a κc coupling-extraction
+search is more sensitive to the assumed B(H→ZZ→4l) than a fiducial
+cross-section measurement is, so including it (per the Felix Heyen thesis,
+this lnN's original source) is a reasonable, independent methodological
+choice that HIG-24-013 simply doesn't need to make for its own measurement.
+**No numeric code change** — inline citation notes added to all 3 scripts
+carrying `BR_HZZ4l` (`create_datacards_ctag2d_100150.py`,
+`create_datacards_ctag2d.py`, `create_datacards_ctag2d_compare.py`).
+
 Memory: `hczz_physicsdays_systematics_audit.md`.
+
+---
+
+## Update 2026-09-14 (later): no-ZX headline rebuilt with every current fix
+applied together for the first time — r=412.0→**411.0**, κc=74.11→**73.93**
+
+Found while doing a correctness pass on `second-brain/slides/analysis_overview_hczz.tex`:
+the no-ZX headline datacard (`combine_run3_100150_ctag2d_v8_jecshifts/datacard_no_zx.txt`)
+had never actually been rebuilt with `lhe_alphaS` re-inclusion, the qqZZ
+norm/shape decoupling fix, or the `kfactor_ggZZ` central-value fix — all
+three (2026-09-11 through 09-14) were only ever validated against the
+**with-ZX** card (`_with_zx_pkatris_systfix`/`_ggzzkfactor`). Confirmed by
+grepping the actual datacard: 22 rows, no `lhe_alphaS` row.
+
+**Rebuilt properly**: same command as the with-ZX build, minus `--zx-dir`
+(`create_datacards_ctag2d_100150.py --scored-dir hplusc_mva_4class_ctag2d_scored_v8
+--jecshifts-dir hplusc_mva_4class_ctag2d_jecshifts_scored_v2 --skip-zx
+--merge-bin-ranges "2-4,7-10"`), into
+`combine/outputs/combine_run3_100150_ctag2d_v8_jecshifts_ggzzkfactor_nozx/`.
+This picks up all 3 fixes at once since they live in the shared script.
+
+**Result**: `combine -M AsymptoticLimits` gives median **r=411.0000**
+(2.5%=195.87, 16%=273.18, 84%=646.09, 97.5%=999.82), **κc=73.93** — was
+412.0/74.11 with the pre-fix 22-nuisance card, confirming the previously
+*assumed* <0.3% shift (−0.24% exactly) rather than just citing the with-ZX
+cross-check as a proxy.
+
+**Re-ranked with the real 3-stage `impact_ranking.py -M Impacts`**
+(`b-hive_ttcc/combine/impact_ranking.py --real --expect-signal 411.0`, 23
+nuisances):
+
+| Rank | Nuisance | Impact on r |
+|---|---|---|
+| 1 | `CMS_ctag2d` | 177.16 |
+| 2 | `ps_isr` | 20.53 |
+| 3 | `QCDscale_qqZZ` | 16.90 |
+| 4 | `BR_HZZ4l` | 12.71 |
+| 5 | `CMS_scale_j` | 12.14 |
+| 6 | `QCDscale_gg` | 10.72 |
+| 7 | `CMS_eff_e_reco_below20` | 9.99 |
+| 8 | `kfactor_ggZZ` | 9.18 |
+| 9 | `higgs_plus_c` | 8.84 |
+| 10 | `pdf_gg` | 8.81 |
+| ... | | |
+| 21 | `scalevar_muF` | 0.12 |
+
+**Notable finding**: `scalevar_muF` collapsed from **#4 (impact 16.15) to
+#21 (0.12)** — the 2026-09-11 norm/shape-decoupling fix had only ever been
+demonstrated on the with-ZX card; this is the first time it actually took
+effect on the no-ZX headline, and the effect is dramatic (the systematic's
+shape-driving power was almost entirely the double-counted normalization
+shift, now removed).
+
+**Also re-ranked the with-ZX `_ggzzkfactor` card** (its existing
+`impacts_real.json`/`.pdf` predated the same-day fixes, from the morning of
+09-11 before `_systfix`/`_ggzzkfactor` were built): r=480.0 unchanged, but
+the ranking moved — `CMS_ctag2d` 252.66→249.98, `ZX_rate` #2 34.23→35.39,
+`CMS_scale_j` #3 26.55→26.40, same `scalevar_muF` collapse (#23, 0.10).
+
+**Also reran stat-only** (`--freezeParameters allConstrainedNuisances`) on
+both final rebuilt cards: no-ZX 273.5 (was 271.75), with-ZX 283.5 (was
+282.00) — the kfactor fix changes ggZZ's central value, not just its
+uncertainty, so even the frozen-nuisance fit shifts slightly. Z+X stat-only
+effect is still small (+3.7%) vs. full-syst (+16.8%) — same
+systematics-driven conclusion as before, just with refreshed numbers.
+
+Output: `combine/outputs/combine_run3_100150_ctag2d_v8_jecshifts_ggzzkfactor_nozx/`
+(datacard, histograms, `impacts_real.json`/`.pdf`, both AsymptoticLimits
+logs). `second-brain/slides/analysis_overview_hczz.tex` updated throughout
+(systematics counts 22/24→23/25, impacts table, "Where we stand" table,
+mistakes-found trail, priorities table, HWW+c comparison) — not yet
+committed. Memory: `hczz_ctag2d_l0_updown_swap_fix`,
+`hczz_jesjer_datacard_complete`, `hczz_zx_pkatris_production_and_era_bug`.

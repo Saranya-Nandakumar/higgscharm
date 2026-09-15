@@ -774,6 +774,12 @@ def write_datacard(histograms, root_filename, output_dir, label, discriminant_de
             # kfactor_ggZZ is the UNCERTAINTY on the GGZZ_KFACTOR=2.27
             # central-value correction now applied above (2026-09-14 fix).
             dc.write(syst_row("kfactor_ggZZ",  "lnN", {"ggZZ": "1.10"}))
+            # BR_HZZ4l=2% CHASED 2026-09-14, inconclusive-but-plausible (see
+            # create_datacards_ctag2d_100150.py for the full note): real
+            # HIG-24-013 (arXiv:2501.14849) doesn't apply this at all; primary
+            # LHCHWG source (arXiv:1107.5909) gives a 1-3% range, not a point
+            # value. 2% is plausible, not independently pinned down. No
+            # numeric change.
             dc.write(syst_row("BR_HZZ4l",      "lnN", {"Signal": "1.02", "Other_Higgs": "1.02"}))
             dc.write(syst_row("QCDscale_qqZZ", "lnN", {"qqZZ": "1.04"}))
 
