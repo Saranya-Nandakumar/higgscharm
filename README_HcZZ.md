@@ -2513,3 +2513,58 @@ frames rebuilt with new plots/tables, uncertainty-band plot's black/red
 roles swapped, "road so far"/"Where we stand"/"Mistakes found and
 fixed"/Priorities/HWW+c-comparison all updated) — not yet committed.
 Memory: `hczz_ctag2d_l0_updown_swap_fix` (superseded by this update).
+
+---
+
+### Update 2026-09-16: Z+c CR ctag2d 2D-SF validation check — small mixed
+effect from the SF, but a much larger pre-existing Data/MC normalization
+gap found in the CR itself (unrelated to ctag2d)
+
+Independent check of whether the official 2D ctag SF improves data/MC
+agreement in the `ztomumu`/`ztoee` `CR_Zplusc` control region (orthogonal
+to the SR and the MVA score). No new condor production — reused the
+existing 2022postEE `CR_Zplusc` parquets (the only era this CR was ever
+submitted for).
+
+**Scope caveat**: only the `cjets` (already c-tag-'loose'-passing) subset
+has per-jet CvL/CvB/hadronFlavour/pt stored in these parquets, not the full
+`jets` collection the SR's `CTag2DCorrector` uses (up to 3 leading jets of
+any flavor). Applied the SF to the `cjets` subset only, per user direction
+— a real but bounded scope reduction from the SR, not a full reproduction.
+
+For each `cjets` entry, categorized into the same 11 WP codes (L0/C0-C4/
+B0-B4) via the real `_category_np`, and histogrammed Data vs MC with and
+without the central per-jet SF applied.
+
+**Result**: the SF moves individual category ratios by roughly ±5-15%
+(e.g. ztomumu C0: 0.543→0.507; C2: 0.500→0.546) but the total barely moves
+(ztomumu 0.524→0.521, ztoee 0.594→0.591) — no systematic improvement or
+degradation, shifts largely cancel.
+
+**Bigger finding**: Data/MC ≈ 0.5-0.6 in every category, both channels —
+MC over-predicts data by roughly a factor of ~1.7-2x. Confirmed via the
+`base` category (no c-jet requirement at all): `ztoee` `base` gives
+Data/MC = 0.616 and `ztomumu` `base` gives Data/MC = 0.556 (10,749,839
+data / 19,329,379.6 MC) — same ballpark in both channels — **this deficit
+predates and is unrelated to the c-tag requirement or the ctag2d SF**. Not
+root-caused (out of scope) — candidates: missing/incomplete trigger
+efficiency correction, a DY xsec/k-factor mismatch, or this production
+simply never having had its absolute normalization validated before (built
+for tagging-shape comparisons, not an absolute-yield CR). Flag for separate
+investigation before drawing any absolute-normalization conclusion from
+this CR.
+
+Incidental finding from the `ztomumu` `base` rerun: 8 parquet files under
+its output tree (`DYJetsToLL_50`, `TTtoLNu2Q`, `TWminusto2L2Nu`,
+`TbarWplusto2L2Nu`) actually carry the `ztoee`-shaped schema
+(`dielectron_mass`/... branches) — a small amount of `ztoee` output mixed
+into `ztomumu`'s directory tree. Negligible in scale (8 of many thousands
+of files) and doesn't move the 0.556 number; flagged, not fixed. Separately
+4 files hit real Parquet corruption/truncation — matches the
+already-documented EOS-read-race flakiness pattern, not new.
+
+Script: `combine/scripts/create_cr_zplusc_ctag2d_check.py` (+
+`check_zplusc_base_normalization.py` for the base-category cross-check).
+Plots: `second-brain/slides/make_hczz_cr_zplusc_ctag2d_plots.py` ->
+`hczz_cr_zplusc_{ztomumu,ztoee}_{nosf,withsf}.pdf`. Full writeup:
+`second-brain/Notes/hczz-zplusc-cr-ctag2d-sf-check-2026-09-16.md`.
