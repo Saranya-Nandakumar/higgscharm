@@ -46,6 +46,7 @@ object_selection:
         - objects['muons'].is_loose
         - objects['muons'].is_relaxed
         - events.Muon.isPFcand | ((events.Muon.highPtId > 0) & (events.Muon.pt > 200))
+        - events.Muon.pfRelIso03_all < 0.35
   electrons:
     field: events.Electron
     add_cut:
@@ -284,6 +285,49 @@ histogram_config:
       categories: [11, 13]
       label: $|\text{pdgId}(\ell_3)|$ (3P1F)
       expression: np.abs(objects['best_zllcandidate_3p1f'].z2.l1.pdgId)
+    l3_phi_3p1f:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(\ell_3)$ (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l1.phi
+    l3_charge_3p1f:
+      type: IntCategory
+      categories: [-1, 1]
+      label: charge($\ell_3$) (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l1.charge
+    l3_pfreliso03all_3p1f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 2
+      label: $\ell_3$ PF rel. iso (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l1.pfRelIso03_all
+    l3_sip3d_3p1f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 15
+      label: $\ell_3$ SIP3D (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l1.sip3d
+    l3_mvahzziso_3p1f:
+      type: Regular
+      bins: 50
+      start: -999
+      stop: 1
+      label: $\ell_3$ mvaHZZIso (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l1.mvaHZZIso
+    l3_ispfcand_3p1f:
+      type: Boolean
+      label: $\ell_3$ isPFcand (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l1.isPFcand
+    l3_highptid_3p1f:
+      type: Integer
+      start: 0
+      stop: 3
+      label: $\ell_3$ highPtId (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l1.highPtId
     l4_pt_3p1f:
       type: Variable
       edges: [5, 7, 10, 20, 30, 40, 50, 80]
@@ -305,6 +349,49 @@ histogram_config:
       categories: [11, 13]
       label: $|\text{pdgId}(\ell_4)|$ (3P1F)
       expression: np.abs(objects['best_zllcandidate_3p1f'].z2.l2.pdgId)
+    l4_phi_3p1f:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(\ell_4)$ (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l2.phi
+    l4_charge_3p1f:
+      type: IntCategory
+      categories: [-1, 1]
+      label: charge($\ell_4$) (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l2.charge
+    l4_pfreliso03all_3p1f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 2
+      label: $\ell_4$ PF rel. iso (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l2.pfRelIso03_all
+    l4_sip3d_3p1f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 15
+      label: $\ell_4$ SIP3D (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l2.sip3d
+    l4_mvahzziso_3p1f:
+      type: Regular
+      bins: 50
+      start: -999
+      stop: 1
+      label: $\ell_4$ mvaHZZIso (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l2.mvaHZZIso
+    l4_ispfcand_3p1f:
+      type: Boolean
+      label: $\ell_4$ isPFcand (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l2.isPFcand
+    l4_highptid_3p1f:
+      type: Integer
+      start: 0
+      stop: 3
+      label: $\ell_4$ highPtId (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z2.l2.highPtId
 
     # 2P2F: both l3 and l4 are fail
     l3_pt_2p2f:
@@ -324,6 +411,53 @@ histogram_config:
       categories: [11, 13]
       label: $|\text{pdgId}(\ell_3)|$ (2P2F)
       expression: np.abs(objects['best_zllcandidate_2p2f'].z2.l1.pdgId)
+    l3_istight_2p2f:
+      type: Boolean
+      label: $\ell_3$ is_tight (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l1.is_tight
+    l3_phi_2p2f:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(\ell_3)$ (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l1.phi
+    l3_charge_2p2f:
+      type: IntCategory
+      categories: [-1, 1]
+      label: charge($\ell_3$) (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l1.charge
+    l3_pfreliso03all_2p2f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 2
+      label: $\ell_3$ PF rel. iso (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l1.pfRelIso03_all
+    l3_sip3d_2p2f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 15
+      label: $\ell_3$ SIP3D (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l1.sip3d
+    l3_mvahzziso_2p2f:
+      type: Regular
+      bins: 50
+      start: -999
+      stop: 1
+      label: $\ell_3$ mvaHZZIso (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l1.mvaHZZIso
+    l3_ispfcand_2p2f:
+      type: Boolean
+      label: $\ell_3$ isPFcand (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l1.isPFcand
+    l3_highptid_2p2f:
+      type: Integer
+      start: 0
+      stop: 3
+      label: $\ell_3$ highPtId (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l1.highPtId
     l4_pt_2p2f:
       type: Variable
       edges: [5, 7, 10, 20, 30, 40, 50, 80]
@@ -341,6 +475,53 @@ histogram_config:
       categories: [11, 13]
       label: $|\text{pdgId}(\ell_4)|$ (2P2F)
       expression: np.abs(objects['best_zllcandidate_2p2f'].z2.l2.pdgId)
+    l4_istight_2p2f:
+      type: Boolean
+      label: $\ell_4$ is_tight (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l2.is_tight
+    l4_phi_2p2f:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(\ell_4)$ (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l2.phi
+    l4_charge_2p2f:
+      type: IntCategory
+      categories: [-1, 1]
+      label: charge($\ell_4$) (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l2.charge
+    l4_pfreliso03all_2p2f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 2
+      label: $\ell_4$ PF rel. iso (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l2.pfRelIso03_all
+    l4_sip3d_2p2f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 15
+      label: $\ell_4$ SIP3D (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l2.sip3d
+    l4_mvahzziso_2p2f:
+      type: Regular
+      bins: 50
+      start: -999
+      stop: 1
+      label: $\ell_4$ mvaHZZIso (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l2.mvaHZZIso
+    l4_ispfcand_2p2f:
+      type: Boolean
+      label: $\ell_4$ isPFcand (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l2.isPFcand
+    l4_highptid_2p2f:
+      type: Integer
+      start: 0
+      stop: 3
+      label: $\ell_4$ highPtId (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z2.l2.highPtId
 
     # =========================================================================
     # SS 2P2F: Failing lepton info (for AN-18-340 Eq. 11 SS fake rate method)
@@ -427,6 +608,13 @@ histogram_config:
       stop: 2.5
       label: Jets $\eta$
       expression: objects['jets'].eta
+    jet_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: Jets $\phi$
+      expression: objects['jets'].phi
     jet_btagPNetB:
       type: Regular
       bins: 50
@@ -462,6 +650,13 @@ histogram_config:
       stop: 2.5
       label: c-Jet $\eta$
       expression: objects['cjets'].eta
+    cjets_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: c-Jet $\phi$
+      expression: objects['cjets'].phi
     cjets_btagPNetB:
       type: Regular
       bins: 50
@@ -622,6 +817,91 @@ histogram_config:
       categories: [11, 13]
       label: Z1 l1 |pdgId| (3P1F)
       expression: np.abs(objects['best_zllcandidate_3p1f'].z1.l1.pdgId)
+    # Z1 lepton ID/iso features (3P1F) -- needed by the H+c MVA's npf_candidates
+    # block (lepton_charge/pfRelIso03_all/sip3d/is_tight/mvaHZZIso/isPFcand/
+    # highPtId), previously never dumped -- see second-brain 2026-09-16 Z+X
+    # feature-completeness check. Fields are harmonized across muon/electron
+    # in select_zzto4l_leptons() (object_selections.py), safe on either flavor.
+    z1_l1_istight_3p1f:
+      type: Boolean
+      label: Z1 l1 is_tight (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l1.is_tight
+    z1_l1_charge_3p1f:
+      type: IntCategory
+      categories: [-1, 1]
+      label: charge(Z1 l1) (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l1.charge
+    z1_l1_pfreliso03all_3p1f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 2
+      label: Z1 l1 PF rel. iso (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l1.pfRelIso03_all
+    z1_l1_sip3d_3p1f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 15
+      label: Z1 l1 SIP3D (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l1.sip3d
+    z1_l1_mvahzziso_3p1f:
+      type: Regular
+      bins: 50
+      start: -999
+      stop: 1
+      label: Z1 l1 mvaHZZIso (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l1.mvaHZZIso
+    z1_l1_ispfcand_3p1f:
+      type: Boolean
+      label: Z1 l1 isPFcand (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l1.isPFcand
+    z1_l1_highptid_3p1f:
+      type: Integer
+      start: 0
+      stop: 3
+      label: Z1 l1 highPtId (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l1.highPtId
+    z1_l2_istight_3p1f:
+      type: Boolean
+      label: Z1 l2 is_tight (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l2.is_tight
+    z1_l2_charge_3p1f:
+      type: IntCategory
+      categories: [-1, 1]
+      label: charge(Z1 l2) (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l2.charge
+    z1_l2_pfreliso03all_3p1f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 2
+      label: Z1 l2 PF rel. iso (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l2.pfRelIso03_all
+    z1_l2_sip3d_3p1f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 15
+      label: Z1 l2 SIP3D (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l2.sip3d
+    z1_l2_mvahzziso_3p1f:
+      type: Regular
+      bins: 50
+      start: -999
+      stop: 1
+      label: Z1 l2 mvaHZZIso (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l2.mvaHZZIso
+    z1_l2_ispfcand_3p1f:
+      type: Boolean
+      label: Z1 l2 isPFcand (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l2.isPFcand
+    z1_l2_highptid_3p1f:
+      type: Integer
+      start: 0
+      stop: 3
+      label: Z1 l2 highPtId (3P1F)
+      expression: objects['best_zllcandidate_3p1f'].z1.l2.highPtId
     # c-jet Higgs delta-phi (3P1F)
     cjets_h_dphi_3p1f:
       type: Regular
@@ -743,6 +1023,87 @@ histogram_config:
       categories: [11, 13]
       label: Z1 l1 |pdgId| (2P2F)
       expression: np.abs(objects['best_zllcandidate_2p2f'].z1.l1.pdgId)
+    # Z1 lepton ID/iso features (2P2F) -- see 3P1F block above for rationale.
+    z1_l1_istight_2p2f:
+      type: Boolean
+      label: Z1 l1 is_tight (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l1.is_tight
+    z1_l1_charge_2p2f:
+      type: IntCategory
+      categories: [-1, 1]
+      label: charge(Z1 l1) (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l1.charge
+    z1_l1_pfreliso03all_2p2f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 2
+      label: Z1 l1 PF rel. iso (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l1.pfRelIso03_all
+    z1_l1_sip3d_2p2f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 15
+      label: Z1 l1 SIP3D (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l1.sip3d
+    z1_l1_mvahzziso_2p2f:
+      type: Regular
+      bins: 50
+      start: -999
+      stop: 1
+      label: Z1 l1 mvaHZZIso (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l1.mvaHZZIso
+    z1_l1_ispfcand_2p2f:
+      type: Boolean
+      label: Z1 l1 isPFcand (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l1.isPFcand
+    z1_l1_highptid_2p2f:
+      type: Integer
+      start: 0
+      stop: 3
+      label: Z1 l1 highPtId (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l1.highPtId
+    z1_l2_istight_2p2f:
+      type: Boolean
+      label: Z1 l2 is_tight (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l2.is_tight
+    z1_l2_charge_2p2f:
+      type: IntCategory
+      categories: [-1, 1]
+      label: charge(Z1 l2) (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l2.charge
+    z1_l2_pfreliso03all_2p2f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 2
+      label: Z1 l2 PF rel. iso (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l2.pfRelIso03_all
+    z1_l2_sip3d_2p2f:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 15
+      label: Z1 l2 SIP3D (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l2.sip3d
+    z1_l2_mvahzziso_2p2f:
+      type: Regular
+      bins: 50
+      start: -999
+      stop: 1
+      label: Z1 l2 mvaHZZIso (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l2.mvaHZZIso
+    z1_l2_ispfcand_2p2f:
+      type: Boolean
+      label: Z1 l2 isPFcand (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l2.isPFcand
+    z1_l2_highptid_2p2f:
+      type: Integer
+      start: 0
+      stop: 3
+      label: Z1 l2 highPtId (2P2F)
+      expression: objects['best_zllcandidate_2p2f'].z1.l2.highPtId
     # c-jet Higgs delta-phi (2P2F)
     cjets_h_dphi_2p2f:
       type: Regular
@@ -777,15 +1138,47 @@ histogram_config:
       - z1_l2_pt_3p1f
       - z1_l2_eta_3p1f
       - z1_l2_phi_3p1f
+    z1_leptons_id_3p1f:
+      - z1_l1_istight_3p1f
+      - z1_l1_charge_3p1f
+      - z1_l1_pfreliso03all_3p1f
+      - z1_l1_sip3d_3p1f
+      - z1_l1_mvahzziso_3p1f
+      - z1_l1_ispfcand_3p1f
+      - z1_l1_highptid_3p1f
+    z1_l2_id_3p1f:
+      - z1_l2_istight_3p1f
+      - z1_l2_charge_3p1f
+      - z1_l2_pfreliso03all_3p1f
+      - z1_l2_sip3d_3p1f
+      - z1_l2_mvahzziso_3p1f
+      - z1_l2_ispfcand_3p1f
+      - z1_l2_highptid_3p1f
     leptons_3p1f:
       - l3_pt_3p1f
       - l3_eta_3p1f
+      - l3_phi_3p1f
       - l3_istight_3p1f
       - l3_pdgid_3p1f
       - l4_pt_3p1f
       - l4_eta_3p1f
+      - l4_phi_3p1f
       - l4_istight_3p1f
       - l4_pdgid_3p1f
+    l3_id_3p1f:
+      - l3_charge_3p1f
+      - l3_pfreliso03all_3p1f
+      - l3_sip3d_3p1f
+      - l3_mvahzziso_3p1f
+      - l3_ispfcand_3p1f
+      - l3_highptid_3p1f
+    l4_id_3p1f:
+      - l4_charge_3p1f
+      - l4_pfreliso03all_3p1f
+      - l4_sip3d_3p1f
+      - l4_mvahzziso_3p1f
+      - l4_ispfcand_3p1f
+      - l4_highptid_3p1f
     # ---- 2P2F groups ----
     zll_2p2f:
       - m4l_2p2f
@@ -810,13 +1203,47 @@ histogram_config:
       - z1_l2_pt_2p2f
       - z1_l2_eta_2p2f
       - z1_l2_phi_2p2f
+    z1_leptons_id_2p2f:
+      - z1_l1_istight_2p2f
+      - z1_l1_charge_2p2f
+      - z1_l1_pfreliso03all_2p2f
+      - z1_l1_sip3d_2p2f
+      - z1_l1_mvahzziso_2p2f
+      - z1_l1_ispfcand_2p2f
+      - z1_l1_highptid_2p2f
+    z1_l2_id_2p2f:
+      - z1_l2_istight_2p2f
+      - z1_l2_charge_2p2f
+      - z1_l2_pfreliso03all_2p2f
+      - z1_l2_sip3d_2p2f
+      - z1_l2_mvahzziso_2p2f
+      - z1_l2_ispfcand_2p2f
+      - z1_l2_highptid_2p2f
     leptons_2p2f:
       - l3_pt_2p2f
       - l3_eta_2p2f
+      - l3_phi_2p2f
+      - l3_istight_2p2f
       - l3_pdgid_2p2f
       - l4_pt_2p2f
       - l4_eta_2p2f
+      - l4_phi_2p2f
+      - l4_istight_2p2f
       - l4_pdgid_2p2f
+    l3_id_2p2f:
+      - l3_charge_2p2f
+      - l3_pfreliso03all_2p2f
+      - l3_sip3d_2p2f
+      - l3_mvahzziso_2p2f
+      - l3_ispfcand_2p2f
+      - l3_highptid_2p2f
+    l4_id_2p2f:
+      - l4_charge_2p2f
+      - l4_pfreliso03all_2p2f
+      - l4_sip3d_2p2f
+      - l4_mvahzziso_2p2f
+      - l4_ispfcand_2p2f
+      - l4_highptid_2p2f
     # ---- SS 2P2F group (for AN-18-340 Eq. 11) ----
     leptons_2p2f_ss:
       - m4l_2p2f_ss
@@ -838,6 +1265,7 @@ histogram_config:
     jets:
       - jet_pt
       - jet_eta
+      - jet_phi
       - jet_btagPNetB
       - jet_btagPNetCvL
       - jet_btagPNetCvB
@@ -847,5 +1275,8 @@ histogram_config:
       - cjets_btagPNetB
       - cjets_btagPNetCvL
       - cjets_btagPNetCvB
+    cjets_phi_dphi:
+      - cjets_phi
       - cjets_h_dphi_3p1f
+      - cjets_h_dphi_2p2f
       - cjets_h_dphi_2p2f
