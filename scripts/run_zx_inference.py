@@ -96,6 +96,38 @@ PASSTHROUGH = [
     'weight_nominal', 'weight_zx', 'zx_weight', 'zx_sign',
 ]
 
+# Per-jet PASSTHROUGH columns that estimate_zx_background.py's _load_flat()
+# ALSO writes as indexed <name>_0/_1/_2 columns (one real value per jet slot),
+# alongside a bare <name> column that is only the leading jet's value.
+# MVAPostProcessor.prepare_features() reads these via _get_col(df, [name],
+# idx=j) expecting an array-valued column -- passing the bare scalar column
+# through as-is silently returns the SAME (leading-jet) value for every
+# candidate slot j=0,1,2, corrupting jets 2-3 for every event with >1 jet.
+# Found 2026-09-16: confirmed present and correct in our own merged CR
+# parquets + our own estimate_zx_background.py output (verified: a real
+# 3-jet event gives jet_pt_0/1/2 = 26.99/22.02/21.07, not duplicates) --
+# this reconstructs the true per-jet array from those indexed columns so
+# the existing (correct) array-handling path in _get_col actually fires.
+JET_ARRAY_COLS = [
+    'jet_pt', 'jet_eta', 'jet_btagPNetB', 'jet_btagPNetCvL', 'jet_btagPNetCvB',
+    'cjets_pt', 'cjets_eta', 'cjets_btagPNetB', 'cjets_btagPNetCvL', 'cjets_btagPNetCvB',
+]
+N_JET_SLOTS = 3
+
+
+def _reconstruct_jet_array_columns(df):
+    """Build array-valued jet_pt/eta/btag* (etc.) columns from the
+    <name>_0/_1/_2 indexed columns emitted by estimate_zx_background.py,
+    when present. Returns a dict of {name: pd.Series of np.ndarray}."""
+    out = {}
+    for name in JET_ARRAY_COLS:
+        idx_cols = [f'{name}_{j}' for j in range(N_JET_SLOTS)]
+        if not all(c in df.columns for c in idx_cols):
+            continue
+        stacked = np.stack([df[c].to_numpy(dtype=np.float64) for c in idx_cols], axis=1)
+        out[name] = pd.Series(list(stacked), index=df.index)
+    return out
+
 
 def prepare_df_for_inference(df, col_map):
     """Rename CR columns to MVA-expected names and pass through common columns."""
@@ -110,6 +142,10 @@ def prepare_df_for_inference(df, col_map):
     for col in PASSTHROUGH:
         if col in df.columns:
             out[col] = df[col]
+    # Prefer the reconstructed true per-jet array over the bare
+    # leading-jet-only scalar, for any column where the _0/_1/_2 indexed
+    # variants are available (see JET_ARRAY_COLS note above).
+    out.update(_reconstruct_jet_array_columns(df))
     return pd.DataFrame(out)
 
 
