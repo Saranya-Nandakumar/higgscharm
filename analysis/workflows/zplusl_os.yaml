@@ -26,6 +26,9 @@ object_selection:
         - objects['muons'].is_loose
         - objects['muons'].is_relaxed
         - events.Muon.isPFcand | ((events.Muon.highPtId > 0) & (events.Muon.pt > 200))
+        # pfRelIso03_all < 0.35 is applied in select_zzto4l_leptons (after FSR
+        # correction) -- do NOT apply here on raw iso, it double-vetoes muons
+        # with a nearby FSR photon (matches zzto4l.yaml / zzto4l_CR.yaml).
   electrons:
     field: events.Electron
     add_cut: 
