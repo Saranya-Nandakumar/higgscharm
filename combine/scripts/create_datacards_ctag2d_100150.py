@@ -59,6 +59,7 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 import uproot
+import hist
 from collections import defaultdict
 
 
@@ -244,6 +245,22 @@ SYSTEMATICS = {
 # HPlusBottom ~+-7.7%, same private-sample-elevated-but-not-pathological
 # pattern already noted for it above) -- none of the same-direction-Up/Down
 # signature that flagged the original bug.
+#
+# RE-INCLUDED 2026-09-20 (lhe_pdf/scalevar_muR/scalevar_muF, Other_Higgs
+# only): closes the gap documented in second-brain memory
+# hczz_other_higgs_scale_gap -- Other_Higgs was the only process with NEITHER
+# a real shape systematic NOR a compensating QCDscale_gg/pdf_gg-style lnN for
+# these three. The exclusion above was correctly diagnosed as being driven
+# entirely by HPlusBottom (~4% of Other_Higgs's yield, same private-LHE-chain
+# bug as Signal) -- but unlike Signal, Other_Higgs is a POOLED process whose
+# other ~96% (official ggH/VBF/WH/ZH/ttH/bbH centrally-produced samples) has
+# already been spot-checked sane above (2026-09-11 lhe_alphaS check covered
+# the same sub-samples). Rather than exclude the whole pool or add a flat
+# lnN placeholder, load_mc_scored_parquets() now overrides these 3
+# systematics to nominal (no variation) PER-SAMPLE for HPlusBottom files only
+# (see HPLUSBOTTOM_BUGGY_SYST / is_hplusbottom below) -- the pooled
+# Other_Higgs shape now carries a real, mostly-official-sample lhe_pdf/
+# scalevar_muR/scalevar_muF variation instead of being flat everywhere.
 EFF_E_RECO = {"CMS_eff_e_reco_20to75", "CMS_eff_e_reco_above75", "CMS_eff_e_reco_below20"}
 USABLE_SYST = {
     # higgs_plus_c is deliberately narrow-scoped to ggH/VBF only (see
@@ -257,10 +274,17 @@ USABLE_SYST = {
     # branch and degenerate lhe_pdf/lhe_alphaS -- unrelated to the abs() bug,
     # re-including wouldn't add real information for either).
     "qqZZ":        set(SYSTEMATICS.keys()) - {"higgs_plus_c"},
-    "Other_Higgs": set(SYSTEMATICS.keys()) - {"lhe_pdf", "scalevar_muR", "scalevar_muF"},
+    "Other_Higgs": set(SYSTEMATICS.keys()),
     "ggZZ":        {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"} | EFF_E_RECO,
     "Signal":      {"ps_isr", "ps_fsr", "CMS_pileup", "CMS_ctag2d", "CMS_eff_m_id"} | EFF_E_RECO,
 }
+
+# Per-sample (not per-process) override: HPlusBottom is the ~4% private-LHE
+# sub-sample of Other_Higgs sharing Signal's confirmed lhe_pdf-normalization
+# and scalevar_muR/muF same-direction bugs (see the block comment above).
+# lhe_alphaS is NOT in this set -- verified sane (not pathological) for
+# HPlusBottom specifically, 2026-09-11.
+HPLUSBOTTOM_BUGGY_SYST = {"lhe_pdf", "scalevar_muR", "scalevar_muF"}
 
 
 # ---------------------------------------------------------------------------
@@ -439,8 +463,16 @@ def load_mc_scored_parquets(scored_dir, sumw_by_proc):
                 continue
 
             usable = USABLE_SYST.get(proc, set())
+            # HPlusBottom-specific override -- see HPLUSBOTTOM_BUGGY_SYST above.
+            # Don't even request these 3 columns for HPlusBottom files (avoids
+            # reading the known-buggy values); the loop below still iterates
+            # the FULL `usable` set per file so proc_syst_weights arrays stay
+            # aligned 1:1 with proc_scores/proc_weights across every file of
+            # this process, HPlusBottom or not.
+            is_hplusbottom = (proc == "Other_Higgs" and "HPlusBottom" in sample_name)
+            requestable = usable - HPLUSBOTTOM_BUGGY_SYST if is_hplusbottom else usable
             syst_cols_wanted = []
-            for syst in usable:
+            for syst in requestable:
                 for direction in ("Up", "Down"):
                     syst_cols_wanted.append(syst_col(syst, direction, era))
 
@@ -478,7 +510,15 @@ def load_mc_scored_parquets(scored_dir, sumw_by_proc):
                 for syst in usable:
                     for direction in ("Up", "Down"):
                         col = syst_col(syst, direction, era)
-                        if col in df_win.columns:
+                        if is_hplusbottom and syst in HPLUSBOTTOM_BUGGY_SYST:
+                            # Force nominal (no variation) for HPlusBottom's
+                            # known-buggy lhe_pdf/scalevar_muR/scalevar_muF,
+                            # even though the column itself exists -- keeps
+                            # this file's contribution to Other_Higgs's pooled
+                            # shape flat for these 3 systs, same convention as
+                            # the missing-column fallback below.
+                            proc_syst_weights[proc][syst][direction].append(nominal_win)
+                        elif col in df_win.columns:
                             proc_syst_weights[proc][syst][direction].append(
                                 df_win[col].fillna(0).values
                             )
@@ -778,7 +818,16 @@ NORM_DECOUPLED = {
 
 
 def build_histograms(mc_data, zx_scores, zx_weights, jec_data=None):
+    """
+    Returns (histograms, histograms_var): parallel dicts, same keys.
+    `histograms[name]` is the per-bin sum-of-weights (as before).
+    `histograms_var[name]` is the per-bin sum-of-weights-SQUARED -- the true
+    statistical variance of a weighted-MC bin. Needed so write_root_file can
+    populate each template's real TH1::fSumw2 (see its docstring for why this
+    matters for autoMCStats).
+    """
     histograms = {}
+    histograms_var = {}
     n_bins = len(MVA_BINS) - 1
 
     print(f"\n  {'Process':<15} {'n_events':>10} {'hist_integral':>14}")
@@ -788,10 +837,13 @@ def build_histograms(mc_data, zx_scores, zx_weights, jec_data=None):
         scores, weights, syst_scaled = mc_data[proc]
         if len(scores) == 0:
             histograms[proc] = np.zeros(n_bins)
+            histograms_var[proc] = np.zeros(n_bins)
             print(f"  {proc:<15} {'(empty)':>10}")
             continue
         h, _ = np.histogram(scores, bins=MVA_BINS, weights=weights)
+        h2, _ = np.histogram(scores, bins=MVA_BINS, weights=weights ** 2)
         histograms[proc] = h.astype(np.float64)
+        histograms_var[proc] = h2.astype(np.float64)
         print(f"  {proc:<15} {len(scores):>10} {h.sum():>14.4f}")
 
         for syst, by_dir in syst_scaled.items():
@@ -801,13 +853,18 @@ def build_histograms(mc_data, zx_scores, zx_weights, jec_data=None):
                           f"({len(w)} vs {len(scores)}) -- skipping")
                     continue
                 hs, _ = np.histogram(scores, bins=MVA_BINS, weights=w)
+                hs2, _ = np.histogram(scores, bins=MVA_BINS, weights=w ** 2)
                 if (proc, syst) in NORM_DECOUPLED and hs.sum() > 0:
                     # Rescale the whole template to the nominal integral --
                     # removes the normalization shift (already covered by
                     # this (proc,syst)'s matching flat lnN), keeps only the
-                    # per-bin acceptance+shape distortion.
-                    hs = hs * (h.sum() / hs.sum())
+                    # per-bin acceptance+shape distortion. Variance scales as
+                    # the square of the same factor: Var(c*X) = c^2 * Var(X).
+                    c = h.sum() / hs.sum()
+                    hs = hs * c
+                    hs2 = hs2 * c ** 2
                 histograms[f"{proc}_{syst}{direction}"] = hs.astype(np.float64)
+                histograms_var[f"{proc}_{syst}{direction}"] = hs2.astype(np.float64)
 
         # JES/JER (and other object-shift) systematics: independent samples,
         # not a weight ratio on `scores`/`weights` above -- histogram their
@@ -821,33 +878,65 @@ def build_histograms(mc_data, zx_scores, zx_weights, jec_data=None):
                     if len(jscores) == 0:
                         continue
                     hs, _ = np.histogram(jscores, bins=MVA_BINS, weights=jweights)
+                    hs2, _ = np.histogram(jscores, bins=MVA_BINS, weights=jweights ** 2)
                     histograms[f"{proc}_{syst}{direction}"] = hs.astype(np.float64)
+                    histograms_var[f"{proc}_{syst}{direction}"] = hs2.astype(np.float64)
 
     if len(zx_scores) > 0:
         h, _ = np.histogram(zx_scores, bins=MVA_BINS, weights=zx_weights)
+        h2, _ = np.histogram(zx_scores, bins=MVA_BINS, weights=zx_weights ** 2)
         histograms["ZX"] = h.astype(np.float64)
+        histograms_var["ZX"] = h2.astype(np.float64)
         print(f"  {'ZX':<15} {len(zx_scores):>10} {h.sum():>14.4f}")
     else:
         histograms["ZX"] = np.zeros(n_bins)
+        histograms_var["ZX"] = np.zeros(n_bins)
 
-    return histograms
+    return histograms, histograms_var
 
 
 # ---------------------------------------------------------------------------
 # Write ROOT file
 # ---------------------------------------------------------------------------
 
-def write_root_file(histograms, output_dir, filename="histograms_mva_with_zx.root",
-                     include_zx=True):
+def write_root_file(histograms, histograms_var, output_dir,
+                     filename="histograms_mva_with_zx.root", include_zx=True):
+    """
+    Each MC/ZX template is written as a Weight()-storage `hist.Hist` so its true
+    per-bin variance (sum of w^2, from build_histograms) lands in the ROOT
+    file's TH1::fSumw2 array -- NOT the previous bare-(values,edges)-tuple
+    write, which leaves fSumw2 empty. Confirmed by direct round-trip test
+    (2026-09-17): with an empty fSumw2, ROOT/uproot readback falls back to a
+    Poisson proxy (variance = max(content, 0)) -- EXACTLY ZERO for any
+    negative-content bin (already known to occur in Signal's low-score-tail
+    templates, see scan_negative_bins/--merge-bin-ranges), and a systematic
+    underestimate everywhere else a bin mixes large positive- and
+    negative-weight MC events (true variance = sum(w^2) can be ~2x the naive
+    Poisson mean=variance assumption for this analysis's ~25%-negative-weight
+    Signal/HPlusBottom MC). Combine's Barlow-Beeston-lite autoMCStats nuisance
+    needs a well-defined, non-degenerate effective event count
+    (n_eff = content^2/variance) per bin -- the old zero/wrong-Sumw2 files
+    could never supply one, at any --automcstats-threshold. This is the
+    concrete mechanism behind the non-convergence documented in
+    README_HcZZ.md's 2026-08-19 update (11.5h test, thresholds 10/50/100,
+    zero quantiles produced). Fixed here 2026-09-17.
+    """
     path = os.path.join(output_dir, filename)
     nominal_procs = ["Signal", "ggZZ", "qqZZ", "Other_Higgs"] + (["ZX"] if include_zx else [])
     with uproot.recreate(path, compression=None) as f:
         for proc, h in histograms.items():
             if proc == "ZX" and not include_zx:
                 continue  # --skip-zx: never write the ZX histogram at all
-            f[f"h_{proc}"] = (h, MVA_BINS)
+            hw = hist.Hist(hist.axis.Variable(MVA_BINS), storage=hist.storage.Weight())
+            hw.view().value = h
+            hw.view().variance = histograms_var[proc]
+            f[f"h_{proc}"] = hw
         # Asimov data_obs = sum of NOMINAL process histograms only -- must not
         # include the systematic-varied Up/Down histograms also stored here.
+        # Left as a plain (values, edges) tuple deliberately: Combine's binned
+        # likelihood treats observed data as Poisson-counted by construction
+        # (RooDataHist), it does not read Sumw2 off data_obs the way it does
+        # for autoMCStats' MC templates above.
         data_obs = sum(histograms[p] for p in nominal_procs if p in histograms)
         f["h_data_obs"] = (data_obs, MVA_BINS)
     print(f"\n  ROOT file: {path}")
@@ -1237,14 +1326,15 @@ def main():
 
     # 3. Build histograms
     print("\n[3] Building histograms")
-    histograms = build_histograms(mc_data, zx_scores, zx_weights, jec_data=jec_data)
+    histograms, histograms_var = build_histograms(mc_data, zx_scores, zx_weights, jec_data=jec_data)
     if args.skip_zx:
         histograms.pop("ZX", None)
+        histograms_var.pop("ZX", None)
 
     # 4. Write output
     print("\n[4] Writing output")
     root_filename = "histograms_mva_with_zx.root" if not args.skip_zx else "histograms_no_zx.root"
-    root_file = write_root_file(histograms, args.output, filename=root_filename, include_zx=not args.skip_zx)
+    root_file = write_root_file(histograms, histograms_var, args.output, filename=root_filename, include_zx=not args.skip_zx)
     dc_path = write_datacard(histograms, os.path.basename(root_file), args.output, include_zx=not args.skip_zx, automcstats_threshold=args.automcstats_threshold)
 
     print_summary(histograms, include_zx=not args.skip_zx)

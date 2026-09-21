@@ -45,6 +45,7 @@ ERAS = dc.ERAS
 CLASS_NAMES = dc.CLASS_NAMES
 MASS_WINDOW = dc.MASS_WINDOW
 USABLE_SYST = dc.USABLE_SYST
+HPLUSBOTTOM_BUGGY_SYST = dc.HPLUSBOTTOM_BUGGY_SYST
 syst_col = dc.syst_col
 get_process_from_path = dc.get_process_from_path
 EXPECTED_YIELDS = dc.EXPECTED_YIELDS
@@ -143,8 +144,14 @@ def load_mc_scored_parquets_rawsf(scored_dir, sumw_by_proc):
                 continue
 
             usable = USABLE_SYST.get(proc, set())
+            # HPlusBottom-specific override -- see dc.HPLUSBOTTOM_BUGGY_SYST.
+            # Mirrors the same fix in create_datacards_ctag2d_100150.py's
+            # load_mc_scored_parquets (this function is a hand-duplicated
+            # copy of it, patched only for CMS_ctag2d recomputation).
+            is_hplusbottom = (proc == "Other_Higgs" and "HPlusBottom" in sample_name)
+            requestable = usable - HPLUSBOTTOM_BUGGY_SYST if is_hplusbottom else usable
             syst_cols_wanted = []
-            for syst in usable:
+            for syst in requestable:
                 for direction in ("Up", "Down"):
                     syst_cols_wanted.append(syst_col(syst, direction, era))
 
@@ -191,6 +198,8 @@ def load_mc_scored_parquets_rawsf(scored_dir, sumw_by_proc):
                         if syst == "CMS_ctag2d" and ctag2d_up_raw is not None:
                             arr = ctag2d_up_raw if direction == "Up" else ctag2d_dn_raw
                             proc_syst_weights[proc][syst][direction].append(arr)
+                        elif is_hplusbottom and syst in HPLUSBOTTOM_BUGGY_SYST:
+                            proc_syst_weights[proc][syst][direction].append(nominal_win)
                         elif col in df_win.columns:
                             proc_syst_weights[proc][syst][direction].append(
                                 df_win[col].fillna(0).values
