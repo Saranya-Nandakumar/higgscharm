@@ -9,7 +9,7 @@ follows.
 
 **Repo (EOS)**: `/eos/user/s/snandaku/Higgscharmnew/higgscharm`
 **Repo (AFS)**: `/afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm`
-**Combine builder**: `/eos/home-s/snandaku/b-hive_ttcc/combine/create_datacards.py`
+**Combine builder**: `/eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/scripts/create_datacards_ctag2d_100150_stitched_decorr.py` (current; `b-hive_ttcc/combine/create_datacards.py` is the August builder)
 **Env**: LCG_105 (python/data-loading), separate CMSSW shell for combine itself
 
 ```bash
@@ -20,7 +20,8 @@ source /cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc13-opt/setup.sh
 
 ## Contents
 
-- [Pipeline overview](#pipeline-overview)
+- [Current state (2026-10-23) — start here](#current-state-2026-10-23--start-here)
+- [Pipeline overview (August 2026)](#pipeline-overview-august-2026)
 - [0. Prerequisites](#0-prerequisites)
 - [1. Process NanoAOD → parquet](#1-process-nanoaod--parquet)
 - [2. Postprocess: merge + MVA inference (consolidated)](#2-postprocess-merge--mva-inference-consolidated)
@@ -32,10 +33,85 @@ source /cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-el9-gcc13-opt/setup.sh
 - [Systematics](#systematics)
 - [Known traps](#known-traps)
 - [Open items / next techniques to port from hww-analysis](#open-items--next-techniques-to-port-from-hww-analysis)
+- [Update 2026-10-17 → 10-23](#update-2026-10-17--10-23-2024-mva-jec-v4v3-reprocessing-z-x)
 
 ---
 
-## Pipeline overview
+## Current state (2026-10-23) — start here
+
+The sections after this one are a chronological log (August → October). Where they disagree with this section, this section is current.
+
+**Two checkouts, not synced by git.** EOS (`/eos/user/s/snandaku/Higgscharmnew/higgscharm`, remote `Saranya-Nandakumar/higgscharm`) and AFS (`/afs/cern.ch/user/s/snandaku/Higgscharmnew/higgscharm`, remote `ua-cms/higgscharm`) are independent working copies.
+- **AFS:** condor submission (`submit_condor.py`, LCG_105); the only copy with the 2024/2025 filesets and the workflows `*_jecshifts_bkg`, `*_CR_merged_jecv4`, `hplusc_mva_4class_v15`.
+- **EOS:** scoring (`analysis/postprocess/run_mva_postprocess.py`, EOS only), the combine builders (`combine/scripts/`, EOS only), this README.
+- The 2022/2023 workflow yamls differ between the two only by the 2024/2025 UParT fallbacks (AFS); `mva_inference.py` is identical in both since 2026-10-23.
+- Mirror any pipeline-code change to both.
+- **Git (2026-10-26):** everything in the EOS checkout (code, builders, filesets, this README; not the `.bak_*` copies) is committed on branch `HcZZ-zx-estimation` of `Saranya-Nandakumar/higgscharm`. "Uncommitted" in the dated sections below refers to the state on that date.
+
+### Which workflow is ours
+
+The analysis (2022/2023) runs on the **`hplusc_mva_4class_ctag2d*`** family. `hplusc_mva_4class` is the parent workflow and the source of the MVA training parquets, not of the cards.
+
+| workflow | role | JEC | output → scored dir |
+|---|---|---|---|
+| `hplusc_mva_4class` | parent; MVA **training** parquets 2022/23 (`b-hive_ttcc/filelists/create_filelists_legacy.py`) and the August 2024 parquets. Also ctag2d SFs since 08-14, but no `higgsHFWeight` | V2/V1 (coffea `.txt`) | `outputs/hplusc_mva_4class` |
+| `hplusc_mva_4class_ctag2d` | background nominal of all cards up to 10-22 | V2/V1 | `hplusc_mva_4class_ctag2d` → `_ctag2d_scored_v8` |
+| `hplusc_mva_4class_ctag2d_jecshifts` | JES/JER and muon scale/resolution shift templates (nominal + 8 shift dirs); no muon ID SF in the 09-08 production | V4/V3 (correctionlib) | → `_ctag2d_jecshifts_scored_v2` |
+| `hplusc_mva_4class_ctag2d_jecshifts_fschad` | signal (4FS + 3FS for the stitch), GEN c-hadron columns | V4/V3 | → `_ctag2d_fschad_scored_v1` |
+| `hplusc_mva_4class_ctag2d_jecshifts_bkg` (AFS) | 10-22 background reprocessing with the muon ID SF: **the next background nominal**, so that background, signal and shifts all use V4/V3 | V4/V3 | `_ctag2d_jecshifts_bkg` → `_scored_v1` (**not scored yet**; 33 H+b jobs missing, T2_BE_IIHE down) |
+| `hplusc_mva_4class_CR_merged` / `_CR_merged_jecv4` (AFS) | Z+X control regions (3P1F/2P2F/SS) | V2/V1 / V4/V3 | `Analysis/zx_background_mva_CRmerged_105160_2026_10_07` / `..._CRmerged_jecv4_105160_2026_10_22` |
+| `hplusc_mva_4class_v15` (AFS) | 2024/2025 NanoAODv15 MVA training parquets (copy of the parent) | — | `outputs/hplusc_mva_4class_v15/{2024,2025}` |
+
+### Pipeline as run now
+
+```
+NanoAOD
+  |  AFS: submit_condor.py -w <workflow> -y <era> -d <dataset> --output_format parquet --eos --jobflavor workday --submit
+  |       (export X509_USER_PROXY=~/private/x509up_u178308)
+  v
+outputs/<workflow>/<era>/<dataset>_<N>/{base,sumw,...}/*.parquet       (<dataset>_<N>.coffea = per-job marker)
+  |  EOS: analysis/postprocess/run_mva_postprocess.py   (separate step; NOT run_postprocess.py --postprocess)
+  v
+outputs/<workflow>_scored_vN/<era>/<dataset>_<N>/...   mva_score_{qqZZ,ggZZ,Signal,Other_Higgs}
+  |  optional: run_mva_postprocess.py --stages bookkeep,plot   (cutflows, yields, normalised histograms, plots;
+  |            analysis/postprocess/bookkeeping.py, 2026-10-26, see models/README.md)
+  |  EOS: combine/scripts/create_datacards_ctag2d_100150_stitched_decorr.py
+  v
+combine/outputs/<card dir>/datacard_mva_with_zx.txt  ->  combine (Analysis/fsrw_2026_10_02/run_combine.sh)
+```
+
+**Scoring.** `analysis/postprocess/mva_inference.py::MVAPostProcessor` does the inference. It is called in two ways:
+- **Production:** `run_mva_postprocess.py` on the raw per-job parquets, as its own step after the condor jobs (no merging).
+- **`run_postprocess.py --postprocess --mva-inference --mva-config … --mva-model …`:** merges and then scores in the same command. `--mva-inference` is a flag on the postprocess step, not a separate step. Not used for the cards.
+
+Both pass the era to `MVAPostProcessor`, which picks the jet-category table from `JET_TAG_BOUNDARIES_BY_ERA[era]` (PNet for 2022/2023, UParT for 2024/2025). Example (the 10-22 background scoring, `Analysis/jecv4_bkg_2026_10_22/score_era.sh`, condor `/afs/cern.ch/user/s/snandaku/condor_hczz_2026_10_22/score.sub`):
+
+```bash
+source /eos/user/s/snandaku/miniforge3/etc/profile.d/conda.sh && conda activate b_hive_new
+cd /eos/user/s/snandaku/Higgscharmnew/higgscharm
+O=/eos/user/s/snandaku/higgscharm/outputs
+python3 -u analysis/postprocess/run_mva_postprocess.py \
+  --input-dir $O/hplusc_mva_4class_ctag2d_jecshifts_bkg \
+  --output-dir $O/hplusc_mva_4class_ctag2d_jecshifts_bkg_scored_v1 \
+  --config models/hc_zzto4l_mw_training_4class_nomass.yml --model models/best_model.pt \
+  --era <era> --no-mass-window --no-histograms --workers 8
+```
+
+**Models.**
+- 2022/2023: `models/best_model.pt` + `models/hc_zzto4l_mw_training_4class_nomass.yml` (bundled, `models/README.md`).
+- 2024/2025: `b-hive_ttcc/output/TrainingTask/hc_zzto4l_mw_training_4class_nomass_2024v15/hcZZ_2024v15_catv2/train_2024v15_catv2_lr5e4/MLP_HcZZ_MW_Deep_4class/epochs_40/nominal/best_model.pt` with config `hc_zzto4l_mw_training_4class_nomass_2024v15`. 2025 is scored with the 2024 model. Not used for any card yet.
+
+**Cards.** Nominal and optimised-binning cards: `Analysis/optbin_2026_10_21/pipeline_optbin_jecv4_condor.sh` (builder options in the `A`/`ST`/`K` variables there).
+- **Nominal binning (adopted 2026-10-22): 10 optimised bins** (optbin10 = S10 edges `0,0.077426,0.198279,0.381715,0.518877,0.634575,0.714366,0.808976,0.833804,0.874049,1` from `Analysis/optbin_2026_10_21/edges_smzx.txt`, passed with `--bin-edges`; not K10 in `edges.txt`): r = 427.0 (V2/V1 background) / 427.5 (V4/V3 + `--recompute-muon-id-sf`). All new cards (2022/23 V4/V3, 2024) use these edges.
+- Superseded: 20 qqZZ-quantile bins (`--higgs-scale-norm`): r = 456.0.
+
+**Z+X.** `Analysis/jecv4_bkg_2026_10_22/zx_pipeline.sh`: `merge_cr_parquets.py` → `estimate_zx_background.py --fake-rates <pkatris OS fake_rates.pkl> --year all --mass-window 105 160` → `run_zx_inference.py`. On V4/V3: **35.9 ± 4.5** events (35.1 ± 4.4 in the 10-07 production, which missed some 2023preBPix muon data files).
+
+---
+
+## Pipeline overview (August 2026)
+
+*Historical; see [Current state](#current-state-2026-10-23--start-here).*
 
 **Production** (`hplusc_mva_4class`, historical split path — §4):
 ```
@@ -1647,6 +1723,11 @@ this datacard. `_v7` is confirmed complete for every process it uses.
 | **Central DY NanoAODv12 datasets are INVALID in DBS (found 2026-09-23)** | Every central DY query in `analysis/filesets/*_nanov12.yaml` (all 4 Run3 eras) plus `bbH_Hto2Zto4L` is `INVALID` in global DBS. The chains were re-made from DIGI-RECO in 2025-09 to 2025-12, so the old files are disappearing from disk. The symptom is jobs failing within about 2 min in preprocessing with `[3011] No servers are available to read the file`. `jobs_status.py`'s site blacklist can't help, and a plain resubmit fails the same way. Check with `dasgoclient -query="dataset dataset=<DS> status=*"`. Plain `file dataset=<INVALID DS>` returns 0 files. The replacement map is in second-brain `Notes/hczz-dy-nanov12-replacement-map-2026-09-23.tsv`. **Only `hplusc_mva_4class_CR_merged` has been switched** (at the condor job-folder level); the shared yamls/filesets still point at INVALID DY. |
 | **`condor/submit.sh` exits 0 even when `xrdcp` of the output failed** | The script ends with `rm -rf "$LOCAL_OUTPUT"`, whose exit code becomes the job's. On 2026-09-23 about 180 jobs failed `xrdcp` with `[3021] ... Disk quota exceeded` and many still reported `return value 0`. Partially copied jobs can also look complete to `jobs_status.py`. After any copy/quota incident, grep the `.err` files for `xrdcp`/`[3021]`, and wipe and rerun the affected datasets instead of trusting condor exit codes. Not yet fixed in code. |
 | **EOS user quota: the file-count limit (5M) runs out before bytes (2 TB)** | `/eos/user/s/snandaku` hit 5.00M/5.00M files at 93% bytes on 2026-09-23. Check with `EOS_MGM_URL=root://eosuser.cern.ch eos quota /eos/user/s/snandaku/` (without `EOS_MGM_URL` it says "no quota for path"). Parquet outputs are many small files (~220 per CR_merged job). `eos find --count` stops at ~100k per call. `eos rm` goes to the recycle bin, which does not count against the user quota. |
+| **Pooled xs normalisation in the datacard builders (FIXED 2026-09-25)** | Until 2026-09-24, `create_datacards_ctag2d_100150.py` (and so rawsf/decorr) scaled every event of a process by `EXPECTED_YIELDS[proc]/sumw_total[proc]`, i.e. summed xs over sumw summed across all samples **and eras**. That's wrong when (sample, era) sumw isn't proportional to xs x lumi: ggZZ SR 6.68 instead of 4.90, and Other_Higgs composition was off (ttH ~x25 too low). Now `event_scale(era, sample)` = xs_group x lumi_era / sumw(era, group). Official xs comes from `analysis/filesets/<era>_nanov12.yaml` (ggZZ x `GGZZ_KFACTOR`); private samples use `PRIVATE_XS_PB` (HplusC 2.6381e-05, HplusB 0.000173 -- **assumed, to confirm**). Older scripts (`create_datacards_ctag2d.py`, `_3ratio`, `_compare`, `create_cr_*_check.py`) still use the pooled `EXPECTED_YIELDS`. |
+| **EOS FUSE serves stale EMPTY directory listings (lxplus929, lxplus971; 2026-09-24/25)** | `glob`/`os.listdir` returned nothing for directories whose files `eos ls`/`xrdfs ls` showed, and FUSE could not open those files by name either. Nothing raises, so builders silently read a subset. One decorr card lost 21% of Other_Higgs CMS_res_m Up (limit 412 instead of 342), and builds lost whole `sumw/` dirs. It appeared after ~40 min of heavy reading, so checking the node beforehand isn't enough. **Use `combine/scripts/eos_io.py`** (server-side xrootd listings, FUSE read with an xrootd fallback, raises). All ctag2d_100150 builders and `plot_datamc_prefit_regions.py` use it, and their read errors are fatal. `dc.write_datacard` also refuses a JES/JER template >15% off nominal. |
+| **CMSSW combine fails under an LCG view** | With `/cvmfs/sft.cern.ch/lcg/views/LCG_107/.../setup.sh` sourced, `cmsenv`/`scramv1 runtime` does not give a working combine (`text2workspace.py: command not found`). Run combine in a clean env: `env -i HOME=$HOME USER=$USER PATH=/usr/bin:/bin bash run_combine.sh ...`. |
+| **Remote detached jobs die with the ssh session** | `ssh host "setsid nohup job &"` sometimes killed the job when the connection closed. Use `ssh -n -f host "cd ... && setsid nohup bash job.sh > log 2>&1 < /dev/null &"` and check it with a second ssh. Also: a `pgrep -f <cmd>` wait loop matches any shell whose command line contains that text (including the launcher itself), so it can wait forever. |
+| **Datacard nuisance names > 25 chars** | `write_datacard`'s `syst_row` pads names to 25 chars with no separator, so longer names (e.g. `CMS_ctag2d_stat_flavC_C0_2022postEE`) run into the `shape` column (`Unsupported pdf 1`). The decorr builder re-inserts the space (`write_datacard_fixed`); the base builder is unchanged. |
 
 ---
 
@@ -2760,3 +2841,322 @@ converges (target: accept ≥97-98% rather than chasing every last file —
 check what fraction of total statistics the remaining gap represents),
 proceed with merge → `estimate_zx_background.py` → `run_zx_inference.py`
 → with-ZX datacard → combine, per the plan above.
+
+
+## Update 2026-09-25: per-(dataset, era) normalisation; decorrelated ctag2d; data/MC prefit plots
+
+Expected limits (median r, AsymptoticLimits blind; 100-150, v8 + jecshifts_v2, CR_merged Z+X 32.6, autoMCStats 10, 20 quantile bins):
+
+| card | pooled norm (09-23/24) | per-dataset norm (09-25) |
+|---|---|---|
+| single `CMS_ctag2d` (official Total), with Z+X | 352.5 | **335.0** |
+| single `CMS_ctag2d`, no Z+X | 346.5 | **328.0** |
+| decorrelated ctag2d (`create_datacards_ctag2d_100150_decorr.py`), with Z+X | 342.0 | **329.5** |
+| decorrelated ctag2d, no Z+X | 336.5 | **323.0** |
+
+- The only difference in the 352.5 -> 335.0 step is the normalisation fix (Known traps). SR rates:
+
+  | process | pooled | per-dataset |
+  |---|---|---|
+  | ggZZ | 6.678 | 4.895 |
+  | Other_Higgs | 55.078 | 60.805 |
+  | qqZZ | 36.318 | 36.526 |
+  | Signal | 0.0531 | 0.0534 |
+  | ZX | 32.605 | 32.605 |
+
+- Decorrelated ctag2d: 33 grouped `Stat_flav*_*` sources per era (decorrelated across eras) plus `CMS_ctag2d_resid`, pruned at 0.1% per bin
+  -> 12 charm stat sources + resid kept. With it, ZX_norm's impact goes 24 -> 4.4 (per-dataset norm), and the top impact is scalevar_muR (81.6).
+- Data/MC prefit plots with the full systematic band (`combine/scripts/plot_datamc_prefit_regions.py`, output
+  `combine/outputs/datamc_prefit_perdsnorm_2026_09_25/`): On-Z 1.01, qqZZ CR 0.93, SR m4l sidebands 0.91, SR MVA low 15 bins 0.77.
+  The script refuses to plot unless its SR histogram reproduces the reference card's rates.
+- Open: TTH_Hto2Z xs (0.00312 pb, filtered?) and the private-sample cross-sections. Cards: `combine/outputs/combine_run3_100150_ctag2d_{rawsf,decorr}_{withzxCRmerged,nozx}_jecshifts_automcstats_perdsnorm_2026_09_25/`.
+  Full write-up: second-brain `Notes/hczz-datamc-prefit-regions-and-pooled-norm-bug-2026-09-24.md`.
+
+## Update 2026-09-26 → 10-05: FS stitching inputs, sumw fixes, NNLO normalisation (code-level summary)
+
+The detailed records are in second-brain `Notes/` (paths below) and the `Tasks/HcZZ-fake-rate.md` entries for these dates. Changes marked **TEST** were made for the direct 3FS+4FS stitching and may be reverted if the analysis goes back to 4FS-only samples. Both are additive or opt-in.
+
+### Processor (`analysis/processors/base.py`, EOS and AFS kept identical)
+
+- **`dump_sumw_json` restored (09-27).** The call had been missing since the 08-18 jec_shifts rework. The 09-25 cards therefore combined sidecars from 08-14/15 with parquets rewritten 08-29 to 09-02, which is the cause of the sidecar coverage gap (signal ×1.13 in 2022postEE, ×1.06 in 2023preBPix).
+- **New per-event parquet columns:**
+  - `n_genc10`: GEN c-jets, `GenJet_hadronFlavour == 4`, pT > 10 GeV, no η cut. This is the LHCHWG-2026-007 stitching variable (09-27).
+  - `gen_chad1_pt`, `n_chad5`, `n_chad10`: weakly decaying open-charm hadrons not from b, |η| < 2.5. Same definition as the HWW FS study (10-02).
+- **Sidecar keys:**
+  - `sumw_genc{0,1,2p}`, `sumw_chad{5,10}_{0,1,2p}`, each with `_scalevar`. These are **after** the jet veto.
+  - `sumw_preveto` (10-02).
+  - **TEST (10-05):** `sumw_preveto_genc{0,1,2p}` (+ `_scalevar`), the c-jet split **before** the jet veto. The veto is not flat in c-jets (≥2c fraction 0.132 before vs 0.127 after).
+  - Backup: `base.py.bak_20261005_preveto_genc`.
+  - Smoke test: `smoketest_preveto_genc.py` (old vs new processor; log `smoketest_preveto_genc_20261005.log`).
+- **New workflows:** `hplusc_mva_4class_ctag2d_jecshifts_fs.yaml` and `..._jecshifts_fschad.yaml`; the muon ID SF block is restored in the jecshifts yamls.
+
+### Datacard builder (`combine/scripts/create_datacards_ctag2d_100150_stitched.py`, EOS only)
+
+- **`--signal-mode`:**
+  - `stitched`: direct 3FS (≥1 GEN c-jet) + 4FS FxFx (0 c-jets), K3 = 1.31 and K4 = 0.76, rescaled to `--sigma-total-fb`.
+  - `4fs_rw`: 4FS reweighted per event with `--stitch-weights` derived on the official H→γγ samples. **This is the current nominal.**
+  - `4fs` and `3fs` also exist.
+  - `CMS_FS_cH_massless1c` and `CMS_FS_cH_T10` are shape nuisances in `4fs_rw`; `--no-fs-syst` turns them off.
+- **`--sigma-total-fb` default 73.30 fb** = MiNNLOPS 4FS at 13.6 TeV (LHCHWG-2026-007 Table 3, 0.1664 fb / BR(γγ) 2.270e-3). The 68.2 fb used until 10-04 was not a 13.6 TeV number. The XSDB 4FS FxFx value is 97.62 fb. The `--sigma-3fs-fb` default of 56.2 is wrong: use 55.0 (Table 3) for the direct stitch.
+- **`--sumw-table`:** pre-veto sumw over exactly the chunks read, from `Analysis/sumw_fix_2026_10_02/make_sumw_table.py`. It replaces the post-veto sidecars for signal, backgrounds and JES/JER. Implemented for `4fs_rw` only.
+- **TEST (10-05):** with `--sumw-table`, JES/JER backgrounds are normalised **per shift dir** (`load_jecshifts_pershift`), because 3 of 56 ggZZ→ττ era-groups have shift dirs missing 0.2–1.5% of the chunks. The shared `create_datacards_ctag2d_100150.py` loader is untouched. Backup: `create_datacards_ctag2d_100150_stitched.py.bak_20261005_jec_pershift`.
+
+### Current headline (10-05, with-ZX, Asimov, expected median)
+
+Card `combine/outputs/combine_run3_100150_ctag2d_fsrw_withzxCRmerged_jecshifts_automcstats_sumwfix_2026_10_02`:
+
+| | r < (16 / 50 / 84%) |
+|---|---|
+| with-ZX | 332.8 / **479.0** / 702.4 |
+| with-ZX, stat-only | **388.5** |
+| no-ZX | **469.0** |
+| with-ZX without FS nuisances | 478.0 |
+
+- r is relative to σ_NNLO = 73.30 fb; the σ limit is ≈ 35.1 pb.
+- The 09-25 reference r < 335 corresponds to 32.8 pb: it used NLO 97.9 fb and an inflated signal from the sidecar gap.
+- Top impacts: `CMS_ctag2d` 192, `scalevar_muR` 115, `CMS_scale_j` 51, `CMS_eff_e_reco_below20` 44, `ZX_norm` 30. FS nuisances: 10.8 (massless1c) and 7.5 (T10).
+
+### Known traps added
+
+- **Jet veto before sumw:** `apply_jetvetomaps` runs before the sidecar `sumw`, so all post-veto sidecar normalisations are ~5% high. Use `--sumw-table` or the `sumw_preveto*` keys.
+- **Purged CRAB outputs:** the Feb-2026 private outputs under `/store/user/snandaku/hplus{c,b}_htozz/` (no "1") are gone. The productions read the `hplus{c,b}_htozz1` copies (DAS prod/phys03, T2_BE_IIHE). The old `condor/hplusc_mva_4class/*/partitions.json` still lists the purged LFNs.
+- **Muon smearing is unseeded:** `analysis/corrections/muon_ss.py:125` (`random()`) and `:453` (`np.random.rand`), so reprocessing is not reproducible event by event (297/862 reco columns differed between two runs of identical code). Not fixed.
+- **Private 3FS gridpack:** the July gridpack was built with genproductions run3 defaults (nf_4 PDF, maxjetflavor 4, broken scale weights). The rebuild is in `Analysis/3FS_setup/genproductions` (validated: σ 55.2 fb).
+
+Second-brain notes:
+- `hczz-fs-3fs-gridpack-mismatch-2026-10-02.md`
+- `hczz-sumwfix-quota-3fs-gridpack-2026-10-04.md`
+- `hczz-signal-normalisation-and-fs-stitching-plan-2026-10-05.md`
+- `hczz-preveto-genc-sumw-and-jec-pershift-sumw-2026-10-05.md`
+
+## Update 2026-10-07: 4FS-alone signal in m4l [105,160); new 3FS 2022 scored
+
+### Datacard builder (`combine/scripts/create_datacards_ctag2d_100150_stitched.py`, EOS only, uncommitted)
+
+Backup: `….bak_20261007_masswindow_4fsplain`. Two new options:
+- **`--mass-window LO HI`:** sets the m4l window [LO, HI) for MC, signal, JES/JER and Z+X.
+  - It overrides both `dc.MASS_WINDOW` and `rs.MASS_WINDOW`, because rawsf copies the window at import.
+  - The Z+X input must cover the window. The 09-23 CR_merged Z+X files stop at 150 GeV.
+- **`--no-stitch-reweight`:** works with `--signal-mode 4fs_rw` only, and implies `--no-fs-syst`. The per-event stitch weight is 1, so the signal is the 4FS FxFx sample alone at the XSDB 97.62 fb.
+  - Use it with `--sigma-total-fb 0`, so that `stitch_summary.json` reports 97.62 fb.
+
+The scored MC trees carry scores at every m4l, so a window change needs no MC rescoring.
+
+### Z+X in [105,160]
+
+- **Estimate:** `scripts/estimate_zx_background.py --workflow hplusc_mva_4class_CR_merged --fake-rates <pkatris OS fake_rates.pkl> --year all --mass-window 105 160` (LCG_107), giving **35.1 ± 4.4** (32.6 in [100,150]).
+- **Scoring:** `scripts/run_zx_inference.py` with the `models/` pair (LCG_105).
+- **Output:** `Analysis/zx_background_mva_CRmerged_105160_2026_10_07/`.
+
+### Results (4FS alone at 97.62 fb; r relative to 97.62 fb; blind Asimov)
+
+| card | total bkg | r < (16 / 50 / 84%) |
+|---|---|---|
+| [105,160) with Z+X | 134.8 | 252.1 / **361.5** / 528.7 (35.3 pb) |
+| [105,160) no Z+X | 99.7 | 247.2 / **354.5** / 517.0 |
+| [100,150) with Z+X | 125.8 | 250.5 / **360.5** / 527.2 |
+
+- The window has no effect.
+- In absolute σ, 4FS alone (35.3 pb) and the 10-05 headline with the 4FS reweighted to the stitch (479.0 × 73.30 fb = 35.1 pb) agree.
+- Impacts: `CMS_ctag2d` 140, `scalevar_muR` 88, `CMS_scale_j` 36, `CMS_eff_e_reco_below20` 32, `ZX_norm` 23.
+- Pipeline: `Analysis/fs4_105160_2026_10_07/pipeline.sh`.
+
+### New 3FS (pythia8new/v1new) 2022 MVA-scored
+
+- Recipe: `analysis/postprocess/run_mva_postprocess.py --input-dir outputs/hplusc_mva_4class_ctag2d_jecshifts_fschad --era <era> --no-mass-window --no-histograms --datasets Stitch3FS_cH_ --workers 8` (`b_hive_new`).
+- Output: `outputs/hplusc_mva_4class_ctag2d_fschad_scored_v1/2022{preEE,postEE}/Stitch3FS_cH_*`. That tree now holds 4FS and 3FS together.
+- 90 + 2754 files; row counts are identical to the inputs.
+
+### Known traps added
+
+- **`mamba activate` fails in non-interactive scripts.** Use `conda activate`, add `set -e`, and check `CONDA_DEFAULT_ENV`. Without that, a batch script silently runs with the base Python.
+- **Stitched mode reads post-veto sumw.** `region_sumw()` in the stitched builder still reads the post-veto `sumw_genc*`. Switch it to `sumw_preveto_genc*` before the first direct-stitch card.
+- **Stitched mode needs every era.** The builder loops over all 4 eras, and there is no new 3FS for 2023 yet.
+
+Second-brain note: `hczz-4fs-alone-105160-and-3fs-scoring-2026-10-07.md`.
+
+### Later on 10-07: first direct 3FS+4FS stitch (2022-only)
+
+- **New builder options:**
+  - `--eras` restricts the whole card (in place on `dc.ERAS`).
+  - `--preveto-genc-4fs <json>`: stitched mode with pre-veto sumw for both pieces. The 4FS split comes from `Analysis/fs_stitch_direct_2026_10_07/scan_4fs_preveto_genc.py`, because the 4FS sidecars have no `sumw_preveto_genc*`.
+  - Stitched mode with `--sumw-table` now works when given this option, and is refused without it.
+- **Muon ID SF:** `MUON_ID_SF` is no longer applied to `fschad` trees, whose weights already carry it.
+- Backup: `….bak_20261007_prestitched`.
+- **Result** (2022 only, [100,150), with Z+X, no FS nuisances, 73.30 fb):
+  - direct stitch r < **629.5**, signal 0.01948;
+  - `4fs_rw` r < 655.0, signal 0.01896.
+  - The ≥2 GEN c-jet yield is ×1.53 in the direct stitch.
+- **Not built yet:** the stitched-sample scale envelope, `QCDscale_ccH`, the 3FS PDF and K3. The 2023 3FS is pending (deduplicate RECO lumis first).
+
+## Update 2026-10-08: m4l-by-process plots, new 3FS validated against the official samples, σ convention
+
+No change to the analysis code (`analysis/`, `combine/`). All new scripts live in the `Analysis/` work dirs below.
+
+### m4l by process with both mass windows
+
+- `Analysis/fs4_105160_2026_10_07/m4l_by_process.py`: imports the stitched builder's own loaders with the `pipeline.sh` options and `--mass-window 70 250`. It wraps `eos_io.read_parquet` so that the score column carries m4l.
+  - It reproduces the card yields exactly in both windows.
+  - The output feeds `plot_m4l_by_process.py`. Use `--with-zx` for the version with Z+X.
+- **Z+X over 70–250:** `scripts/estimate_zx_background.py … --mass-window 70 250` → `Analysis/zx_background_estimate_CRmerged_70250_2026_10_08/` (80.8 ± 5.9).
+  - That run computes the ZZ correction over the whole range, so the plot rescales the 3P1F weights per era to the [105,160] correction (×1.04–1.05).
+- **Trap:** in the `scored_v8` parquets `zz_mass_inclusive` is a 1-element **list** column.
+- **Resolved 2026-10-09 (false alarm):** the Z+X inference log's `MVAPostProcessor: era='None'` warning comes from the constructor, printed once before the era loop. `scripts/run_zx_inference.py` sets `processor.era = era` per loop (since 9072555), and a 2022postEE real-era rescore reproduces the stored scores exactly (max |Δ| = 0; the legacy boundaries would change 24/453 3P1F and 304/5047 2P2F events). The script now passes `era=args.eras[0]` at construction, so the warning no longer prints.
+
+### New 3FS H→ZZ vs official Run-2 3FS H→ZZ→4ℓ and Run-3 3FS H→γγ
+
+Work dir: `Analysis/fs_3fs_run2_gg_compare_2026_10_08/`.
+
+| script | what it does |
+|---|---|
+| `scan3fs.py` | GEN scan |
+| `recoscan.py` | common simplified 4ℓ selection, DeepJet, LHE initial-state partons |
+| `compare_3fs.py`, `compare_reco.py` | figures and summaries |
+
+- **Reference samples in DAS:** the official Run-2 sample is `/HPlusCharm_3FS_MuRFScaleDynX0p50_HToZZTo4L_M125_TuneCP5_13TeV_amcatnlo_JHUGenV7011_pythia8/RunIISummer20UL{16,16APV,17,18}…`.
+- **Results:**
+  - The decay matches Run 2.
+  - Production matches Run-3 γγ: σ 54.93 vs 54.66 fb, with the same c-hadron spectrum, scale weights and negative-weight fraction.
+  - Run 2 differs only by 13 → 13.6 TeV.
+  - Partonic composition is identical in all three: gg +1.040, qq̄ 3.6e-4, qg −0.040, no incoming c/b.
+- **Trap:** NanoAOD GenJets cluster photons, so GEN-jet / c-jet observables cannot be compared between H→γγ and H→ZZ. Use c-hadrons.
+- **Reco vs Run 2:** leptons and m4l agree. The jet and DeepJet differences are reconstruction-era effects, and the Run-3 4ℓ efficiency is 10% lower (lepton ID).
+
+### Cross-section convention (fileset `xsec`)
+
+- `HPlusCharm*` / `SomeSMSignal` `xsec: 0.000026381` pb is **σ×BR**: 97.9 fb × BR(H→ZZ→4ℓ, ℓ = e/μ/τ) = 97.9 fb × 2.694e-4. Likewise `Stitch3FS_cH_*` 1.48e-5 pb = 55.0 fb × BR.
+- **r × reference σ** (97.9, 97.62 or 73.30 fb) is a limit on **σ(pp→H+c)**, assuming the SM BR. It is **not** σ×BR.
+- The σ×BR(4ℓ) limit is r × σ_ref × 2.694e-4. For example, the current headline r < 479.0 at 73.30 fb gives σ(pp→H+c) < 35.1 pb, or σ×BR < 9.46 fb.
+
+Second-brain notes:
+- `hczz-4fs-alone-105160-and-3fs-scoring-2026-10-07.md` §8
+- `hczz-3fs-new-vs-run2zz-and-run3gg-2026-10-08.md`
+
+## Update 2026-10-09: Z+X era warning closed, 4FS-alone stat-only limits, new 3FS 2023 (deduplicated) processed and scored
+
+### Code and config changes (uncommitted)
+
+- **`scripts/run_zx_inference.py`** (EOS only; this script is not in the AFS checkout): passes `era=args.eras[0]` to the `MVAPostProcessor` constructor. This is cosmetic; it silences the spurious `era='None'` warning. The per-era loop already set `processor.era` (since 9072555), and the stored Z+X scores equal a real-era rescore exactly.
+- **`analysis/filesets/2023{preBPix,postBPix}_nanov12.yaml`** (AFS and EOS): `Stitch3FS_cH_2023*` now queries the new `…-pythia8new`/`…-v1new` NanoAODv13 datasets; xsec 0.0000148 pb (55.0 fb × 2.694e-4). Backups `*.bak_20261009_3fsnew`.
+- **`analysis/filesets/fileset_2023{preBPix,postBPix}_nanov12_lxplus.json`** (AFS):
+  - preBPix holds the **393 deduplicated files**. The DAS dataset has 618 files, 225 of which are exact duplicate files left by recovery CRAB tasks.
+  - postBPix holds its single file.
+  - ⚠️ **Never regenerate `Stitch3FS_cH_2023preBPix` from DAS** (`fetch.py`), or the duplicates come back. `fileset_checker` only rebuilds missing keys, so it is safe.
+
+### Outputs
+
+- **Archive:** the July 2023 3FS outputs (55 dirs) were moved to `outputs/hplusc_mva_4class_ctag2d_{jecshifts,fs_scored_v1}_july2026/2023*/…_july2026`. The manifest is in `outputs/README_july2026_3fs_archive.txt`.
+- **Processing:** `jecshifts_fschad` processing of `Stitch3FS_cH_2023*` ran as condor clusters 16440434 (27 jobs) and 16440435 (1 job). All jobs returned 0 with full coverage. Σ`sumw_preveto` = 54501.1 / 54025.6, equal to the deduplicated Runs sumw (σ 55.47 / 54.85 fb).
+- **Scoring:** the 10-07 recipe (`outputs/logs_fschad_scored_v1/run_3fs_20261009.sh`, 4 workers) wrote into `outputs/hplusc_mva_4class_ctag2d_fschad_scored_v1/2023*/Stitch3FS_cH_*`. Every file has equal row counts in and out, and there are no negative or NaN scores.
+- **The 3FS now exists in all 4 eras.** Still missing for the 4-era stitched card: the 2023 4FS pre-veto c-jet split (`Analysis/fs_stitch_direct_2026_10_07/scan_4fs_preveto_genc.py --eras 2023preBPix 2023postBPix`).
+
+### 4FS-alone stat-only limits (97.62 fb)
+
+Expected median r: [105,160) with Z+X **293.5** (full 361.5); no Z+X 285.5 (354.5); [100,150) with Z+X 292.5 (360.5).
+- `allConstrainedNuisances` already freezes the autoMCStats parameters.
+- The stat-only limit is σ(pp→H+c) < 28.7 pb, or σ×BR(4ℓ) < 7.7 fb.
+
+Second-brain notes:
+- `hczz-3fs-new-2023-nano-dedup-2026-10-09.md`
+- `hczz-4fs-alone-105160-and-3fs-scoring-2026-10-07.md` §8 (end) and §9
+
+## Update 2026-10-10: 4-era direct 3FS+4FS stitch
+
+- **4FS pre-veto GEN c-jet split for 2023:** `Analysis/fs_stitch_direct_2026_10_07/scan_4fs_preveto_genc.py` was run on all 4 eras, rewriting `preveto_genc_4fs.json` (2022 entries unchanged; closure ≤1.5e-7).
+- **Cards:** `combine/outputs/combine_run3_100150_ctag2d_{stitch3fs,fsrw_nofssyst}_withzxCRmerged_4era_jecshifts_automcstats_sumwfix_2026_10_10/`, built by `pipeline_4era.sh`.
+- **Expected r** ([100,150), with Z+X, no FS nuisances):
+  - direct stitch **466.5**;
+  - 4FS reweighted 478.0.
+- **Signal:** the stitch has +2.2% in the window; the ≥2 GEN c-jet region is ×1.55.
+- **Still missing from the stitched card:** the prescribed FS uncertainties. Scale envelope inputs: 3FS +20/−19%; H→γγ 4FS events with no c-hadron above 10 GeV +4.4/−5.2%.
+
+Second-brain note: `hczz-4era-direct-stitch-2026-10-10.md`
+
+## Update 2026-10-15/16: signal μR/μF, Other_Higgs split, ttH xsec fix, FS cross-check
+
+All results are expected limits in [105,160), 4 eras, with Z+X. They are built on the c-tag fixes (`--ctag2d-capfix mirror`, 33 decorrelated sources, `create_datacards_ctag2d_100150_stitched_decorr.py`). Pipelines and outputs are in `/eos/user/s/snandaku/Analysis/ctag2d_capfix_decorr_2026_10_15/`.
+
+### ⚠️ ttH cross section fixed in the fileset yamls (2026-10-16)
+
+- **Old value:** `analysis/filesets/<era>_nanov12.yaml` TTH_Hto2Z was 0.00312 pb in all 4 eras.
+- **2022:** 1.535e-4 pb. The 2022 sample is pure H→ZZ→4ℓ.
+- **2023:** 4.437e-4 pb. The 2023 `4LFilter` sample also accepts top leptons.
+- **Backups:** `*.bak_20261016_before_tth_xsec`.
+- **Effect:** every card before 10-16 overweights ttH (11.9 instead of 0.88 events). The limit changes by ≤ 0.3%, but yield tables do not.
+- **Not checked:** the AFS checkout and the 2024/Run-2 filesets.
+
+### New builder options (`combine/scripts/create_datacards_ctag2d_100150_stitched.py`)
+
+- `--fs-scale-mode separate`: signal `scalevar_muR_cH`/`muF_cH` instead of the 7-point envelope.
+- `--split-other-higgs`: one template per Higgs mode, same MVA score and binning.
+- `--per-process-bkg-scale`: `scalevar_muR/muF_<proc>`.
+- `--sig4fs-scale-json`: `--signal-mode 4fs` with separate μR/μF from the rebuilt-4FS per-class ratios. Backup of the builder: `.bak_20261016_before_sig4fs`.
+- FS nuisance on 4FS-alone cards: `Analysis/ctag2d_capfix_decorr_2026_10_15/add_fs_3fs4fs.py`.
+
+### Results
+
+| card | r | σ(pp→H+c) |
+|---|---|---|
+| **K** (stitch, separate μR/μF with yields kept, per-process background scales; proposed nominal) | **488.0** (rel. 73.30 fb) | **35.8 pb** |
+| C (stitch, 7-point envelope) | 485.0 | 35.6 pb |
+| 4FS alone (97.62 fb), no FS | 346.5 | 33.8 pb |
+| 4FS + Heyen FS (3FS vs plain 4FS, R = 54.79/83.38 = 0.657 from official H+c→γγ, ±36%) | 450.0 (rel. 97.62 fb) | 43.9 pb |
+
+- **The stitch is 18% better in σ.** r is not comparable between cards with different reference σ.
+- **FS as a shape only** has no effect (33.8 pb).
+
+Second-brain notes:
+- `hczz-tth-xsec-and-scale-reference-check-2026-10-16.md` (§1–7)
+- `hczz-scale-uncertainty-conventions-2026-10-15.md` (§5)
+- `hczz-ctag2d-placeholder-qqzz-check-2026-10-14.md`
+- AN §7.14
+
+---
+
+## Update 2026-10-17 → 10-23: 2024 MVA, JEC V4/V3 reprocessing, Z+X
+
+### 2024/2025 MVA (UParT)
+- **Categories** (x = P(b+c), y = 1 − CvB; same table in `b-hive_ttcc/utils/coffea_processors/lz4_hczz_processor.py` and `analysis/postprocess/mva_inference.py`, 2025 = 2024):
+
+  | cat | x | y |
+  |---|---|---|
+  | L0 / C0 / C1 | 0–0.250 / 0.250–0.452 / **0.452–0.808** | all |
+  | C2 / C3 / C4 | 0.808–1 | 0.017–0.055 / 0.006–0.017 / 0–0.006 |
+  | B0 / B1 / B2 / B3 / B4 | 0.808–1 | 0.055–0.761 / –0.944 / –0.985 / –0.995 / –1 |
+
+  C1 goes up to 0.808 (user, 10-22), closing the 0.766–0.808 gap of the HiggsDNA table, as in the UParT 2D SF calibration. Backups `*.bak_20261022_before_c1to0808`.
+- **Model** `train_2024v15_catv2_lr5e4`: same recipe as 2022/23 (learning rate 5e-4, `--loss-weighting True` for class balancing, 40 epochs). The 10-17 model used the b-hive default 1e-3.
+- **AUCs** on the 2024 test set (378,778 events), signal vs qqZZ / ggZZ / other Higgs / all: 0.972 / 0.965 / 0.857 / 0.845 (2022/23: 0.970 / 0.965 / 0.873 / 0.91).
+  - "Vs all" depends on the test-set mix: the 2024 test set is 67% other Higgs (90% H+b files).
+  - With the background mix weighted to 2022/23, 2024 gives 0.902 vs 0.912.
+- **Other-Higgs cap check (10-23).** `filelists/create_filelists_2024_v15.py` gained `--max-other-higgs-events` (cap before the split, as the legacy script), `--max-other-higgs-train-events` (cap the training files only, test set unchanged) and `--tag`.
+  - Training with other Higgs at 42% instead of 64% (`train_2024v15_ohcaptrain_lr5e4`): AUCs within 0.005 of the nominal.
+  - The loss weighting already balances the classes. Nominal unchanged.
+- **Scale factors:** `flavTaggingSF_2024.json.gz` (`UParTAK4_pseudocontinuous`, inputs systematic, flavour, wp, |η|, pT; one |η| bin; 37% placeholder cells, as in 2022/23) is wired into `ctag2d.py` since 10-23 (see below).
+- **Scoring:** not done yet. Before scoring 2024/2025, use the 10-23 `mva_inference.py`: it now has the UParT table on EOS too (EOS backup `.bak_20261023_before_sync_2024`).
+
+### JEC V4/V3 for everything (user decision 10-22)
+- The background nominal (`scored_v8`) and Z+X data used V2/V1 (coffea `.txt`), while the signal and the JES/JER shifts used V4/V3 (correctionlib).
+- On the optbin10 card the difference is +0.1% (427.0 → 427.5, with the muon ID SF recomputed per event by `combine/scripts/musf_recompute.py`, builder flag `--recompute-muon-id-sf`).
+- **Background reprocessing** `hplusc_mva_4class_ctag2d_jecshifts_bkg`: complete except 33 H+b jobs (private H+b files at T2_BE_IIHE, unreachable).
+- **CR reprocessing** `hplusc_mva_4class_CR_merged_jecv4`: complete.
+- XRootD "Operation expired" failures were recovered with a site-pinned rerun: each input file probed, URLs rewritten to DESY/KIT/CERN/FNAL (`Analysis/jecv4_bkg_2026_10_22/{probe.py,build_rerun.py}`).
+- Next: score (`condor_hczz_2026_10_22/score.sub`), then the optbin10 card with `--scored-dir`/`--jecshifts-dir` = `..._jecshifts_bkg_scored_v1` and the new Z+X dir. Check the sumw table covers the new production.
+- Still to do: pin the 2022preEE JEC file (`utils.py` uses `latest`).
+
+Second-brain notes:
+- `hczz-jec-v4v3-consistency-2026-10-22.md`
+- `hczz-2024-mva-c1-gap-closed-retrain-2026-10-23.md`
+- `hczz-optimised-binning-2026-10-21.md`
+
+### 2024/2025 c-tag 2D SF wired (2026-10-23)
+- `analysis/corrections/ctag2d.py` now covers 2024 and 2025 (user: use the 2024 file as a placeholder, as for 2022/23).
+  - **File:** `flavTaggingSF_2024.json.gz`, correction `UParTAK4_pseudocontinuous`. It is the only file in `ingredients/2024/2D_HF_Tagging`, and there is none for 2025.
+  - **Inputs:** `btagUParTAK4CvL/CvB`, with the 2024 category table (C1 up to 0.808).
+  - **Nuisance:** `CMS_ctag2d_2024`. 2025 uses the 2024 file, table and nuisance.
+  - **Changes:** `utils.py` adds the 2025 entry; `correction_manager.py` only changes a comment. Same code in both checkouts; backups `*.bak_20261023_before_ctag2d_2024` (the AFS `utils.py` backup is in `/eos/user/s/snandaku/Analysis/backups_afs_2026_10_23/`, because AFS was full).
+- **Placeholder convention:** identical to 2022/23 (SF 1.000, up_Total 3.000, down_Total 0.300). 74/198 cells in 2024 vs 69–90/198 in 2022/23.
+- **Checks:**
+  - 2022/23 weights and `CMS_ctag2d_<yr>` variations are bit-identical to the old code.
+  - 2024 categories agree 100% with the b-hive training convention on real v15 jets.
+  - Real-jet 2024 vs 2022postEE: mean event SF H+c 1.034 / qqZZ 1.023 vs 1.002 / 1.003; Up/nominal H+c 1.34 / qqZZ 1.05 vs 1.26 / 1.07.
