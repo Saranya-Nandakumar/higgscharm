@@ -10,16 +10,17 @@ Models are saved as PyTorch `.pt` checkpoint files produced by the [b-hive](http
 
 ## Available models
 
-| Eras | Model | Config | Training run (b-hive) |
-|------|-------|--------|-----------------------|
-| 2022preEE, 2022postEE, 2023preBPix, 2023postBPix | `models/best_model.pt` (md5 `fd19031f…`) | `models/hc_zzto4l_mw_training_4class_nomass.yml` (`config_4class.yml` is an identical copy) | `hc_zzto4l_mw_training_4class_nomass` / `hcZZ_big4classjetyesmasslooseoldcbal` / `train_loose_oldcwithmassbal` |
-| 2024, 2025 (2025 is scored with the 2024 model) | `b-hive_ttcc/output/TrainingTask/hc_zzto4l_mw_training_4class_nomass_2024v15/hcZZ_2024v15_catv2/train_2024v15_catv2_lr5e4/MLP_HcZZ_MW_Deep_4class/epochs_40/nominal/best_model.pt` | `b-hive_ttcc/config/hc_zzto4l_mw_training_4class_nomass_2024v15.yml` | same path as the model |
+The 2022/2023 analysis (2022preEE, 2022postEE, 2023preBPix, 2023postBPix) uses one model:
 
-All are `MLP_HcZZ_MW_Deep_4class`, 4 classes `[qqZZ, ggZZ, Signal, Other_Higgs]`, 101 inputs.
-Always use the model and config of the same row: a config with the right feature *count* but a
-different feature *list* scores silently wrong. The era passed to the scorer selects the
-jet-category table (`JET_TAG_BOUNDARIES_BY_ERA`: PNet for 2022/2023, UParT for 2024/2025); for
-2024/2025 the scorer stops with a `KeyError` if the parquets lack the `jet_btagUParTAK4*` columns.
+| File | Value |
+|------|-------|
+| Model | `models/best_model.pt` (md5 `fd19031f…`), `MLP_HcZZ_MW_Deep_4class`, 4 classes `[qqZZ, ggZZ, Signal, Other_Higgs]`, 101 inputs |
+| Config | `models/hc_zzto4l_mw_training_4class_nomass.yml` (`config_4class.yml` is an identical copy) |
+| Training (b-hive) | config `hc_zzto4l_mw_training_4class_nomass`, dataset `hcZZ_big4classjetyesmasslooseoldcbal`, training `train_loose_oldcwithmassbal`, 40 epochs, learning rate 5e-4 |
+
+Always use this model with this config: a config with the right feature *count* but a different
+feature *list* scores silently wrong. The era passed to the scorer selects the jet-category table
+(`JET_TAG_BOUNDARIES_BY_ERA`, PNet for 2022/2023).
 
 ## Running MVA inference
 
@@ -39,7 +40,7 @@ source /eos/user/s/snandaku/miniforge3/etc/profile.d/conda.sh && conda activate 
 cd /eos/user/s/snandaku/Higgscharmnew/higgscharm
 O=/eos/user/s/snandaku/higgscharm/outputs
 
-# 2022/2023 (run once per era, or --all-eras)
+# run once per era, or --all-eras
 python3 -u analysis/postprocess/run_mva_postprocess.py \
   --input-dir  $O/<workflow> \
   --output-dir $O/<workflow>_scored_vN \
@@ -47,78 +48,95 @@ python3 -u analysis/postprocess/run_mva_postprocess.py \
   --model  models/best_model.pt \
   --era <era> --no-mass-window --no-histograms --workers 8
 
-# 2024 (and 2025 with --era 2025)
-B=/eos/user/s/snandaku/b-hive_ttcc
-python3 -u analysis/postprocess/run_mva_postprocess.py \
-  --input-dir  $O/<workflow> \
-  --output-dir $O/<workflow>_scored_2024_vN \
-  --config $B/config/hc_zzto4l_mw_training_4class_nomass_2024v15.yml \
-  --model  $B/output/TrainingTask/hc_zzto4l_mw_training_4class_nomass_2024v15/hcZZ_2024v15_catv2/train_2024v15_catv2_lr5e4/MLP_HcZZ_MW_Deep_4class/epochs_40/nominal/best_model.pt \
-  --era 2024 --no-mass-window --no-histograms --workers 8
 ```
 
 `<workflow>` is the analysis production (the `hplusc_mva_4class_ctag2d*` family, see
 `README_HcZZ.md` "Current state"). For long runs, submit the command as a condor job from AFS
-(examples: `/afs/cern.ch/user/s/snandaku/condor_hczz_2026_10_22/score.sub`,
-`/afs/cern.ch/user/s/snandaku/condor_hczz_2026_10_25_score2024v2/score_2024.sh`).
+(example: `/afs/cern.ch/user/s/snandaku/condor_hczz_2026_10_22/score.sub`).
 
 | Flag | Description |
 |------|-------------|
 | `--input-dir`, `-i` | Workflow output directory (`<era>/<dataset>_<N>/...` below it). Required. |
 | `--output-dir`, `-o` | Where the scored copy goes. Default: the input directory, i.e. files are updated **in place**; always give a new `_scored_vN` directory. |
-| `--config`, `-c` / `--model`, `-m` | b-hive config YAML and `.pt` checkpoint (one row of the table above). Required. |
+| `--config`, `-c` / `--model`, `-m` | b-hive config YAML and `.pt` checkpoint (above). Required for the `score` stage. |
 | `--era`, `-e` / `--all-eras` | Score one era, or every era found below `--input-dir`. |
 | `--no-mass-window` | Score all events. Used in production: the m4l window (105–160 GeV) is applied in the datacard builder. Without it, only 90 ≤ m4l < 160 (`--mass-window-min/max`) is scored. |
 | `--no-histograms` | Skip the score histograms (the cards are built from the parquets). |
 | `--datasets` | Only score partition directories that start with these dataset names. |
 | `--workers`, `-w` | Parallel workers (default 8). |
+| `--stages` | `score` (default), `bookkeep`, `plot`; see below. |
 
-### Bookkeeping and plots: `--stages bookkeep,plot`
+### Bookkeeping and plots (2022/2023)
 
-`run_mva_postprocess.py --stages` (default `score`) also runs the bookkeeping that
-`run_postprocess.py --postprocess --plot` does for the other workflows, on the per-job outputs and
-with the datacard builder's normalisation (`analysis/postprocess/bookkeeping.py`). Stages can run
-alone on an existing scored directory; `--config/--model` are only needed for `score`.
+`analysis/postprocess/bookkeeping.py` gives the HcZZ productions what `run_postprocess.py --postprocess
+--plot` gives the other workflows: cutflows, yield tables, normalised histograms and data/MC plots. It
+works on the per-job outputs (no merging) and normalises exactly as the datacard builder
+(`weight_nominal × xs × lumi / Σw` per dataset and era, `dc.event_scale`). It can run as a stage of
+the scoring command, or standalone over several productions.
+
+**Full 2022/2023 bookkeeping** (inputs of the nominal card; backgrounds, H+c and data come from
+three productions, each restricted to its processes with `--source RAW_DIR SCORED_DIR KINDS`):
 
 ```bash
-# 2022/23 backgrounds of the nominal card (same sumw table as the card)
+source /eos/user/s/snandaku/miniforge3/etc/profile.d/conda.sh && conda activate b_hive_new
+cd /eos/user/s/snandaku/Higgscharmnew/higgscharm
+O=/eos/user/s/snandaku/higgscharm/outputs
+python3 -u analysis/postprocess/bookkeeping.py \
+  --source $O/hplusc_mva_4class_ctag2d_jecshifts_bkg    $O/hplusc_mva_4class_ctag2d_jecshifts_bkg_scored_v1 background \
+  --source $O/hplusc_mva_4class_ctag2d_jecshifts_fschad $O/hplusc_mva_4class_ctag2d_fschad_scored_v1        signal \
+  --source $O/hplusc_mva_4class_ctag2d                  $O/hplusc_mva_4class_ctag2d_scored_v8               data \
+  --eras 2022preEE 2022postEE 2023preBPix 2023postBPix \
+  --sumw-table /eos/user/s/snandaku/Analysis/v4v3_card_2026_10_23/sumw_table.json \
+  --output-dir <dir> --workers 16
+```
+
+**As a stage of the scoring command** (one production: `--input-dir` = raw, `--output-dir` = scored;
+`--config/--model` are only needed for `score`; `score` alone is the default and unchanged):
+
+```bash
 python3 -u analysis/postprocess/run_mva_postprocess.py \
   --input-dir  $O/hplusc_mva_4class_ctag2d_jecshifts_bkg \
   --output-dir $O/hplusc_mva_4class_ctag2d_jecshifts_bkg_scored_v1 \
   --all-eras --stages bookkeep,plot --workers 16 \
-  --sumw-table /eos/user/s/snandaku/Analysis/v4v3_card_2026_10_23/sumw_table.json \
-  --bookkeep-dir <dir>
-
-# 2024 (sidecar sumw_preveto, as the 2024 card)
-python3 -u analysis/postprocess/run_mva_postprocess.py \
-  --input-dir  $O/hplusc_mva_4class_ctag2d_jecshifts \
-  --output-dir $O/hplusc_mva_4class_ctag2d_jecshifts_scored_2024_v2 \
-  --era 2024 --stages bookkeep,plot --workers 16 --bookkeep-dir <dir>
+  --sumw-table /eos/user/s/snandaku/Analysis/v4v3_card_2026_10_23/sumw_table.json --bookkeep-dir <dir>
 ```
 
-Written to `--bookkeep-dir` (default `<output-dir>/bookkeeping`), per era, per year and for all eras:
-`cutflow_<tag>.csv` (weighted, from the per-job `.coffea` metadata: generated pre-veto → jet veto →
-trigger → … → ≥1 c-jet, then selected / mass window / card input from the scored parquets),
-`cutflow_eff_<tag>.csv`, `yields_<tag>.csv/.tex`, `sumw_check_<tag>.csv` (Σw of the `.coffea` files vs
-the Σw used: flags missing or duplicated jobs), `histograms_<tag>.coffea` (m4l, MVA scores and inputs,
-regions `selected`/`window`, with flow bins) and `plots/`.
+Output, per era, per year (2022, 2023) and for all eras (`<tag>` = era, year or `all`):
+
+| File | Content |
+|------|---------|
+| `cutflow_<tag>.csv` | Weighted cutflow per process: generated (pre jet veto) → jet veto map → trigger → lumimask → good vertex → ZZ candidate → ≥1 c-jet (per-job `.coffea` metadata), then selected / m4l window / card input (scored parquets) |
+| `cutflow_eff_<tag>.csv` | The same relative to the generated row (data: relative to the input events) |
+| `yields_<tag>.csv`, `.tex` | Selected, m4l window and card input (window and `mva_score_Signal ≥ 0`), stat. uncertainty, raw events |
+| `sumw_check_<tag>.csv` | Σw of the `.coffea` files vs the Σw used for the normalisation; ≠ 1 means missing/duplicated jobs or a Σw table over a different set of chunks |
+| `job_check_<tag>.csv` | Per process: events written according to the `.coffea` jobs (`raw_final_nevents`) vs rows in the scored parquets. If they differ, `.coffea` jobs are missing and that process's cutflow rows are left empty (NaN); its yields from the parquets are unaffected |
+| `histograms_<tag>.coffea` | `{variable: hist.Hist(region, process, variable)}`, regions `selected` / `window`, with under/overflow; m4l, MVA scores, Z masses, jet and c-jet variables |
+| `plots/` | Stacked MC with MC-stat band, H+c ×100, data with ratio panel |
+| `bookkeeping_<tag>.json` | All numbers and the inputs used |
 
 | Flag | Description |
 |------|-------------|
-| `--stages` | `score`, `bookkeep`, `plot`, comma-separated |
-| `--bookkeep-dir` | Output directory of bookkeep/plot |
-| `--sumw-table` | Pre-veto Σw table of the 2022/23 cards (`nom` entries); default: sidecars with `--sumw-key` (default `sumw_preveto`) |
-| `--mass-window LO HI` | Window of the yield table and the `window` region (default 105 160, as the cards) |
-| `--no-split-higgs` | One pooled Other_Higgs instead of ggH/VBF/WH/ZH/ttH/bbH/H+b |
+| `--source RAW SCORED KINDS` | Repeatable; `KINDS` = `background`, `signal`, `data`, `all` or process names (comma-separated) |
+| `--raw-dir`, `--scored-dir` | Single production instead of `--source` |
+| `--sumw-table` | Pre-veto Σw table of the card (`nom` + `sig` entries); default: sidecars with `--sumw-key` (default `sumw_preveto`) |
+| `--mass-window LO HI` | Window of the yield table and the `window` region (default 105 160, as the card) |
+| `--no-split-higgs` | One pooled Other_Higgs instead of ggH/VBF/WminusH/WplusH/ZH/ttH/bbH/HPlusB |
 | `--exclude` | Regexes of sample directories to skip |
-| `--unblind`, `--blind-m4l LO HI` | Blinding of data (default: no data in the window region and yield columns, m4l 115–135 GeV hidden) |
-| `--signal-scale` | Scale of the H+c overlay in the plots (default 100) |
+| `--unblind`, `--blind-m4l LO HI` | Data blinding (default: data only outside the mass window in the tables and the `window` region; m4l plots hide 115–135 GeV) |
+| `--stages`, `--signal-scale` | `bookkeep`, `plot` (standalone default: both); H+c overlay scale (default 100) |
 
-Validated 2026-10-26: background yields equal the builder's loader for the 2022/23 nominal (429) and the
-2024 card to < 1e-4; the qqZZ cutflow equals the old `--postprocess` cutflow of `hplusc_mva_4class`.
-Not included: Z+X, the stitched 4FS+3FS signal (the Signal column is the plain 4FS sample at 97.62 fb;
-the 2024 card scales it by 73.30/97.62) and shifted templates. Run time: 45 s for 2022/23
-(backgrounds), about 11 min for 2024 (13k parquet files, data included).
+Validated (2026-10-26): the background yields equal the nominal card's loader (r < 429, V4/V3, optbin10)
+for every process to < 1e-4; the qqZZ cutflow equals the old `run_postprocess.py --postprocess` cutflow of
+`hplusc_mva_4class`; scoring output is bit-identical to the previous script.
+Not included: Z+X (data-driven, its own chain), the stitched 4FS+3FS signal and its flat muon ID SF (the
+Signal column is the plain 4FS sample at 97.62 fb × BR) and the shifted templates. Data come from the
+`_ctag2d` production (JEC V2/V1); 90 of its 261 data jobs have no `.coffea` (August production), so
+the data cutflow is left empty and only the data yields (from the parquets) are given. Run time about
+1 min for the four eras.
+
+Known effect found by `sumw_check`: the card's Σw table sums only chunks that have a parquet file, and a
+chunk with no selected event writes none. For the ggZZ→τ samples this lowers Σw (up to ×1/1.88 for 4τ in
+2022preEE) and raises their yield; the effect on the card is +0.0056 events, 0.10% of ggZZ.
 
 ### 2. Optional, not used for the cards: `run_postprocess.py --mva-inference`
 

@@ -118,19 +118,25 @@ def is_data(name):
     return name.startswith(DATA_PREFIXES)
 
 
-def process_of(name, exclude):
+def process_of(name, exclude, kinds="all"):
+    """Process of a sample directory / job name, or None to skip it. kinds: comma-separated
+    'all', 'background', 'signal', 'data' or process names (a --source restricts each production)."""
     # parquets_<sample>/: merged copies written by run_postprocess.py --postprocess (would double count)
     if name.startswith("parquets_") or (exclude and any(re.search(x, name) for x in exclude)):
         return None
-    if is_data(name):
-        return "Data"
-    return dc.get_process_from_path(name)
+    proc = "Data" if is_data(name) else dc.get_process_from_path(name)
+    if proc is None:
+        return None
+    want = {k.strip() for k in kinds.split(",")}
+    kind = "data" if proc == "Data" else "signal" if proc == "Signal" else "background"
+    return proc if ("all" in want or kind in want or proc in want) else None
 
 
 def load_sumw_table(path):
+    """(era, group) -> pre-veto sumw: 'nom' (backgrounds) and 'sig' (4FS H+c) entries of the table."""
     tab = json.load(open(path))
     out = {}
-    for era, groups in tab["nom"].items():
+    for era, groups in [(e, g) for kind in ("nom", "sig") for e, g in tab.get(kind, {}).items()]:
         for g, rec in groups.items():
             if rec.get("n_missing"):
                 raise RuntimeError(f"sumw table: {rec['n_missing']} chunks without sumw for {era} {g}")
@@ -138,11 +144,11 @@ def load_sumw_table(path):
     return out
 
 
-def load_sidecar_sumw(raw_dir):
+def load_sidecar_sumw(raw_dir, kinds="all"):
     """dc.load_sumw_by_group, skipping loose files (<sample>.parquet/.coffea) and the merged
     parquets_<sample>/ dirs that an old run_postprocess.py --postprocess left in the era dir."""
     def key(era, part):
-        if part.startswith("parquets_") or "." in part:
+        if part.startswith("parquets_") or "." in part or process_of(part, [], kinds) in (None, "Data"):
             return None
         g = dc.norm_group(part)
         return (era, g) if g else None
@@ -176,7 +182,7 @@ def _load_coffea(path):
     return cloudpickle.loads(lz4.frame.decompress(E.read_bytes(path)))
 
 
-def collect_cutflows(raw_dir, era, exclude, workers):
+def collect_cutflows(raw_dir, era, exclude, workers, kinds="all"):
     """(process, group) -> {"steps": {step: sumw}, "sumw": .., "sumw_preveto": .., "n_jobs": ..}."""
     era_dir = os.path.join(raw_dir, era)
     jobs = []
@@ -188,7 +194,7 @@ def collect_cutflows(raw_dir, era, exclude, workers):
             name = Path(f).stem               # <dataset>_<N>, same as the partition dir name
             if not re.fullmatch(re.escape(d) + r"_\d+", name):
                 continue                      # not a per-job output (e.g. old base/cutflow_base_*.coffea)
-            proc = process_of(name, exclude)
+            proc = process_of(name, exclude, kinds)
             if proc is not None:
                 jobs.append((f, name, proc))
 
@@ -198,12 +204,13 @@ def collect_cutflows(raw_dir, era, exclude, workers):
         cat = meta.get(CUTFLOW_CATEGORY, {})
         return name, proc, meta, cat.get("cutflow", {})
 
-    out = defaultdict(lambda: {"steps": defaultdict(float), "sumw": 0.0, "sumw_preveto": 0.0, "n_jobs": 0})
+    out = defaultdict(lambda: {"steps": defaultdict(float), "sumw": 0.0, "sumw_preveto": 0.0, "n_jobs": 0, "raw_final": 0})
     with ThreadPoolExecutor(max_workers=workers) as ex:
         for name, proc, meta, cutflow in ex.map(one, jobs):
             group = "Data" if proc == "Data" else dc.norm_group(name)
             rec = out[(proc, group)]
             rec["n_jobs"] += 1
+            rec["raw_final"] += int(meta.get(CUTFLOW_CATEGORY, {}).get("raw_final_nevents", 0))
             sw = float(meta.get("sumw", 0.0))
             rec["sumw"] += sw
             rec["sumw_preveto"] += float(meta.get("sumw_preveto", sw) or sw)
@@ -271,12 +278,12 @@ def _file_acc(path, scale, window, data):
     return acc
 
 
-def collect_yields(scored_dir, era, sumw_by_group, window, exclude, workers):
+def collect_yields(scored_dir, era, sumw_by_group, window, exclude, workers, kinds="all"):
     """process -> accumulated yields/histograms for this era."""
     era_dir = os.path.join(scored_dir, era)
     tasks = []
     for name in E.listdir(era_dir):
-        proc = process_of(name, exclude)
+        proc = process_of(name, exclude, kinds)
         if proc is None:
             continue
         base = os.path.join(era_dir, name, "base")
@@ -307,7 +314,10 @@ def _ordered(procs, mc_order):
 
 
 def make_tables(eras, cutflows, yields, sumw_by_group, window, mc_order, blind):
-    """Cutflow, efficiency, yields and sumw check summed over `eras`."""
+    """Cutflow, efficiency, yields, sumw check and job coverage summed over `eras`. Job coverage: the
+    events written according to the .coffea files (raw_final_nevents) must equal the rows of the scored
+    parquets; otherwise .coffea jobs (or parquets) are missing and the process gets NaN in the
+    .coffea-based cutflow rows."""
     steps_seen = []
     cf = defaultdict(lambda: defaultdict(float))     # proc -> row -> value
     check = []
@@ -340,11 +350,31 @@ def make_tables(eras, cutflows, yields, sumw_by_group, window, mc_order, blind):
             cf[proc][win + ", mva score >= 0 (card input)"] += acc["w_win"]
     rows = ["generated (pre jet veto)", "jet veto map"] + steps_seen + \
         ["selected (scored parquets)", win, win + ", mva score >= 0 (card input)"]
+    jobs = []
+    for era in eras:
+        coffea_raw = defaultdict(int)
+        n_jobs = defaultdict(int)
+        for (proc, _g), rec in cutflows[era].items():
+            coffea_raw[proc] += rec["raw_final"]
+            n_jobs[proc] += rec["n_jobs"]
+        for proc in sorted(set(coffea_raw) | set(yields[era])):
+            pq_raw = yields[era][proc]["n_raw_sel"] if proc in yields[era] else 0
+            jobs.append({"era": era, "process": proc, "n_coffea_jobs": n_jobs[proc],
+                         "events_written_coffea": coffea_raw[proc], "events_in_parquets": pq_raw,
+                         "complete": coffea_raw[proc] == pq_raw})
+    jobs = pd.DataFrame(jobs, columns=["era", "process", "n_coffea_jobs", "events_written_coffea",
+                                       "events_in_parquets", "complete"])
+    for proc in set(jobs.loc[~jobs["complete"].astype(bool), "process"]):
+        for r in rows[:-3]:
+            cf[proc][r] = np.nan
     procs = _ordered(cf.keys(), mc_order)
     cutflow = pd.DataFrame({p: [cf[p].get(r, np.nan) for r in rows] for p in procs}, index=rows)
     bkg = [p for p in procs if p not in ("Signal", "Data")]
-    cutflow.insert(len(bkg), "Total background", cutflow[bkg].sum(axis=1, min_count=1))
+    cutflow.insert(len(bkg), "Total background", cutflow[bkg].sum(axis=1, skipna=False))
     if blind and "Data" in cutflow:
+        # blinded: data only outside the mass window (no number that includes the signal region)
+        out_win = sum(yields[e]["Data"]["w_sel"] - yields[e]["Data"]["w_m4l"] for e in eras if "Data" in yields[e])
+        cutflow.loc["selected (scored parquets)", "Data"] = out_win
         cutflow.loc[rows[-2:], "Data"] = np.nan
     eff = cutflow / cutflow.iloc[0]
     if "Data" in eff:
@@ -357,9 +387,12 @@ def make_tables(eras, cutflows, yields, sumw_by_group, window, mc_order, blind):
             if proc in yields[era]:
                 _add_acc(a, yields[era][proc])
         hide = blind and proc == "Data"
+        sel, sel2, sel_raw = a["w_sel"], a["w2_sel"], a["n_raw_sel"]
+        if hide:   # blinded data: selected events outside the mass window only
+            sel, sel2, sel_raw = sel - a["w_m4l"], sel2 - a["w2_m4l"], sel_raw - a["n_raw_m4l"]
         yrows.append({
             "process": proc,
-            "selected": a["w_sel"], "selected_stat": np.sqrt(a["w2_sel"]), "selected_raw": a["n_raw_sel"],
+            "selected": sel, "selected_stat": np.sqrt(sel2), "selected_raw": sel_raw,
             "window": np.nan if hide else a["w_m4l"], "window_stat": np.nan if hide else np.sqrt(a["w2_m4l"]),
             "card_input": np.nan if hide else a["w_win"], "card_input_stat": np.nan if hide else np.sqrt(a["w2_win"]),
             "card_input_raw": -1 if hide else a["n_raw_win"],
@@ -370,7 +403,7 @@ def make_tables(eras, cutflows, yields, sumw_by_group, window, mc_order, blind):
                                    tot["selected_raw"].sum(), tot["window"].sum(),
                                    np.sqrt((tot["window_stat"] ** 2).sum()), tot["card_input"].sum(),
                                    np.sqrt((tot["card_input_stat"] ** 2).sum()), tot["card_input_raw"].sum()]
-    return cutflow, eff, ydf, pd.DataFrame(check)
+    return cutflow, eff, ydf, pd.DataFrame(check), jobs
 
 
 def yields_latex(ydf, window, tag):
@@ -378,12 +411,16 @@ def yields_latex(ydf, window, tag):
              rf"Process & Selected & $m_{{4\ell}}\in[{window[0]:g},{window[1]:g})$ & Card input \\", r"\hline"]
     for p, r in ydf.iterrows():
         def f(v, s):
-            return "--" if not np.isfinite(v) else (f"{v:.2f} $\\pm$ {s:.2f}" if v < 1000 else f"{v:.0f} $\\pm$ {s:.0f}")
+            if not np.isfinite(v):
+                return "--"
+            d = 0 if v >= 1000 else 2 if v >= 1 else 4
+            return f"{v:.{d}f} $\\pm$ {s:.{d}f}"
         if p == "Total background":
             lines.append(r"\hline")
         lines.append(f"{p.replace('_', ' ')} & {f(r['selected'], r['selected_stat'])} & "
                      f"{f(r['window'], r['window_stat'])} & {f(r['card_input'], r['card_input_stat'])} \\\\")
-    lines += [r"\hline", r"\end{tabular}", f"% {tag}, stat. uncertainties only"]
+    lines += [r"\hline", r"\end{tabular}",
+              f"% {tag}, stat. uncertainties only; blinded data: selected events outside the mass window"]
     return "\n".join(lines) + "\n"
 
 
@@ -421,36 +458,58 @@ def run_bookkeep(a):
     out_dir = Path(a.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
+    sources = [tuple(x) for x in (getattr(a, "source", None) or [])] or [(a.raw_dir, a.scored_dir, "all")]
     if a.sumw_table:
         sumw_by_group = load_sumw_table(a.sumw_table)
-        sumw_src = f"table {a.sumw_table} ('nom')"
+        sumw_src = f"table {a.sumw_table} ('nom' + 'sig')"
     else:
-        sumw_by_group = load_sidecar_sumw(a.raw_dir)
-        sumw_src = f"sidecars {a.raw_dir} key {a.sumw_key}"
+        sumw_by_group = {}
+        for raw, _, kinds in sources:
+            if kinds.strip() != "data":
+                for k, v in load_sidecar_sumw(raw, kinds).items():
+                    if k in sumw_by_group:
+                        raise SystemExit(f"sumw group {k} found in two --source productions; restrict their kinds")
+                    sumw_by_group[k] = v
+        sumw_src = f"sidecars of the sources, key {a.sumw_key}"
     logger.info(f"sumw: {sumw_src}")
-    cutflows, yields = {}, {}
-    for era in eras:
-        logger.info(f"[{era}] cutflows from {a.raw_dir}")
-        cutflows[era] = collect_cutflows(a.raw_dir, era, a.exclude, a.workers)
-        logger.info(f"[{era}] yields from {a.scored_dir}")
-        yields[era] = collect_yields(a.scored_dir, era, sumw_by_group, a.mass_window, a.exclude, a.workers)
+    cutflows = {e: {} for e in eras}
+    yields = {e: {} for e in eras}
+
+    for raw, scored, kinds in sources:
+        for era in eras:
+            logger.info(f"[{era}] {kinds}: cutflows from {raw}")
+            cf = collect_cutflows(raw, era, a.exclude, a.workers, kinds)
+            logger.info(f"[{era}] {kinds}: yields from {scored}")
+            yl = collect_yields(scored, era, sumw_by_group, a.mass_window, a.exclude, a.workers, kinds)
+            for dst, src in ((cutflows[era], cf), (yields[era], yl)):
+                clash = set(dst) & set(src)
+                if clash:
+                    raise SystemExit(f"{era}: {sorted(clash)} come from two --source productions; restrict their kinds")
+                dst.update(src)
     blind = not a.unblind
     for tag, es in era_groups(eras).items():
-        cutflow, eff, ydf, check = make_tables(es, cutflows, yields, sumw_by_group, a.mass_window, mc_order, blind)
+        cutflow, eff, ydf, check, jobs = make_tables(es, cutflows, yields, sumw_by_group, a.mass_window,
+                                                     mc_order, blind)
         cutflow.to_csv(out_dir / f"cutflow_{tag}.csv")
         eff.to_csv(out_dir / f"cutflow_eff_{tag}.csv")
         ydf.to_csv(out_dir / f"yields_{tag}.csv")
         (out_dir / f"yields_{tag}.tex").write_text(yields_latex(ydf, a.mass_window, tag))
         check.to_csv(out_dir / f"sumw_check_{tag}.csv", index=False)
+        jobs.to_csv(out_dir / f"job_check_{tag}.csv", index=False)
+        incomplete = jobs[~jobs["complete"].astype(bool)] if len(jobs) else jobs
+        if len(incomplete):
+            logger.warning(f"{tag}: cutflow rows blanked for {sorted(set(incomplete['process']))}: events written "
+                           f"by the .coffea jobs != rows in the scored parquets (see job_check_{tag}.csv)")
         save(make_hists(es, yields, blind, a.blind_m4l), str(out_dir / f"histograms_{tag}.coffea"))
         bad = check[(check["ratio_coffea_preveto/used"] - 1).abs() > 1e-3] if len(check) else check
         meta = {
             "tag": tag, "eras": es, "lumi_pb": sum(dc.LUMINOSITY_PB[e] for e in es),
-            "raw_dir": a.raw_dir, "scored_dir": a.scored_dir, "sumw": sumw_src,
+            "sources": [{"raw_dir": r, "scored_dir": sc, "kinds": k} for r, sc, k in sources], "sumw": sumw_src,
             "mass_window": list(a.mass_window), "split_higgs": not a.no_split_higgs, "blind": blind,
             "exclude": a.exclude, "created": time.strftime("%Y-%m-%d %H:%M:%S"),
             "cutflow": json.loads(cutflow.to_json()), "yields": json.loads(ydf.to_json()),
             "sumw_check_mismatches": json.loads(bad.to_json(orient="records")),
+            "job_check_incomplete": json.loads(incomplete.to_json(orient="records")),
         }
         (out_dir / f"bookkeeping_{tag}.json").write_text(json.dumps(meta, indent=1))
         with pd.option_context("display.width", 250, "display.max_columns", 30, "display.float_format", "{:.4g}".format):
@@ -556,8 +615,11 @@ def run_plot(a):
 # ---------------------------------------------------------------------------
 def add_arguments(p, standalone=True):
     if standalone:
-        p.add_argument("--raw-dir", required=True, help="unscored workflow output (sumw sidecars, .coffea)")
-        p.add_argument("--scored-dir", required=True, help="run_mva_postprocess.py output")
+        p.add_argument("--raw-dir", help="unscored workflow output (sumw sidecars, .coffea)")
+        p.add_argument("--scored-dir", help="run_mva_postprocess.py output")
+        p.add_argument("--source", nargs=3, action="append", metavar=("RAW_DIR", "SCORED_DIR", "KINDS"),
+                       help="instead of --raw-dir/--scored-dir, repeatable: one production and the processes taken "
+                            "from it (comma-separated: background, signal, data, all, or process names)")
         p.add_argument("--eras", nargs="+", required=True)
         p.add_argument("--output-dir", required=True)
         p.add_argument("--workers", type=int, default=8)
@@ -577,6 +639,8 @@ def add_arguments(p, standalone=True):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     a = add_arguments(p).parse_args()
+    if not a.source and not (a.raw_dir and a.scored_dir):
+        p.error("give --raw-dir and --scored-dir, or one or more --source")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     stages = [s.strip() for s in a.stages.split(",") if s.strip()]
     if "bookkeep" in stages:
