@@ -31,12 +31,14 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 from collections import defaultdict
+import eos_io as E   # server-side EOS listings, xrootd read fallback
 
 sys.path.insert(0, "/eos/user/s/snandaku/Higgscharmnew/higgscharm/combine/scripts")
 sys.path.insert(0, "/eos/user/s/snandaku/Higgscharmnew/higgscharm")
 import create_datacards_ctag2d_100150 as dc
 from analysis.corrections.ctag2d import (
     _category_np, CID, CAT_TO_WP, BOUNDARIES_BY_ERA, CORRECTION_NAME, PT_BINS,
+    correction_name, UPART_ERAS,
 )
 import correctionlib
 from analysis.corrections.utils import correction_files
@@ -52,12 +54,47 @@ EXPECTED_YIELDS = dc.EXPECTED_YIELDS
 
 _CORR_CACHE = {}
 
+# Per-jet c-tag inputs read from the scored parquets (2026-10-25): PNet for 2022/2023,
+# UParTAK4 for 2024/2025 (jet_btagUParTAK4* columns, workflows since 2026-10-25).
+PNET_JET_COLS = ["jet_btagPNetCvL", "jet_btagPNetCvB", "jet_hadronFlavour", "jet_pt"]
+UPART_JET_COLS = ["jet_btagUParTAK4CvL", "jet_btagUParTAK4CvB", "jet_hadronFlavour", "jet_pt"]
+
+
+def jet_score_cols(era):
+    return UPART_JET_COLS if era in UPART_ERAS else PNET_JET_COLS
+
+# --- capped-cell fix (2026-10-15) ---------------------------------------------------------
+# 2022postEE, light jets (hadronFlavour 0), 20 <= pT < 35, all |eta|: up_Total sits at the
+# file's [0.3, 3.0] clamp (C0: central 1.034, up 3.000, down 1.029; L0: central 0.980, up 0.300,
+# down 0.996) while every named source of the cell is < 1% (quadrature 0.8% C0, 1.1% L0). It is
+# the only such cell in the four files (scan: second-brain
+# Notes/hczz-ctag2d-placeholder-qqzz-check-2026-10-14.md sec. 6). --ctag2d-capfix replaces that
+# up_Total only, keeping the file's sign convention (C0 up, L0 down):
+#   none   : file as is (default; reproduces every earlier card)
+#   mirror : up = central +- |central - down_Total|   (the measured half of the same cell)
+#   <x>    : up = central +- x * central                (e.g. 0.05: conservative cross-check)
+CAPFIX = "none"
+for _i, _a in enumerate(sys.argv):
+    if _a == "--ctag2d-capfix":
+        CAPFIX = sys.argv[_i + 1]
+        del sys.argv[_i:_i + 2]
+        break
+if CAPFIX not in ("none", "mirror"):
+    float(CAPFIX)   # anything else must be a relative width
+CAPFIX_CELL = {"era": "2022postEE", "flav": 0, "wp_sign": {0: -1.0, 40: +1.0}, "pt": (20.0, 35.0)}
+CAPFIX_LOG = defaultdict(int)   # (era, wp) -> number of jet evaluations whose up_Total was replaced
+if CAPFIX != "none":
+    import atexit
+    print(f"--ctag2d-capfix {CAPFIX}: {CAPFIX_CELL}")
+    atexit.register(lambda: print(f"--ctag2d-capfix {CAPFIX}: up_Total replaced for "
+                                  f"{dict(CAPFIX_LOG) or 'NO jets (check!)'}", flush=True))
+
 
 def _get_corr(year_dir_era):
     if year_dir_era not in _CORR_CACHE:
         _CORR_CACHE[year_dir_era] = correctionlib.CorrectionSet.from_file(
             correction_files["ctagging_2d"][year_dir_era]
-        )[CORRECTION_NAME]
+        )[correction_name(year_dir_era)]
     return _CORR_CACHE[year_dir_era]
 
 
@@ -75,6 +112,23 @@ def _raw_event_sf(cvl, cvb, flav, pt, era, syst):
             np.zeros(ok.sum(), dtype=np.float64),
             np.clip(pt[ok], *PT_BINS),
         )
+    if CAPFIX != "none" and syst == "up_Total" and era == CAPFIX_CELL["era"]:
+        hi = CAPFIX_CELL["pt"][1]
+        for wp_code, sign in CAPFIX_CELL["wp_sign"].items():
+            m = ok & (flav == CAPFIX_CELL["flav"]) & (wp == wp_code) & (pt < hi)
+            if not m.any():
+                continue
+            args = (flav[m], wp[m], np.zeros(m.sum(), dtype=np.float64), np.clip(pt[m], *PT_BINS))
+            c = corr.evaluate("central", *args)
+            if not np.allclose(sf[m], 3.0 if sign > 0 else 0.3):
+                raise RuntimeError(f"--ctag2d-capfix: {era} light wp {wp_code} pT<{hi} up_Total is not at the "
+                                   f"clamp ({np.unique(sf[m])[:5]}): the SF file changed, re-check the cell")
+            if CAPFIX == "mirror":
+                delta = np.abs(c - corr.evaluate("down_Total", *args))
+            else:
+                delta = float(CAPFIX) * c
+            sf[m] = c + sign * delta
+            CAPFIX_LOG[(era, wp_code)] += int(m.sum())
     return sf
 
 
@@ -85,8 +139,8 @@ def _recompute_ctag2d_raw(df, era):
     Up/Down columns are the FULL alternate weight, not just a ratio)."""
     n = len(df)
     nj_cap = 3
-    cvl_list = df["jet_btagPNetCvL"].values
-    cvb_list = df["jet_btagPNetCvB"].values
+    cvl_list = df[jet_score_cols(era)[0]].values
+    cvb_list = df[jet_score_cols(era)[1]].values
     flav_list = df["jet_hadronFlavour"].values
     pt_list = df["jet_pt"].values
 
@@ -119,7 +173,7 @@ def _recompute_ctag2d_raw(df, era):
     return weight_nominal * r_up, weight_nominal * r_dn
 
 
-def load_mc_scored_parquets_rawsf(scored_dir, sumw_by_proc):
+def load_mc_scored_parquets_rawsf(scored_dir, sumw_by_group):
     """Copy of dc.load_mc_scored_parquets, patched to recompute CMS_ctag2d
     Up/Down from raw jet branches instead of trusting the swap-corrected
     baked-in parquet columns."""
@@ -130,25 +184,26 @@ def load_mc_scored_parquets_rawsf(scored_dir, sumw_by_proc):
 
     for era in ERAS:
         era_dir = os.path.join(scored_dir, era)
-        if not os.path.isdir(era_dir):
+        if not E.isdir(era_dir):
             print(f"  WARNING: era dir not found: {era_dir}")
             continue
 
-        for sample_name in os.listdir(era_dir):
+        for sample_name in E.listdir(era_dir):
             proc = get_process_from_path(sample_name)
             if proc is None:
                 continue
 
             sample_dir = os.path.join(era_dir, sample_name, "base")
-            if not os.path.isdir(sample_dir):
+            if not E.isdir(sample_dir):
                 continue
 
+            scale = dc.event_scale(era, sample_name, sumw_by_group)
             usable = USABLE_SYST.get(proc, set())
             # HPlusBottom-specific override -- see dc.HPLUSBOTTOM_BUGGY_SYST.
             # Mirrors the same fix in create_datacards_ctag2d_100150.py's
             # load_mc_scored_parquets (this function is a hand-duplicated
             # copy of it, patched only for CMS_ctag2d recomputation).
-            is_hplusbottom = (proc == "Other_Higgs" and "HPlusBottom" in sample_name)
+            is_hplusbottom = (proc != "Signal" and "HPlusBottom" in sample_name)
             requestable = usable - HPLUSBOTTOM_BUGGY_SYST if is_hplusbottom else usable
             syst_cols_wanted = []
             for syst in requestable:
@@ -156,25 +211,15 @@ def load_mc_scored_parquets_rawsf(scored_dir, sumw_by_proc):
                     syst_cols_wanted.append(syst_col(syst, direction, era))
 
             need_jet_cols = "CMS_ctag2d" in usable
-            jet_cols = ["jet_btagPNetCvL", "jet_btagPNetCvB", "jet_hadronFlavour", "jet_pt"] if need_jet_cols else []
+            jet_cols = jet_score_cols(era) if need_jet_cols else []
 
-            for pq_file in glob.glob(os.path.join(sample_dir, "*.parquet")):
+            for pq_file in E.files(sample_dir, ".parquet"):
                 base_cols = ["zz_mass_inclusive", "mva_score_Signal", "weight_nominal"]
                 all_cols = base_cols + syst_cols_wanted + jet_cols
-                try:
-                    df = pq.read_table(pq_file, columns=all_cols).to_pandas()
-                except Exception:
-                    try:
-                        available = pq.ParquetFile(pq_file).schema.names
-                        cols = base_cols + [c for c in syst_cols_wanted if c in available] + \
-                               [c for c in jet_cols if c in available]
-                        df = pq.read_table(pq_file, columns=cols).to_pandas()
-                    except Exception as e:
-                        print(f"  WARNING: {pq_file}: {e}")
-                        continue
+                df = E.read_parquet(pq_file, all_cols).to_pandas()   # missing columns dropped; failures raise
 
                 w_all = df["weight_nominal"].fillna(0).values
-                raw_weight[proc] += w_all.sum()
+                raw_weight[proc] += w_all.sum() * scale
 
                 mask = (df["zz_mass_inclusive"] >= MASS_WINDOW[0]) & \
                        (df["zz_mass_inclusive"] < MASS_WINDOW[1])
@@ -185,12 +230,13 @@ def load_mc_scored_parquets_rawsf(scored_dir, sumw_by_proc):
                     continue
 
                 proc_scores[proc].append(df_win["mva_score_Signal"].values)
-                nominal_win = df_win["weight_nominal"].fillna(0).values
+                nominal_win = df_win["weight_nominal"].fillna(0).values * scale
                 proc_weights[proc].append(nominal_win)
 
                 ctag2d_up_raw = ctag2d_dn_raw = None
                 if need_jet_cols and all(c in df_win.columns for c in jet_cols):
                     ctag2d_up_raw, ctag2d_dn_raw = _recompute_ctag2d_raw(df_win, era)
+                    ctag2d_up_raw, ctag2d_dn_raw = ctag2d_up_raw * scale, ctag2d_dn_raw * scale
 
                 for syst in usable:
                     for direction in ("Up", "Down"):
@@ -202,43 +248,12 @@ def load_mc_scored_parquets_rawsf(scored_dir, sumw_by_proc):
                             proc_syst_weights[proc][syst][direction].append(nominal_win)
                         elif col in df_win.columns:
                             proc_syst_weights[proc][syst][direction].append(
-                                df_win[col].fillna(0).values
+                                df_win[col].fillna(0).values * scale
                             )
                         else:
                             proc_syst_weights[proc][syst][direction].append(nominal_win)
 
-    mc_data = {}
-    print(f"\n  {'Process':<15} {'raw_wgt':>12} {'sumw_gen':>14} {'baseline_eff':>13} {'expected':>10} {'in_win_yield':>14}")
-    print("  " + "-" * 82)
-
-    for proc in CLASS_NAMES:
-        raw = raw_weight.get(proc, 0.0)
-        sumw_gen = sumw_by_proc.get(proc, 0.0)
-        exp = EXPECTED_YIELDS.get(proc, 0.0)
-        baseline_eff = raw / sumw_gen if sumw_gen > 0 else float("nan")
-
-        scores = np.concatenate(proc_scores[proc]) if proc_scores[proc] else np.array([])
-        weights = np.concatenate(proc_weights[proc]) if proc_weights[proc] else np.array([])
-
-        if sumw_gen > 0 and exp > 0:
-            scale = exp / sumw_gen
-            scaled_weights = weights * scale
-        else:
-            print(f"  WARNING: no sumw for {proc} -- falling back to post-selection raw_weight")
-            scale = exp / raw if raw > 0 and exp > 0 else 1.0
-            scaled_weights = weights * scale
-
-        syst_scaled = defaultdict(dict)
-        for syst, by_dir in proc_syst_weights[proc].items():
-            for direction, arrs in by_dir.items():
-                w = np.concatenate(arrs) if arrs else np.array([])
-                syst_scaled[syst][direction] = w * scale
-
-        mc_data[proc] = (scores, scaled_weights, syst_scaled)
-        in_win = scaled_weights.sum()
-        print(f"  {proc:<15} {raw:>12.2f} {sumw_gen:>14.2f} {baseline_eff:>13.4%} {exp:>10.4f} {in_win:>14.4f}")
-
-    return mc_data
+    return dc.finalize_mc_data(proc_scores, proc_weights, proc_syst_weights, raw_weight)
 
 
 # monkey-patch: main() calls load_mc_scored_parquets via the module's own

@@ -216,6 +216,9 @@ def main():
         bhive_config_path=args.config,
         bhive_model_path=args.model,
         apply_mass_window=not args.no_mass_window,
+        # A real era at construction avoids a spurious era='None' fallback
+        # warning; the loop below still sets processor.era for every era.
+        era=args.eras[0],
     )
 
     for era in args.eras:
