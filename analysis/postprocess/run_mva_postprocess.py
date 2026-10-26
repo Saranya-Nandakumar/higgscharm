@@ -48,6 +48,7 @@ except ImportError:
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from analysis.postprocess.mva_inference import MVAPostProcessor
+from analysis.postprocess import bookkeeping
 
 logging.basicConfig(
     level=logging.INFO,
@@ -340,8 +341,13 @@ def process_era(
     mva_processor: MVAPostProcessor,
     create_hists: bool = True,
     n_workers: int = 8,
+    datasets: Optional[List[str]] = None,
 ):
-    """Process all parquet files for a given era."""
+    """Process all parquet files for a given era.
+
+    `datasets`: optional list of dataset-name prefixes; only partition dirs
+    (the first path component under the era dir, e.g. `Stitch3FS_cH_2022postEE_12`)
+    starting with one of them are scored. None scores everything."""
     era_input = input_dir / era
     era_output = output_dir / era
 
@@ -352,6 +358,11 @@ def process_era(
     # Find all parquet files, then collapse condor-resubmission duplicates
     # (see dedupe_parquet_files_by_source) down to one copy per source file
     raw_parquet_files = list(era_input.glob('**/*.parquet'))
+    if datasets:
+        raw_parquet_files = [
+            f for f in raw_parquet_files
+            if f.relative_to(era_input).parts[0].startswith(tuple(datasets))
+        ]
     parquet_files = dedupe_parquet_files_by_source(raw_parquet_files)
     logger.info(
         f"Found {len(raw_parquet_files)} parquet files for {era}, "
@@ -543,13 +554,13 @@ def main():
     )
     parser.add_argument(
         '--config', '-c',
-        required=True,
-        help='Path to b-hive config YAML file'
+        default=None,
+        help='Path to b-hive config YAML file (required for --stages score)'
     )
     parser.add_argument(
         '--model', '-m',
-        required=True,
-        help='Path to trained model file (.pt)'
+        default=None,
+        help='Path to trained model file (.pt) (required for --stages score)'
     )
     parser.add_argument(
         '--era', '-e',
@@ -584,13 +595,37 @@ def main():
         help='Mass window maximum (default: 160)'
     )
     parser.add_argument(
+        '--datasets',
+        nargs='+',
+        default=None,
+        help='Only score partition dirs starting with one of these dataset-name prefixes'
+    )
+    parser.add_argument(
         '--workers', '-w',
         type=int,
         default=8,
         help='Number of parallel workers (default: 8)'
     )
 
+    parser.add_argument(
+        '--stages',
+        default='score',
+        help='Comma-separated stages: score (MVA inference, the default), bookkeep (cutflows, yields, '
+             'normalised histograms) and plot, see analysis/postprocess/bookkeeping.py. bookkeep/plot read '
+             '--input-dir (sumw sidecars, per-job .coffea) and --output-dir (scored parquets).'
+    )
+    parser.add_argument(
+        '--bookkeep-dir',
+        default=None,
+        help='Output of the bookkeep/plot stages (default: <output-dir>/bookkeeping)'
+    )
+    bookkeeping.add_arguments(parser.add_argument_group('bookkeep/plot stages'), standalone=False)
+
     args = parser.parse_args()
+    stages = [s_.strip() for s_ in args.stages.split(',') if s_.strip()]
+    unknown = set(stages) - {'score', 'bookkeep', 'plot'}
+    if unknown:
+        parser.error(f"unknown stage(s): {sorted(unknown)}")
 
     input_dir = Path(args.input_dir)
     output_dir = Path(args.output_dir) if args.output_dir else input_dir
@@ -599,29 +634,32 @@ def main():
         logger.error(f"Input directory not found: {input_dir}")
         sys.exit(1)
 
-    if not Path(args.config).exists():
-        logger.error(f"Config file not found: {args.config}")
-        sys.exit(1)
+    if 'score' in stages:
+        if not args.config or not args.model:
+            parser.error('--config and --model are required for --stages score')
+        if not Path(args.config).exists():
+            logger.error(f"Config file not found: {args.config}")
+            sys.exit(1)
 
-    if not Path(args.model).exists():
-        logger.error(f"Model file not found: {args.model}")
-        sys.exit(1)
+        if not Path(args.model).exists():
+            logger.error(f"Model file not found: {args.model}")
+            sys.exit(1)
 
-    # Initialize MVA processor
-    logger.info(f"Loading config: {args.config}")
-    logger.info(f"Loading model: {args.model}")
+        # Initialize MVA processor
+        logger.info(f"Loading config: {args.config}")
+        logger.info(f"Loading model: {args.model}")
 
-    mva_processor = MVAPostProcessor(
-        bhive_config_path=args.config,
-        bhive_model_path=args.model,
-        apply_mass_window=not args.no_mass_window,
-    )
+        mva_processor = MVAPostProcessor(
+            bhive_config_path=args.config,
+            bhive_model_path=args.model,
+            apply_mass_window=not args.no_mass_window,
+        )
 
-    # Override mass window if specified
-    if args.mass_window_min:
-        mva_processor.mass_window_min = args.mass_window_min
-    if args.mass_window_max:
-        mva_processor.mass_window_max = args.mass_window_max
+        # Override mass window if specified
+        if args.mass_window_min:
+            mva_processor.mass_window_min = args.mass_window_min
+        if args.mass_window_max:
+            mva_processor.mass_window_max = args.mass_window_max
 
     # Determine which eras to process
     if args.era:
@@ -634,29 +672,43 @@ def main():
 
     logger.info(f"Processing eras: {eras}")
 
-    # Process each era
-    for era in eras:
-        logger.info(f"\n{'='*60}")
-        logger.info(f"Processing era: {era}")
-        logger.info(f"{'='*60}")
+    if 'score' in stages:
 
-        # Real per-era jet_is_* category boundaries -- see MVAPostProcessor.__init__'s
-        # `era` docstring / JET_TAG_BOUNDARIES_BY_ERA. mva_processor is created once
-        # above and reused across eras, so the era must be updated per iteration
-        # (a bug found 2026-08-14: it was never set at all before this fix, so every
-        # era silently used the wrong legacy boundary set).
-        mva_processor.era = era
+        # Process each era
+        for era in eras:
+            logger.info(f"\n{'='*60}")
+            logger.info(f"Processing era: {era}")
+            logger.info(f"{'='*60}")
 
-        process_era(
-            input_dir=input_dir,
-            output_dir=output_dir,
-            era=era,
-            mva_processor=mva_processor,
-            create_hists=not args.no_histograms,
-            n_workers=args.workers,
-        )
+            # Real per-era jet_is_* category boundaries -- see MVAPostProcessor.__init__'s
+            # `era` docstring / JET_TAG_BOUNDARIES_BY_ERA. mva_processor is created once
+            # above and reused across eras, so the era must be updated per iteration
+            # (a bug found 2026-08-14: it was never set at all before this fix, so every
+            # era silently used the wrong legacy boundary set).
+            mva_processor.era = era
 
-    logger.info("\nMVA post-processing complete!")
+            process_era(
+                input_dir=input_dir,
+                output_dir=output_dir,
+                era=era,
+                mva_processor=mva_processor,
+                create_hists=not args.no_histograms,
+                n_workers=args.workers,
+                datasets=args.datasets,
+            )
+
+        logger.info("\nMVA post-processing complete!")
+
+    if 'bookkeep' in stages or 'plot' in stages:
+        args.raw_dir = str(input_dir)
+        args.scored_dir = str(output_dir)
+        order = ['2022preEE', '2022postEE', '2023preBPix', '2023postBPix', '2024', '2025']
+        args.eras = sorted(eras, key=lambda e: order.index(e) if e in order else len(order))
+        args.output_dir = args.bookkeep_dir or str(output_dir / 'bookkeeping')
+        if 'bookkeep' in stages:
+            bookkeeping.run_bookkeep(args)
+        if 'plot' in stages:
+            bookkeeping.run_plot(args)
 
 
 if __name__ == '__main__':

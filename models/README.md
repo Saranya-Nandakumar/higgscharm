@@ -73,6 +73,53 @@ python3 -u analysis/postprocess/run_mva_postprocess.py \
 | `--datasets` | Only score partition directories that start with these dataset names. |
 | `--workers`, `-w` | Parallel workers (default 8). |
 
+### Bookkeeping and plots: `--stages bookkeep,plot`
+
+`run_mva_postprocess.py --stages` (default `score`) also runs the bookkeeping that
+`run_postprocess.py --postprocess --plot` does for the other workflows, on the per-job outputs and
+with the datacard builder's normalisation (`analysis/postprocess/bookkeeping.py`). Stages can run
+alone on an existing scored directory; `--config/--model` are only needed for `score`.
+
+```bash
+# 2022/23 backgrounds of the nominal card (same sumw table as the card)
+python3 -u analysis/postprocess/run_mva_postprocess.py \
+  --input-dir  $O/hplusc_mva_4class_ctag2d_jecshifts_bkg \
+  --output-dir $O/hplusc_mva_4class_ctag2d_jecshifts_bkg_scored_v1 \
+  --all-eras --stages bookkeep,plot --workers 16 \
+  --sumw-table /eos/user/s/snandaku/Analysis/v4v3_card_2026_10_23/sumw_table.json \
+  --bookkeep-dir <dir>
+
+# 2024 (sidecar sumw_preveto, as the 2024 card)
+python3 -u analysis/postprocess/run_mva_postprocess.py \
+  --input-dir  $O/hplusc_mva_4class_ctag2d_jecshifts \
+  --output-dir $O/hplusc_mva_4class_ctag2d_jecshifts_scored_2024_v2 \
+  --era 2024 --stages bookkeep,plot --workers 16 --bookkeep-dir <dir>
+```
+
+Written to `--bookkeep-dir` (default `<output-dir>/bookkeeping`), per era, per year and for all eras:
+`cutflow_<tag>.csv` (weighted, from the per-job `.coffea` metadata: generated pre-veto → jet veto →
+trigger → … → ≥1 c-jet, then selected / mass window / card input from the scored parquets),
+`cutflow_eff_<tag>.csv`, `yields_<tag>.csv/.tex`, `sumw_check_<tag>.csv` (Σw of the `.coffea` files vs
+the Σw used: flags missing or duplicated jobs), `histograms_<tag>.coffea` (m4l, MVA scores and inputs,
+regions `selected`/`window`, with flow bins) and `plots/`.
+
+| Flag | Description |
+|------|-------------|
+| `--stages` | `score`, `bookkeep`, `plot`, comma-separated |
+| `--bookkeep-dir` | Output directory of bookkeep/plot |
+| `--sumw-table` | Pre-veto Σw table of the 2022/23 cards (`nom` entries); default: sidecars with `--sumw-key` (default `sumw_preveto`) |
+| `--mass-window LO HI` | Window of the yield table and the `window` region (default 105 160, as the cards) |
+| `--no-split-higgs` | One pooled Other_Higgs instead of ggH/VBF/WH/ZH/ttH/bbH/H+b |
+| `--exclude` | Regexes of sample directories to skip |
+| `--unblind`, `--blind-m4l LO HI` | Blinding of data (default: no data in the window region and yield columns, m4l 115–135 GeV hidden) |
+| `--signal-scale` | Scale of the H+c overlay in the plots (default 100) |
+
+Validated 2026-10-26: background yields equal the builder's loader for the 2022/23 nominal (429) and the
+2024 card to < 1e-4; the qqZZ cutflow equals the old `--postprocess` cutflow of `hplusc_mva_4class`.
+Not included: Z+X, the stitched 4FS+3FS signal (the Signal column is the plain 4FS sample at 97.62 fb;
+the 2024 card scales it by 73.30/97.62) and shifted templates. Run time: 45 s for 2022/23
+(backgrounds), about 11 min for 2024 (13k parquet files, data included).
+
 ### 2. Optional, not used for the cards: `run_postprocess.py --mva-inference`
 
 `--mva-inference` is a flag on `run_postprocess.py`, not a separate script. It scores only the
