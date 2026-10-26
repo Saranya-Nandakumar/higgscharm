@@ -1,9 +1,11 @@
+import warnings
 import numpy as np
 from coffea.analysis_tools import Weights
 from analysis.filesets.utils import get_nano_version
 from analysis.corrections.muon import MuonWeights
 from analysis.corrections.ctag import CTagCorrector
-from analysis.corrections.ctag2d import CTag2DCorrector
+from analysis.corrections.ctag2d import CTag2DCorrector, BOUNDARIES_BY_ERA
+from analysis.corrections.utils import correction_files
 from analysis.corrections.pileup import add_pileup_weight
 from analysis.corrections.nnlops import add_nnlops_weight
 from analysis.corrections.lhepdf import add_lhepdf_weight
@@ -242,6 +244,12 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                                 electron_weights.add_reco_weights("Reco20to75")
                                 electron_weights.add_reco_weights("RecoAbove75")
                             elif nano_version == "15":
+                                # 2026-10-23: RecoBelow20 added for 2024 (the 2024 EGM electron.json
+                                # 2025-10-22 has it; electrons have pT > 7 in the 4l selection, so the
+                                # 7-20 GeV reco SF was missing). The 2025 file (2026-06-26) has no
+                                # RecoBelow20 bin, so 2025 keeps 20to75 + above75 only.
+                                if year == "2024":
+                                    electron_weights.add_reco_weights("RecoBelow20")
                                 electron_weights.add_reco_weights("Reco20to75")
                                 electron_weights.add_reco_weights("RecoAbove75")
                     if "trigger" in weights_config["electron"]:
@@ -271,7 +279,20 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                 ctag_corrector.add_ctag_weights(flavor="light")
 
         if "ctagging_2d" in weights_config:
-            if weights_config["ctagging_2d"]:
+            if weights_config["ctagging_2d"] and (
+                year not in BOUNDARIES_BY_ERA
+                or year not in correction_files["ctagging_2d"]
+            ):
+                # Safety net for eras without a boundary table or SF file. Since 2026-10-23
+                # 2024 and 2025 (2024 file as placeholder) are wired, so this no longer
+                # triggers for any analysis era.
+                warnings.warn(
+                    f"ctagging_2d requested but not available for year '{year}' -- "
+                    f"NO c-tag SF applied (weight = 1, no CMS_ctag2d nuisance).",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            elif weights_config["ctagging_2d"]:
                 ctag2d_corrector = CTag2DCorrector(
                     events=pruned_ev,
                     weights=weights_container,

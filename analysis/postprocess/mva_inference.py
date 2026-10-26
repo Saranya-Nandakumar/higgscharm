@@ -261,7 +261,33 @@ JET_TAG_BOUNDARIES_BY_ERA = {
         "B3": {"x": (0.640, 1.000), "y": (0.969, 0.992)},
         "B4": {"x": (0.640, 1.000), "y": (0.992, 1.000)},
     },
+    # 2024/2025 (Summer24 NanoAODv15, UParTAK4), added 2026-10-17 for the 2024 v15 model
+    # (b-hive config hc_zzto4l_mw_training_4class_nomass_2024v15). OFFICIAL 2D categories:
+    # HiggsDNA master d179305, metaconditions/Era2022_v1.json "HPC_ctag_WPs"["2024"], identical to
+    # lz4_hczz_processor.py::JET_TAG_BOUNDARIES_BY_ERA["2024"] (the training-time table).
+    # 2025 has no official 2D calibration; it reuses the 2024 table so that the scoring inputs
+    # match the training (the 2024 model scores 2025; UParT 1D WPs are identical in 2024/2025).
+    # 2026-10-22 (user): C1 extended to 0.808, closing the official gap 0.766 < x < 0.808 (as the
+    # UParT 2D SF calibration, etsai SFbc-2D); must match the training table (model train_2024v15_catv2).
+    # Scores: jet_btagUParTAK4* (see UPART_ERAS below), not PNet.
+    "2024": {
+        "L0": {"x": (0.000, 0.250), "y": (0.000, 1.000)},
+        "C0": {"x": (0.250, 0.452), "y": (0.000, 1.000)},
+        "C1": {"x": (0.452, 0.808), "y": (0.000, 1.000)},
+        "C2": {"x": (0.808, 1.000), "y": (0.017, 0.055)},
+        "C3": {"x": (0.808, 1.000), "y": (0.006, 0.017)},
+        "C4": {"x": (0.808, 1.000), "y": (0.000, 0.006)},
+        "B0": {"x": (0.808, 1.000), "y": (0.055, 0.761)},
+        "B1": {"x": (0.808, 1.000), "y": (0.761, 0.944)},
+        "B2": {"x": (0.808, 1.000), "y": (0.944, 0.985)},
+        "B3": {"x": (0.808, 1.000), "y": (0.985, 0.995)},
+        "B4": {"x": (0.808, 1.000), "y": (0.995, 1.000)},
+    },
 }
+JET_TAG_BOUNDARIES_BY_ERA["2025"] = JET_TAG_BOUNDARIES_BY_ERA["2024"]
+# eras whose jet_is_* inputs come from UParTAK4 scores (the training-time processor swaps
+# PNet -> jet_btagUParTAK4* for 2024, lz4_hczz_processor.py::callColumnAccumulator)
+UPART_ERAS = ("2024", "2025")
 
 MVA_JET_TAG_BOUNDARIES_LEGACY_FALLBACK = {
     "C0": {"x": (0.15, 0.4), "y": (0.0, 0.9)},
@@ -580,10 +606,22 @@ class MVAPostProcessor:
         # --- CPF (c-Jets) features ---
         # Precompute jet tags per jet index (loop order below is feature-major, not jet-major)
         jet_tags_by_j = []
+        if self.era in UPART_ERAS:
+            # 2026-10-25: _get_col falls back to 0.0, which silently put every 2024 jet in L0
+            # (the analysis parquets had no jet_btagUParTAK4CvL); refuse to score instead.
+            missing = [c for c in ('jet_btagUParTAK4B', 'jet_btagUParTAK4CvB', 'jet_btagUParTAK4CvL')
+                       if c not in df.columns]
+            if missing:
+                raise KeyError(f"era {self.era}: UParTAK4 jet scores missing from the input {missing}")
         for j in range(n_cpf):
-            B = self._get_col(df, ['cjets_btagPNetB', 'jet_btagPNetB'], idx=j)
-            CvB = self._get_col(df, ['cjets_btagPNetCvB', 'jet_btagPNetCvB'], idx=j)
-            CvL = self._get_col(df, ['cjets_btagPNetCvL', 'jet_btagPNetCvL'], idx=j)
+            if self.era in UPART_ERAS:
+                B = self._get_col(df, ['jet_btagUParTAK4B'], idx=j)
+                CvB = self._get_col(df, ['jet_btagUParTAK4CvB'], idx=j)
+                CvL = self._get_col(df, ['jet_btagUParTAK4CvL'], idx=j)
+            else:
+                B = self._get_col(df, ['cjets_btagPNetB', 'jet_btagPNetB'], idx=j)
+                CvB = self._get_col(df, ['cjets_btagPNetCvB', 'jet_btagPNetCvB'], idx=j)
+                CvL = self._get_col(df, ['cjets_btagPNetCvL', 'jet_btagPNetCvL'], idx=j)
             jet_tags_by_j.append(self._compute_jet_tags(B, CvB, CvL))
 
         # NOTE: candidate-major (candidate outer, feat inner) -- verified 2026-08-04

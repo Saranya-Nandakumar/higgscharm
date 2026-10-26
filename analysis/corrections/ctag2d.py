@@ -18,9 +18,16 @@ actually need. Real per-era PNet boundaries (source: HiggsDNA metaconditions Era
 "HPC_ctag_WPs" block, independently confirmed 2026-08-14 by the user pasting that exact JSON)
 were already correctly implemented in this repo at
 `b-hive_ttcc/utils/coffea_processors/lz4_hczz_processor.py::JET_TAG_BOUNDARIES_BY_ERA` --
-copied from there below rather than re-derived. The 2024 UParT boundaries are NOT needed here
-(this corrector is gated off for nano_version=="15" in correction_manager.py) and are not
-included.
+copied from there below rather than re-derived.
+
+**2024/2025 (UParTAK4) wired 2026-10-23** (user: use the 2024 file "as a placeholder", like
+2022/23): `flavTaggingSF_2024.json.gz`, correction `UParTAK4_pseudocontinuous`, same
+(syst, flavor, wp, abseta, pt) inputs and WP codes, single abseta bin. Its placeholder
+convention (central 1.000, up_Total 3.000, down_Total 0.300) and share of placeholder cells
+(74/198) are the same as the 2022/23 PNet files (69-90/198). Categories = the 2024 table the
+2024 MVA is trained with (lz4_hczz_processor.py / mva_inference.py JET_TAG_BOUNDARIES_BY_ERA
+["2024"], C1 up to 0.808 as the UParT 2D calibration). Scores from btagUParTAK4CvL/CvB.
+2025 has no calibration: it uses the 2024 file, table and nuisance (CMS_ctag2d_2024).
 
 The (x, y) coordinate transform itself was NOT the bug and needed no fix: `lz4_hczz_processor.
 py::compute_jet_categories` derives x=pBplusC=B+(1-B)*CvL, y=pBvsC=1-CvB from the B/CvB/CvL
@@ -44,7 +51,8 @@ asymmetry (placeholder central=1.000/up_Total=3.000/down_Total=0.300 calibration
 statistically-empty (flavor, WP) corners of the official JSON, amplified by ak.prod across
 many jets). User sign-off to keep this scope regardless -- yield-comparability with the
 corrector being replaced outweighs the smoother-but-incomparable one-jet alternative. Not a
-bug; documented caveat only (see README_HcZZ.md "Known traps").
+bug; documented caveat only (see README_HcZZ.md "Known traps"). (This paragraph was present
+on the EOS checkout but missing here -- checkout drift, backfilled 2026-08-31.)
 
 **SCOPE REVISITED 2026-08-31**: the 2026-08-18 sign-off was made against a coarse
 freeze-and-compare impact of 71.2 (rank 1). The real `combineTool.py -M Impacts`
@@ -150,11 +158,40 @@ BOUNDARIES_BY_ERA = {
         "B3": {"x": (0.640, 1.000), "y": (0.969, 0.992)},
         "B4": {"x": (0.640, 1.000), "y": (0.992, 1.000)},
     },
+    # 2024 UParTAK4 (added 2026-10-23): the user's table (2026-10-22), = b-hive
+    # lz4_hczz_processor.py and mva_inference.py JET_TAG_BOUNDARIES_BY_ERA["2024"].
+    # C1 goes up to 0.808 (HiggsDNA has a gap 0.766-0.808; the UParT 2D SF calibration has none).
+    "2024": {
+        "L0": {"x": (0.000, 0.250), "y": (0.000, 1.000)},
+        "C0": {"x": (0.250, 0.452), "y": (0.000, 1.000)},
+        "C1": {"x": (0.452, 0.808), "y": (0.000, 1.000)},
+        "C2": {"x": (0.808, 1.000), "y": (0.017, 0.055)},
+        "C3": {"x": (0.808, 1.000), "y": (0.006, 0.017)},
+        "C4": {"x": (0.808, 1.000), "y": (0.000, 0.006)},
+        "B0": {"x": (0.808, 1.000), "y": (0.055, 0.761)},
+        "B1": {"x": (0.808, 1.000), "y": (0.761, 0.944)},
+        "B2": {"x": (0.808, 1.000), "y": (0.944, 0.985)},
+        "B3": {"x": (0.808, 1.000), "y": (0.985, 0.995)},
+        "B4": {"x": (0.808, 1.000), "y": (0.995, 1.000)},
+    },
 }
+# 2025: no calibration of its own; 2024 table (the 2024 MVA scores 2025 too)
+BOUNDARIES_BY_ERA["2025"] = BOUNDARIES_BY_ERA["2024"]
 
-CORRECTION_NAME = "ParticleNetAK4_pseudocontinuous"
+# eras tagged with UParTAK4 (NanoAOD v15) instead of PNet
+UPART_ERAS = ("2024", "2025")
+CORRECTION_NAME_PNET = "ParticleNetAK4_pseudocontinuous"
+CORRECTION_NAME_UPART = "UParTAK4_pseudocontinuous"
+CORRECTION_NAME = CORRECTION_NAME_PNET  # kept for existing imports
+
+
+def correction_name(era):
+    return CORRECTION_NAME_UPART if era in UPART_ERAS else CORRECTION_NAME_PNET
+
+
 NUIS_YEAR = {"2022preEE": "2022", "2022postEE": "2022",
-             "2023preBPix": "2023", "2023postBPix": "2023"}
+             "2023preBPix": "2023", "2023postBPix": "2023",
+             "2024": "2024", "2025": "2024"}  # 2025 = 2024 calibration, same nuisance
 # single-nuisance source keys, matching the hww-analysis reference (decision there: 2026-07-23,
 # Total; per-source decorrelation deferred to a whole-card decorrelation pass -- same deferral
 # applies here, not yet revisited).
@@ -194,11 +231,12 @@ class CTag2DCorrector:
     Parameters:
     -----------
         events:
-            Events collection (must carry `selected_jets` with btagPNetCvL/CvB/hadronFlavour)
+            Events collection (must carry `selected_jets` with btagPNetCvL/CvB/hadronFlavour,
+            or btagUParTAK4CvL/CvB for 2024/2025)
         weights:
             Weights container from coffea.analysis_tools
         year:
-            dataset year {2022preEE, 2022postEE, 2023preBPix, 2023postBPix}
+            dataset year {2022preEE, 2022postEE, 2023preBPix, 2023postBPix, 2024, 2025}
         variation:
             if 'nominal' (default), add nominal + up/down variations; else nominal only
             (matches ctag.py's convention in this repo -- NOT hww-analysis's `shift is None`
@@ -208,16 +246,15 @@ class CTag2DCorrector:
     def __init__(self, events, weights: Type[Weights], year: str, variation: str = "nominal") -> None:
         if year not in BOUNDARIES_BY_ERA:
             raise ValueError(
-                f"CTag2DCorrector has no PNet category boundaries for year '{year}' "
-                f"(only {list(BOUNDARIES_BY_ERA)} are wired -- 2024/UParTAK4 needs its own "
-                f"boundary table, not yet added)."
+                f"CTag2DCorrector has no category boundaries for year '{year}' "
+                f"(only {list(BOUNDARIES_BY_ERA)} are wired)."
             )
         self._year = year
         self._weights = weights
         self._variation = variation
         self._corr = correctionlib.CorrectionSet.from_file(
             correction_files["ctagging_2d"][year]
-        )[CORRECTION_NAME]
+        )[correction_name(year)]
         self._nuis = f"CMS_ctag2d_{NUIS_YEAR[year]}"
 
         # CAPPED 2026-08-31: at most the 3 leading (pT-descending, post-selection --
@@ -232,8 +269,9 @@ class CTag2DCorrector:
         jets = events.selected_jets[:, :3]
         self._nj = ak.num(jets)
         j = ak.flatten(jets)
-        self._cvsl = ak.to_numpy(ak.fill_none(j.btagPNetCvL, np.nan)).astype(np.float64)
-        self._cvsb = ak.to_numpy(ak.fill_none(j.btagPNetCvB, np.nan)).astype(np.float64)
+        tagger = "UParTAK4" if year in UPART_ERAS else "PNet"
+        self._cvsl = ak.to_numpy(ak.fill_none(j[f"btag{tagger}CvL"], np.nan)).astype(np.float64)
+        self._cvsb = ak.to_numpy(ak.fill_none(j[f"btag{tagger}CvB"], np.nan)).astype(np.float64)
         self._pt = ak.to_numpy(ak.fill_none(j.pt, np.nan)).astype(np.float64)
         flav = ak.fill_none(getattr(j, "hadronFlavour", ak.zeros_like(j.pt)), 0)
         self._flav = ak.to_numpy(flav).astype(np.int64)

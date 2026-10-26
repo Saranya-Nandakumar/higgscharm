@@ -510,6 +510,29 @@ histogram_config:
       stop: 1
       label: Jets PNet QvG
       expression: objects['jets'].btagPNetQvG
+    jet_btagUParTAK4B:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 1
+      label: Jets UParT B
+      # 2026-10-25: UParTAK4 raw scores for the 2024/2025 MVA inputs (mva_inference.py UPART_ERAS) and the
+      # 2024 c-tag 2D SF recomputation in the datacard builder; -1 where NanoAOD has no UParTAK4 (2022/2023)
+      expression: objects['jets'].btagUParTAK4B if 'btagUParTAK4B' in objects['jets'].fields else ak.full_like(objects['jets'].pt, -1)
+    jet_btagUParTAK4CvL:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 1
+      label: Jets UParT CvL
+      expression: objects['jets'].btagUParTAK4CvL if 'btagUParTAK4CvL' in objects['jets'].fields else ak.full_like(objects['jets'].pt, -1)
+    jet_btagUParTAK4CvB:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 1
+      label: Jets UParT CvB
+      expression: objects['jets'].btagUParTAK4CvB if 'btagUParTAK4CvB' in objects['jets'].fields else ak.full_like(objects['jets'].pt, -1)
     jet_btagRobustParTAK4B:
       type: Regular
       bins: 50
