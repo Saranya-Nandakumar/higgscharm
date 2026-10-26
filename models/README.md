@@ -10,72 +10,107 @@ Models are saved as PyTorch `.pt` checkpoint files produced by the [b-hive](http
 
 ## Available models
 
-| File | Architecture | Classes | Description |
-|------|-------------|---------|-------------|
-| `best_model.pt` | MLP_HcZZ_MW_Deep | 4 | 4-class classifier: qqZZ, ggZZ, Signal, Other_Higgs |
+| Eras | Model | Config | Training run (b-hive) |
+|------|-------|--------|-----------------------|
+| 2022preEE, 2022postEE, 2023preBPix, 2023postBPix | `models/best_model.pt` (md5 `fd19031f…`) | `models/hc_zzto4l_mw_training_4class_nomass.yml` (`config_4class.yml` is an identical copy) | `hc_zzto4l_mw_training_4class_nomass` / `hcZZ_big4classjetyesmasslooseoldcbal` / `train_loose_oldcwithmassbal` |
+| 2024, 2025 (2025 is scored with the 2024 model) | `b-hive_ttcc/output/TrainingTask/hc_zzto4l_mw_training_4class_nomass_2024v15/hcZZ_2024v15_catv2/train_2024v15_catv2_lr5e4/MLP_HcZZ_MW_Deep_4class/epochs_40/nominal/best_model.pt` | `b-hive_ttcc/config/hc_zzto4l_mw_training_4class_nomass_2024v15.yml` | same path as the model |
+
+All are `MLP_HcZZ_MW_Deep_4class`, 4 classes `[qqZZ, ggZZ, Signal, Other_Higgs]`, 101 inputs.
+Always use the model and config of the same row: a config with the right feature *count* but a
+different feature *list* scores silently wrong. The era passed to the scorer selects the
+jet-category table (`JET_TAG_BOUNDARIES_BY_ERA`: PNet for 2022/2023, UParT for 2024/2025); for
+2024/2025 the scorer stops with a `KeyError` if the parquets lack the `jet_btagUParTAK4*` columns.
 
 ## Running MVA inference
 
-After running the standard postprocessing step (`--postprocess`), run MVA inference with:
+There are two entry points. Both use `MVAPostProcessor` (`analysis/postprocess/mva_inference.py`)
+and give the same per-event scores; they differ in which files they score and where the output goes.
+
+### 1. Production (used for all datacards): `run_mva_postprocess.py`
+
+A separate step after the condor jobs, on the raw per-job parquets. It needs no `--postprocess`
+and does no merging. It mirrors the parquet tree (`<era>/<dataset>_<N>/base/*.parquet` and the
+object-shift directories `base/<CMS_scale_j_…Up/Down, …>/*.parquet`) into `--output-dir` and adds the
+score columns to every file, so the shifted templates are scored too. The `sumw/*.json` sidecars are
+not copied; the datacard builder reads them from the unscored workflow directory (`--sumw-dir`).
 
 ```bash
-python3 run_postprocess.py \
-  --workflow hplusc_mva_4class \
-  --year <year> \
-  --output_format parquet \
-  --mva-inference \
-  --mva-config /path/to/config.yml \
-  --mva-model /path/to/best_model.pt \
-  --mva-output /eos/user/<u>/<username>/higgscharm/outputs/hplusc_mvascores/<year>
+source /eos/user/s/snandaku/miniforge3/etc/profile.d/conda.sh && conda activate b_hive_new
+cd /eos/user/s/snandaku/Higgscharmnew/higgscharm
+O=/eos/user/s/snandaku/higgscharm/outputs
+
+# 2022/2023 (run once per era, or --all-eras)
+python3 -u analysis/postprocess/run_mva_postprocess.py \
+  --input-dir  $O/<workflow> \
+  --output-dir $O/<workflow>_scored_vN \
+  --config models/hc_zzto4l_mw_training_4class_nomass.yml \
+  --model  models/best_model.pt \
+  --era <era> --no-mass-window --no-histograms --workers 8
+
+# 2024 (and 2025 with --era 2025)
+B=/eos/user/s/snandaku/b-hive_ttcc
+python3 -u analysis/postprocess/run_mva_postprocess.py \
+  --input-dir  $O/<workflow> \
+  --output-dir $O/<workflow>_scored_2024_vN \
+  --config $B/config/hc_zzto4l_mw_training_4class_nomass_2024v15.yml \
+  --model  $B/output/TrainingTask/hc_zzto4l_mw_training_4class_nomass_2024v15/hcZZ_2024v15_catv2/train_2024v15_catv2_lr5e4/MLP_HcZZ_MW_Deep_4class/epochs_40/nominal/best_model.pt \
+  --era 2024 --no-mass-window --no-histograms --workers 8
 ```
 
-To also apply a mass window cut (100 < m4l < 150 GeV) before inference, add `--mva-mass-window`:
-
-```bash
-python3 run_postprocess.py \
-  --workflow hplusc_mva_4class \
-  --year <year> \
-  --output_format parquet \
-  --mva-inference \
-  --mva-mass-window \
-  --mva-config /path/to/config.yml \
-  --mva-model /path/to/best_model.pt \
-  --mva-output /eos/user/<u>/<username>/higgscharm/outputs/hplusc_mvascores/<year>
-```
-
-You can also combine `--postprocess` and `--mva-inference` in a single command to run both steps together:
-
-```bash
-python3 run_postprocess.py \
-  --workflow hplusc_mva_4class \
-  --year <year> \
-  --postprocess \
-  --output_format parquet \
-  --mva-inference \
-  --mva-mass-window \
-  --mva-config /path/to/config.yml \
-  --mva-model /path/to/best_model.pt
-```
-
-## CLI flags
+`<workflow>` is the analysis production (the `hplusc_mva_4class_ctag2d*` family, see
+`README_HcZZ.md` "Current state"). For long runs, submit the command as a condor job from AFS
+(examples: `/afs/cern.ch/user/s/snandaku/condor_hczz_2026_10_22/score.sub`,
+`/afs/cern.ch/user/s/snandaku/condor_hczz_2026_10_25_score2024v2/score_2024.sh`).
 
 | Flag | Description |
 |------|-------------|
-| `--mva-inference` | Enable MVA inference step |
-| `--mva-config` | Path to b-hive config YAML (required with `--mva-inference`) |
-| `--mva-model` | Path to trained `.pt` model file (required with `--mva-inference`) |
-| `--mva-output` | Output directory for scored parquets and histograms (default: `outputs/<workflow>_mvascores/<year>`) |
-| `--mva-mass-window` | Apply 100 < m4l < 150 GeV mass window before inference |
+| `--input-dir`, `-i` | Workflow output directory (`<era>/<dataset>_<N>/...` below it). Required. |
+| `--output-dir`, `-o` | Where the scored copy goes. Default: the input directory, i.e. files are updated **in place**; always give a new `_scored_vN` directory. |
+| `--config`, `-c` / `--model`, `-m` | b-hive config YAML and `.pt` checkpoint (one row of the table above). Required. |
+| `--era`, `-e` / `--all-eras` | Score one era, or every era found below `--input-dir`. |
+| `--no-mass-window` | Score all events. Used in production: the m4l window (105–160 GeV) is applied in the datacard builder. Without it, only 90 ≤ m4l < 160 (`--mass-window-min/max`) is scored. |
+| `--no-histograms` | Skip the score histograms (the cards are built from the parquets). |
+| `--datasets` | Only score partition directories that start with these dataset names. |
+| `--workers`, `-w` | Parallel workers (default 8). |
+
+### 2. Optional, not used for the cards: `run_postprocess.py --mva-inference`
+
+`--mva-inference` is a flag on `run_postprocess.py`, not a separate script. It scores only the
+merged `parquets_<sample>/` directories that `--postprocess` writes (it stops with an error if they
+do not exist), so run it together with `--postprocess` or after it. It writes scored parquets and
+per-sample score/feature histograms to `--mva-output` (default `outputs/<workflow>_mvascores/<year>`).
+The merged files have no shift directories, so this output cannot be used to build datacards; it is
+meant for quick plots and checks.
+
+```bash
+python3 run_postprocess.py \
+  --workflow <workflow> --year <era> --output_format parquet \
+  --postprocess --mva-inference \
+  --mva-config models/hc_zzto4l_mw_training_4class_nomass.yml \
+  --mva-model  models/best_model.pt \
+  --mva-output /eos/user/<u>/<username>/higgscharm/outputs/<workflow>_mvascores/<era>
+```
+
+| Flag | Description |
+|------|-------------|
+| `--mva-inference` | Score the merged parquets after (or together with) `--postprocess` |
+| `--mva-config` / `--mva-model` | Config and checkpoint (required with `--mva-inference`) |
+| `--mva-output` | Output directory (default `outputs/<workflow>_mvascores/<year>`) |
+| `--mva-mass-window` | Score only events inside the config's `mass_window` (100–150 GeV if the config has none) |
 
 ## Outputs
 
-For each sample, the inference step produces:
+Both entry points add these columns to every scored parquet:
+- `mva_score_<class>` — softmax score per class (`mva_score_qqZZ`, `mva_score_ggZZ`, `mva_score_Signal`, `mva_score_Other_Higgs`)
+- `mva_signal_score` — the Signal score
+- `mva_class_prediction` — predicted class index (argmax)
 
-- **Scored parquets** saved under `<mva-output>/<sample>/base/` — original parquet columns plus:
-  - `mva_score_<class>` — softmax score for each class (e.g. `mva_score_Signal`, `mva_score_qqZZ`, ...)
-  - `mva_signal_score` — signal class score
-  - `mva_class_prediction` — predicted class index (argmax)
-- **Score histograms** saved as `<mva-output>/<sample>_mva_scores.coffea` — one `hist.Hist` per score column with axes `[score, process, variation]`
+Location:
+- `run_mva_postprocess.py`: `<output-dir>/<era>/<dataset>_<N>/base/[<shift>/]*.parquet`, same layout as the input
+  (plus score histograms unless `--no-histograms`).
+- `run_postprocess.py --mva-inference`: `<mva-output>/<sample>/base/*.parquet`, plus
+  `<mva-output>/<sample>_mva_scores.coffea` with one `hist.Hist` per score column (axes `[score, process, variation]`)
+  and per-feature histograms.
 
 ## Config
 
