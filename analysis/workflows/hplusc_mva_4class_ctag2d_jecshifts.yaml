@@ -203,6 +203,12 @@ corrections:
     lhescaleWeight: true
     nnlopsWeight: true
     higgsHFWeight: true
+    # muon ID SF, as hplusc_mva_4class_ctag2d.yaml (block added there 2026-08-21 but
+    # never copied here; restored 2026-10-02, see memory hczz_jecshifts_no_muon_sf)
+    muon:
+      - id: loose
+      - iso: false
+      - trigger: false
     electron:
       - id: false
       - reco: true

@@ -49,6 +49,29 @@ def _fix_option_in_list(array):
     return array
 
 
+def _xrd_copy(local_file: str, destination: str, attempts: int = 4):
+    """
+    xrootd copy with retries. Several coffea workers of one job write into the same
+    new EOS directory at once, and EOS can then answer one of them with
+    "[3018] Unable to mkdir: File exists" (seen 2026-09-27 in 2 of 52 3FS jobs).
+    The directory exists by the next attempt, so a short retry is enough.
+    """
+    import time
+    import XRootD.client
+
+    for attempt in range(attempts):
+        copyproc = XRootD.client.CopyProcess()
+        copyproc.add_job(local_file, destination, force=True)
+        copyproc.prepare()
+        status, _ = copyproc.run()
+        del copyproc
+        if status.status == 0:
+            return
+        if attempt < attempts - 1:
+            time.sleep(2 * (attempt + 1))
+    raise Exception(status.message)
+
+
 def dump_pa_table(
     arrays: dict, fname: str, location: str, subdirs: Optional[List[str]] = None
 ):
@@ -105,13 +128,7 @@ def dump_pa_table(
             # directly, which handles option-in-list types internally.
             ak.to_parquet(arr, local_file)
         if xrootd:
-            copyproc = XRootD.client.CopyProcess()
-            copyproc.add_job(local_file, destination, force=True)
-            copyproc.prepare()
-            status, response = copyproc.run()
-            if status.status != 0:
-                raise Exception(status.message)
-            del copyproc
+            _xrd_copy(local_file, destination)
         else:
             dirname = os.path.dirname(destination)
             pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
@@ -121,7 +138,12 @@ def dump_pa_table(
 
 
 def dump_sumw_json(
-    sumw: float, dataset: str, fname: str, location: str, subdirs: Optional[List[str]] = None
+    sumw: float,
+    dataset: str,
+    fname: str,
+    location: str,
+    subdirs: Optional[List[str]] = None,
+    extra: Optional[dict] = None,
 ):
     """
     Persist the pre-selection sum of genWeight for one processed chunk.
@@ -129,6 +151,10 @@ def dump_sumw_json(
     Written unconditionally (even when zero events survive the analysis
     selection) so that downstream xs*lumi normalization can divide by the
     true full-sample sum of weights rather than a post-selection subset.
+
+    extra: additional pre-selection sums stored next to "sumw" (added
+    2026-09-27 for the 3FS/4FS stitching: sumw split by number of GEN
+    c-jets, nominal and per LHE scale variation -- see base.py).
     """
     subdirs = subdirs or []
     xrd_prefix = "root://"
@@ -155,15 +181,9 @@ def dump_sumw_json(
         else os.path.join(location, os.path.join(merged_subdirs, fname))
     )
     with open(local_file, "w") as f:
-        json.dump({"dataset": dataset, "sumw": sumw}, f)
+        json.dump({"dataset": dataset, "sumw": float(sumw), **(extra or {})}, f)
     if xrootd:
-        copyproc = XRootD.client.CopyProcess()
-        copyproc.add_job(local_file, destination, force=True)
-        copyproc.prepare()
-        status, response = copyproc.run()
-        if status.status != 0:
-            raise Exception(status.message)
-        del copyproc
+        _xrd_copy(local_file, destination)
     else:
         dirname = os.path.dirname(destination)
         pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
@@ -210,13 +230,7 @@ def dump_ak_array(
     )
     ak.to_parquet(ak.fill_none(akarr, [], axis=0), local_file)
     if xrootd:
-        copyproc = XRootD.client.CopyProcess()
-        copyproc.add_job(local_file, destination, force=True)
-        copyproc.prepare()
-        status, response = copyproc.run()
-        if status.status != 0:
-            raise Exception(status.message)
-        del copyproc
+        _xrd_copy(local_file, destination)
     else:
         dirname = os.path.dirname(destination)
         pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
