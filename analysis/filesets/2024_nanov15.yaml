@@ -445,4 +445,4 @@ TTH_Hto2Z:
   query: TTH-Hto2Zto4L_Par-M-125_TuneCP5_13p6TeV_powheg-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: H(125) 
   key: higgs
-  xsec: 0.00312
+  xsec: 0.0004437  # 2026-10-16: was 0.00312 (7x too high); same filter type as 2023 (GenPart, 4284 ev: 37.0% pure H->4l, rest 1 H-Z->ll + 2 leptonic tops); sigma_ttH 0.5700 pb x BR(H->ZZ) 0.02641 x filter 0.029474

@@ -61,6 +61,7 @@ import pyarrow.parquet as pq
 import uproot
 import hist
 from collections import defaultdict
+import eos_io as E   # server-side EOS listings, xrootd read fallback
 
 
 # ---------------------------------------------------------------------------
@@ -102,6 +103,74 @@ GGZZ_KFACTOR = 2.27
 EXPECTED_YIELDS = {p: xs * TOTAL_LUMI_PB for p, xs in PROCESS_XS_PB.items()}
 EXPECTED_YIELDS["ggZZ"] *= GGZZ_KFACTOR
 
+# ---------------------------------------------------------------------------
+# Per-(dataset, era) normalisation (2026-09-25).
+#
+# Until 2026-09-24 every event of a process was scaled by ONE factor,
+# EXPECTED_YIELDS[proc] / (sumw summed over all samples AND eras of proc).
+# That is only right if each (sample, era) was generated with sumw
+# proportional to xs * lumi_era, which is not the case: ggZZ 4e/4mu
+# (0.003 pb) have ~2x the sumw of 2e2mu (0.006 pb), and Other_Higgs pooled
+# ggH/VBF/VH/ttH + private H+b with one summed xs (ttH came out ~25x too
+# small, ggH 0.4-3x off per era; ggZZ SR yield 6.68 -> 4.90 per dataset).
+# Now each event gets xs_group * lumi_era / sumw(era, group), where a group
+# is one official dataset (xs from analysis/filesets/<era>_nanov12.yaml) or
+# one private process (xs below), with all its partitions/versions pooled
+# within the era. EXPECTED_YIELDS above is kept only for older scripts.
+# ---------------------------------------------------------------------------
+FILESET_DIR = "/eos/user/s/snandaku/Higgscharmnew/higgscharm/analysis/filesets"
+# Private samples, not in the fileset yamls. H+c: PROCESS_XS_PB["Signal"];
+# H+b: the last term of PROCESS_XS_PB["Other_Higgs"] (the 0.000144 term there
+# is bbH_Hto2Zto4L, whose sample is not in the scored production).
+PRIVATE_XS_PB = {"HplusC": 2.6381e-05, "HplusB": 0.000173}
+_FILESET_CACHE = {}
+
+
+# 2026-10-25: 2024 is NanoAOD v15 (2024_nanov15.yaml); every other era keeps <era>_nanov12.yaml
+FILESET_YAML = {"2024": "2024_nanov15.yaml"}
+
+
+def _fileset_config(era):
+    if era not in _FILESET_CACHE:
+        import yaml
+        with open(os.path.join(FILESET_DIR, FILESET_YAML.get(era, f"{era}_nanov12.yaml"))) as fh:
+            _FILESET_CACHE[era] = yaml.safe_load(fh)
+    return _FILESET_CACHE[era]
+
+
+def norm_group(sample_name):
+    """Normalisation group of a sample directory / sumw partition name."""
+    proc = get_process_from_path(sample_name)
+    if proc is None:
+        return None
+    base = re.sub(r"_\d+$", "", sample_name)  # drop the condor partition suffix
+    if proc == "Signal":                      # HPlusCharm*, SomeSMSignal
+        return "HplusC"
+    if "HPlusBottom" in base or base.endswith("HB"):   # HPlusBottom*, <era>HB
+        return "HplusB"
+    return base                               # official dataset name
+
+
+def group_xs_pb(era, group):
+    if group in PRIVATE_XS_PB:
+        return PRIVATE_XS_PB[group]
+    cfg = _fileset_config(era)
+    if group not in cfg or "xsec" not in cfg[group]:
+        raise KeyError(f"no xsec for {group} in {FILESET_YAML.get(era, f'{era}_nanov12.yaml')}")
+    xs = float(cfg[group]["xsec"])
+    if get_process_from_path(group) == "ggZZ":
+        xs *= GGZZ_KFACTOR
+    return xs
+
+
+def event_scale(era, sample_name, sumw_by_group):
+    """xs * lumi_era / sumw(era, group) for every event of this sample."""
+    g = norm_group(sample_name)
+    sw = sumw_by_group.get((era, g), 0.0)
+    if sw <= 0:
+        raise RuntimeError(f"no sumw for ({era}, {g}) [sample {sample_name}]")
+    return group_xs_pb(era, g) * LUMINOSITY_PB[era] / sw
+
 CLASS_NAMES = ["qqZZ", "ggZZ", "Signal", "Other_Higgs"]
 
 # Sample name (substring) → process name
@@ -115,6 +184,7 @@ PROCESS_MAPPING = {
     "GluGluToContinto2Zto2E2Mu":    "ggZZ",
     "GluGluToContinto2Zto2E2Tau":   "ggZZ",
     "GluGluToContinto2Zto2Mu2Tau":  "ggZZ",
+    "GluGlu2Zto":                   "ggZZ",   # 2024 v15 names (GluGlu2Zto4Mu, ...), 2026-10-25
     "GluGluHtoZZto4L":              "Other_Higgs",
     "VBFHto2Zto4L":                 "Other_Higgs",
     "WminusH_Hto2Zto4L":           "Other_Higgs",
@@ -316,9 +386,16 @@ JECSHIFTS_SYSTEMATICS = ["CMS_scale_j", "CMS_res_j", "CMS_scale_m", "CMS_res_m"]
 # the LHE-weight systematics above. Revisit if a process is found missing
 # jecshifts coverage.
 JECSHIFTS_USABLE_PROCS = {"Signal", "ggZZ", "qqZZ", "Other_Higgs"}
+# MC processes written to the card, in column order (ZX appended when included), and the
+# Higgs-boson background processes (BR_HZZ4l). split_other_higgs() replaces Other_Higgs by
+# one process per production mode (2026-10-15).
+CARD_MC_PROCS = ["Signal", "ggZZ", "qqZZ", "Other_Higgs"]
+HIGGS_BKG_PROCS = ["Other_Higgs"]
 
 
 def era_year(era):
+    if era.startswith("2024"):   # 2026-10-25: 2024 columns/shift dirs carry the suffix _2024
+        return "2024"
     return "2022" if era.startswith("2022") else "2023"
 
 
@@ -349,12 +426,20 @@ def get_process_from_path(filepath):
 # Load true pre-selection sumw (from base.py's sumw/*.json sidecars)
 # ---------------------------------------------------------------------------
 
-def load_sumw(sumw_dir):
+# Sidecar key used by load_sumw. "sumw" is post-jet-veto; the 2024 builder
+# (create_datacards_2024.py, 2026-10-25) sets "sumw_preveto" (pre-veto, as the 2022/23 sumw table).
+SUMW_KEY = "sumw"
+
+
+def load_sumw(sumw_dir, key_fn=None):
     """
     Walk <sumw_dir>/<era>/<dataset_partition>/sumw/*.json and aggregate the
     pre-selection sum of genWeight per process (summed over all partitions
     and eras). This is the true full-generated-sample denominator, as opposed
     to the post-selection weight sum available in the scored parquets.
+
+    key_fn(era, dataset_partition) -> key (or None to skip) replaces the
+    per-process key; load_sumw_by_group uses it for per-(era, group) sumw.
     """
     import json
 
@@ -363,7 +448,7 @@ def load_sumw(sumw_dir):
 
     for era in ERAS:
         era_dir = os.path.join(sumw_dir, era)
-        if not os.path.isdir(era_dir):
+        if not E.isdir(era_dir):
             print(f"  WARNING: sumw era dir not found: {era_dir}")
             continue
 
@@ -392,49 +477,61 @@ def load_sumw(sumw_dir):
         #      the same ~13-27%-per-era margin measured on the parquet side.
         _chunk_re = re.compile(r'_(\d+)-(\d+)\.json$')
         latest_by_chunk = {}
-        for dataset_partition in os.listdir(era_dir):
-            proc = get_process_from_path(dataset_partition)
+        for dataset_partition in E.listdir(era_dir):
+            proc = (key_fn(era, dataset_partition) if key_fn
+                    else get_process_from_path(dataset_partition))
             if proc is None:
                 continue
 
-            sumw_glob = os.path.join(era_dir, dataset_partition, "sumw", "*.json")
-            for jf in glob.glob(sumw_glob):
+            sumw_dir_p = os.path.join(era_dir, dataset_partition, "sumw")
+            sumw_files = E.files(sumw_dir_p, ".json")
+            if not sumw_files and E.isdir(sumw_dir_p):
+                raise RuntimeError(f"sumw dir is empty on the server: {sumw_dir_p}")
+            for jf in sumw_files:
                 base = os.path.basename(jf)
                 guid = base.split("_%2F")[0]
                 m = _chunk_re.search(base)
                 chunk_range = (m.group(1), m.group(2)) if m else None
                 key = (guid, chunk_range)
-                mtime = os.path.getmtime(jf)
+                mtime = E.mtime(jf)
                 prev = latest_by_chunk.get(key)
                 if prev is None or mtime > prev[1]:
                     latest_by_chunk[key] = (jf, mtime, proc)
 
         for jf, _mtime, proc in latest_by_chunk.values():
-            try:
-                with open(jf) as f:
-                    rec = json.load(f)
-            except Exception as e:
-                print(f"  WARNING: {jf}: {e}")
-                continue
-            sumw_by_proc[proc] += rec["sumw"]
+            rec = E.read_json(jf)
+            sumw_by_proc[proc] += rec[SUMW_KEY]
             n_files[proc] += 1
 
-    print(f"\n  {'Process':<15} {'n_sumw_files':>14} {'sumw_generated':>16}")
-    print("  " + "-" * 47)
-    for proc in CLASS_NAMES:
-        print(f"  {proc:<15} {n_files.get(proc, 0):>14} {sumw_by_proc.get(proc, 0.0):>16.2f}")
+    if key_fn is None:
+        print(f"\n  {'Process':<15} {'n_sumw_files':>14} {'sumw_generated':>16}")
+        print("  " + "-" * 47)
+        for proc in CLASS_NAMES:
+            print(f"  {proc:<15} {n_files.get(proc, 0):>14} {sumw_by_proc.get(proc, 0.0):>16.2f}")
 
     return sumw_by_proc
+
+
+def load_sumw_by_group(sumw_dir):
+    """Pre-selection sumw per (era, norm_group), see event_scale()."""
+    sumw = load_sumw(sumw_dir, key_fn=lambda era, part: (era, norm_group(part)) if norm_group(part) else None)
+    print(f"\n  {'era':<14} {'group':<32} {'xs [pb]':>11} {'sumw':>14} {'xs*L/sumw':>11}")
+    print("  " + "-" * 86)
+    for (era, g), sw in sorted(sumw.items()):
+        xs = group_xs_pb(era, g)
+        print(f"  {era:<14} {g:<32} {xs:>11.4g} {sw:>14.4g} {xs * LUMINOSITY_PB[era] / sw:>11.4g}")
+    return dict(sumw)
 
 
 # ---------------------------------------------------------------------------
 # Load MC from test-set scored parquets
 # ---------------------------------------------------------------------------
 
-def load_mc_scored_parquets(scored_dir, sumw_by_proc):
+def load_mc_scored_parquets(scored_dir, sumw_by_group):
     """
     Walk all eras/samples in scored_dir, read mva_score_Signal + weight_nominal.
-    Normalization: scale weight_nominal by (xs × lumi) / sum(all raw weights per process),
+    Normalization: every event is scaled by event_scale(era, sample) =
+    xs_group * lumi_era / sumw(era, group) (per dataset and era, 2026-09-25),
     so the histogram integral equals the expected physics yield in the mass window.
 
     Returns dict: proc → (scores array, scaled_weights array)
@@ -449,19 +546,20 @@ def load_mc_scored_parquets(scored_dir, sumw_by_proc):
 
     for era in ERAS:
         era_dir = os.path.join(scored_dir, era)
-        if not os.path.isdir(era_dir):
+        if not E.isdir(era_dir):
             print(f"  WARNING: era dir not found: {era_dir}")
             continue
 
-        for sample_name in os.listdir(era_dir):
+        for sample_name in E.listdir(era_dir):
             proc = get_process_from_path(sample_name)
             if proc is None:
                 continue
 
             sample_dir = os.path.join(era_dir, sample_name, "base")
-            if not os.path.isdir(sample_dir):
+            if not E.isdir(sample_dir):
                 continue
 
+            scale = event_scale(era, sample_name, sumw_by_group)
             usable = USABLE_SYST.get(proc, set())
             # HPlusBottom-specific override -- see HPLUSBOTTOM_BUGGY_SYST above.
             # Don't even request these 3 columns for HPlusBottom files (avoids
@@ -469,30 +567,22 @@ def load_mc_scored_parquets(scored_dir, sumw_by_proc):
             # the FULL `usable` set per file so proc_syst_weights arrays stay
             # aligned 1:1 with proc_scores/proc_weights across every file of
             # this process, HPlusBottom or not.
-            is_hplusbottom = (proc == "Other_Higgs" and "HPlusBottom" in sample_name)
+            is_hplusbottom = (proc != "Signal" and "HPlusBottom" in sample_name)
             requestable = usable - HPLUSBOTTOM_BUGGY_SYST if is_hplusbottom else usable
             syst_cols_wanted = []
             for syst in requestable:
                 for direction in ("Up", "Down"):
                     syst_cols_wanted.append(syst_col(syst, direction, era))
 
-            for pq_file in glob.glob(os.path.join(sample_dir, "*.parquet")):
+            for pq_file in E.files(sample_dir, ".parquet"):
                 base_cols = ["zz_mass_inclusive", "mva_score_Signal", "weight_nominal"]
-                try:
-                    df = pq.read_table(pq_file, columns=base_cols + syst_cols_wanted).to_pandas()
-                except Exception:
-                    # Some requested systematic columns may not exist in this
-                    # file/sample -- fall back to reading only what's present.
-                    try:
-                        available = pq.ParquetFile(pq_file).schema.names
-                        cols = base_cols + [c for c in syst_cols_wanted if c in available]
-                        df = pq.read_table(pq_file, columns=cols).to_pandas()
-                    except Exception as e:
-                        print(f"  WARNING: {pq_file}: {e}")
-                        continue
+                # Systematic columns missing from a file are dropped from the
+                # request by E.read_parquet (handled as nominal below); any
+                # read failure raises instead of skipping the file.
+                df = E.read_parquet(pq_file, base_cols + syst_cols_wanted).to_pandas()
 
                 w_all = df["weight_nominal"].fillna(0).values
-                raw_weight[proc] += w_all.sum()
+                raw_weight[proc] += w_all.sum() * scale
 
                 # Apply mass window
                 mask = (df["zz_mass_inclusive"] >= MASS_WINDOW[0]) & \
@@ -504,7 +594,7 @@ def load_mc_scored_parquets(scored_dir, sumw_by_proc):
                     continue
 
                 proc_scores[proc].append(df_win["mva_score_Signal"].values)
-                nominal_win = df_win["weight_nominal"].fillna(0).values
+                nominal_win = df_win["weight_nominal"].fillna(0).values * scale
                 proc_weights[proc].append(nominal_win)
 
                 for syst in usable:
@@ -520,57 +610,35 @@ def load_mc_scored_parquets(scored_dir, sumw_by_proc):
                             proc_syst_weights[proc][syst][direction].append(nominal_win)
                         elif col in df_win.columns:
                             proc_syst_weights[proc][syst][direction].append(
-                                df_win[col].fillna(0).values
+                                df_win[col].fillna(0).values * scale
                             )
                         else:
                             # Column missing for this file -- fall back to
                             # nominal (no variation) so array lengths align.
                             proc_syst_weights[proc][syst][direction].append(nominal_win)
 
-    # Apply xs × lumi normalization using the TRUE pre-selection sumw
-    # (sumw_by_proc, from base.py's sumw/*.json sidecars) as the denominator.
-    # `raw` (post-baseline-selection weight sum, from the scored parquets
-    # themselves) is kept only for a diagnostic comparison against sumw: the
-    # ratio raw/sumw is the baseline analysis selection efficiency that was
-    # previously being silently divided out of the normalization.
+    return finalize_mc_data(proc_scores, proc_weights, proc_syst_weights, raw_weight)
+
+
+def finalize_mc_data(proc_scores, proc_weights, proc_syst_weights, raw_weight):
+    """Concatenate the per-file arrays (already scaled per dataset and era by
+    event_scale) into mc_data[proc] = (scores, weights, {syst: {dir: w}}).
+    Shared by the rawsf/decorr loader copies. `raw_weight` is the scaled yield
+    after the baseline selection (all m4l), printed next to the in-window one.
+    No ratio clipping of the syst weights: an out-of-range per-event weight
+    variation is a symptom of a real bug upstream (see CMS_ctag_light above)."""
     mc_data = {}
-    print(f"\n  {'Process':<15} {'raw_wgt':>12} {'sumw_gen':>14} {'baseline_eff':>13} {'expected':>10} {'in_win_yield':>14}")
-    print("  " + "-" * 82)
-
+    print(f"\n  {'Process':<15} {'yield_all_m4l':>14} {'in_win_yield':>14}")
+    print("  " + "-" * 45)
     for proc in CLASS_NAMES:
-        raw = raw_weight.get(proc, 0.0)
-        sumw_gen = sumw_by_proc.get(proc, 0.0)
-        exp = EXPECTED_YIELDS.get(proc, 0.0)
-        baseline_eff = raw / sumw_gen if sumw_gen > 0 else float("nan")
-
-        scores  = np.concatenate(proc_scores[proc])  if proc_scores[proc]  else np.array([])
+        scores = np.concatenate(proc_scores[proc]) if proc_scores[proc] else np.array([])
         weights = np.concatenate(proc_weights[proc]) if proc_weights[proc] else np.array([])
-
-        if sumw_gen > 0 and exp > 0:
-            scale = exp / sumw_gen
-            scaled_weights = weights * scale
-        else:
-            print(f"  WARNING: no sumw for {proc} -- falling back to post-selection raw_weight")
-            scale = exp / raw if raw > 0 and exp > 0 else 1.0
-            scaled_weights = weights * scale
-
-        # Same scale factor applied to each systematic-varied weight column --
-        # the variation is already a full replacement weight, so this yields
-        # the correctly-scaled Up/Down expected yield in the mass window.
-        # No ratio clipping: an out-of-range per-event weight variation is a
-        # symptom of a real bug upstream (see CMS_ctag_light above), not
-        # numerical noise to paper over -- if it recurs, the fix belongs in
-        # the corrections code, not here.
         syst_scaled = defaultdict(dict)
         for syst, by_dir in proc_syst_weights[proc].items():
             for direction, arrs in by_dir.items():
-                w = np.concatenate(arrs) if arrs else np.array([])
-                syst_scaled[syst][direction] = w * scale
-
-        mc_data[proc] = (scores, scaled_weights, syst_scaled)
-        in_win = scaled_weights.sum()
-        print(f"  {proc:<15} {raw:>12.2f} {sumw_gen:>14.2f} {baseline_eff:>13.4%} {exp:>10.4f} {in_win:>14.4f}")
-
+                syst_scaled[syst][direction] = np.concatenate(arrs) if arrs else np.array([])
+        mc_data[proc] = (scores, weights, syst_scaled)
+        print(f"  {proc:<15} {raw_weight.get(proc, 0.0):>14.4f} {weights.sum():>14.4f}")
     return mc_data
 
 
@@ -578,12 +646,12 @@ def load_mc_scored_parquets(scored_dir, sumw_by_proc):
 # Load JES/JER (object-shift) systematics
 # ---------------------------------------------------------------------------
 
-def load_jecshifts_scored_parquets(jecshifts_dir, sumw_by_proc):
+def load_jecshifts_scored_parquets(jecshifts_dir, sumw_by_group):
     """
     Walk <jecshifts_dir>/<era>/<sample>/base/<syst>_<year>{Up,Down}/*.parquet
     for each of JECSHIFTS_SYSTEMATICS and build raw (scores, weights) arrays
-    per process/systematic/direction -- same xs*lumi/sumw normalization as
-    load_mc_scored_parquets, and reusing the SAME sumw_by_proc (genWeight is a
+    per process/systematic/direction -- same per-(dataset, era) event_scale as
+    load_mc_scored_parquets, and reusing the SAME sumw_by_group (genWeight is a
     generator-level quantity, unaffected by reco-level jet/muon corrections,
     so the true-sumw denominator computed once from the un-shifted raw
     production is valid for every shift variant too -- no separate sumw
@@ -608,31 +676,28 @@ def load_jecshifts_scored_parquets(jecshifts_dir, sumw_by_proc):
 
     for era in ERAS:
         era_dir = os.path.join(jecshifts_dir, era)
-        if not os.path.isdir(era_dir):
+        if not E.isdir(era_dir):
             print(f"  WARNING: jecshifts era dir not found: {era_dir}")
             continue
         year = era_year(era)
 
-        for sample_name in os.listdir(era_dir):
+        for sample_name in E.listdir(era_dir):
             proc = get_process_from_path(sample_name)
             if proc is None or proc not in JECSHIFTS_USABLE_PROCS:
                 continue
+            scale = event_scale(era, sample_name, sumw_by_group)
 
             for syst in JECSHIFTS_SYSTEMATICS:
                 for direction in ("Up", "Down"):
                     cat_dir = os.path.join(
                         era_dir, sample_name, "base", f"{syst}_{year}{direction}"
                     )
-                    if not os.path.isdir(cat_dir):
+                    if not E.isdir(cat_dir):
                         continue
 
-                    for pq_file in glob.glob(os.path.join(cat_dir, "*.parquet")):
+                    for pq_file in E.files(cat_dir, ".parquet"):
                         cols = ["zz_mass_inclusive", "mva_score_Signal", "weight_nominal"]
-                        try:
-                            df = pq.read_table(pq_file, columns=cols).to_pandas()
-                        except Exception as e:
-                            print(f"  WARNING: {pq_file}: {e}")
-                            continue
+                        df = E.read_parquet(pq_file, cols).to_pandas()
 
                         raw_sum[proc][syst][direction] += df["weight_nominal"].fillna(0).values.sum()
 
@@ -644,16 +709,12 @@ def load_jecshifts_scored_parquets(jecshifts_dir, sumw_by_proc):
                             continue
 
                         raw[proc][syst][direction]["scores"].append(df_win["mva_score_Signal"].values)
-                        raw[proc][syst][direction]["weights"].append(df_win["weight_nominal"].fillna(0).values)
+                        raw[proc][syst][direction]["weights"].append(df_win["weight_nominal"].fillna(0).values * scale)
 
     jec_data = defaultdict(lambda: defaultdict(dict))
     print(f"\n  {'Process':<15} {'Systematic':<16} {'Dir':<6} {'n_files_sum':>12} {'in_win_yield':>14}")
     print("  " + "-" * 66)
     for proc in JECSHIFTS_USABLE_PROCS:
-        sumw_gen = sumw_by_proc.get(proc, 0.0)
-        exp = EXPECTED_YIELDS.get(proc, 0.0)
-        scale = exp / sumw_gen if sumw_gen > 0 and exp > 0 else 1.0
-
         for syst in JECSHIFTS_SYSTEMATICS:
             for direction in ("Up", "Down"):
                 scores_list = raw[proc][syst][direction]["scores"]
@@ -663,7 +724,7 @@ def load_jecshifts_scored_parquets(jecshifts_dir, sumw_by_proc):
                     jec_data[proc][syst][direction] = (np.array([]), np.array([]))
                     continue
                 scores = np.concatenate(scores_list)
-                weights = np.concatenate(weights_list) * scale
+                weights = np.concatenate(weights_list)
                 jec_data[proc][syst][direction] = (scores, weights)
                 print(f"  {proc:<15} {syst:<16} {direction:<6} "
                       f"{raw_sum[proc][syst][direction]:>12.2f} {weights.sum():>14.4f}")
@@ -693,10 +754,9 @@ def load_zx_parquets(zx_dir):
     for era in ERAS:
         for cr in ("3p1f", "2p2f"):
             fp = os.path.join(zx_dir, era, f"zx_{cr}_{era}_mva.parquet")
-            if not os.path.exists(fp):
-                print(f"  WARNING: missing {fp}")
-                continue
-            df = pd.read_parquet(fp)
+            if os.path.basename(fp) not in E.listdir(os.path.dirname(fp)):
+                raise FileNotFoundError(f"missing Z+X input {fp}")
+            df = E.read_parquet(fp).to_pandas()
             if "m4l" not in df.columns:
                 raise KeyError(f"{fp} has no 'm4l' column -- cannot apply the "
                                f"{MASS_WINDOW} GeV window to Z+X")
@@ -838,6 +898,66 @@ NORM_DECOUPLED = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Other_Higgs split into one process per production mode (2026-10-15)
+# ---------------------------------------------------------------------------
+# As in F. Heyen's cH(ZZ->4mu) thesis: every Higgs production mode its own process and
+# templates, instead of one pooled Other_Higgs. Normalisation is unchanged (already per
+# (era, dataset) via event_scale). second-brain Notes/hczz-scale-uncertainty-conventions-2026-10-15.md
+HIGGS_SPLIT = {   # sample substring -> process (longest match wins in get_process_from_path)
+    "GluGluHtoZZto4L":   "ggH",
+    "VBFHto2Zto4L":      "VBF",
+    "WminusH_Hto2Zto4L": "WminusH",
+    "WplusH_Hto2Zto4L":  "WplusH",
+    "ZHto2Zto4L":        "ZH",
+    "TTH_Hto2Z":         "ttH",
+    "bbH_Hto2Zto4L":     "bbH",
+    "HPlusBottom":       "HPlusB",
+    "2022preEEHB":       "HPlusB",
+    "2022postEEHB":      "HPlusB",
+    "2023preBPixHB":     "HPlusB",
+    "2023postBPixHB":    "HPlusB",
+}
+PER_PROCESS_SCALE = ("scalevar_muR", "scalevar_muF")
+
+
+def split_other_higgs(per_process_scale=False):
+    """Replace Other_Higgs by the HIGGS_SPLIT processes everywhere (mapping, CLASS_NAMES,
+    USABLE_SYST, JECSHIFTS_USABLE_PROCS, card columns, BR_HZZ4l). higgs_plus_c stays on ggH/VBF
+    only. per_process_scale: the background scalevar_muR/muF become one pair per process
+    (scalevar_muR_<proc>, same parquet column), qqZZ included (its normalisation stays
+    decoupled into QCDscale_qqZZ); HPlusB gets none (weights broken, HPLUSBOTTOM_BUGGY_SYST)."""
+    global CLASS_NAMES, CARD_MC_PROCS, HIGGS_BKG_PROCS
+    new = list(dict.fromkeys(HIGGS_SPLIT.values()))
+    for k, v in HIGGS_SPLIT.items():
+        assert PROCESS_MAPPING.get(k) == "Other_Higgs", k
+        PROCESS_MAPPING[k] = v
+    base = USABLE_SYST.pop("Other_Higgs")
+    for p in new:
+        USABLE_SYST[p] = set(base) - ({"higgs_plus_c"} if p not in ("ggH", "VBF") else set())
+    CLASS_NAMES[:] = [c for c in CLASS_NAMES if c != "Other_Higgs"] + new
+    CARD_MC_PROCS[:] = [c for c in CARD_MC_PROCS if c != "Other_Higgs"] + new
+    HIGGS_BKG_PROCS[:] = new
+    JECSHIFTS_USABLE_PROCS.discard("Other_Higgs")
+    JECSHIFTS_USABLE_PROCS.update(new)
+    if per_process_scale:
+        for proc in ["qqZZ"] + new:
+            for s_ in PER_PROCESS_SCALE:
+                USABLE_SYST[proc].discard(s_)
+                if proc == "HPlusB":
+                    continue
+                name = f"{s_}_{proc}"
+                SYSTEMATICS[name] = dict(SYSTEMATICS[s_])     # same parquet column weight_scalevar_mu*
+                USABLE_SYST[proc].add(name)
+                if (proc, s_) in NORM_DECOUPLED:
+                    NORM_DECOUPLED.add((proc, name))
+        for s_ in PER_PROCESS_SCALE:
+            if not any(s_ in u for u in USABLE_SYST.values()):
+                del SYSTEMATICS[s_]
+    print(f"Other_Higgs split into {new}; per-process background scale: {per_process_scale}")
+    return new
+
+
 def build_histograms(mc_data, zx_scores, zx_weights, jec_data=None):
     """
     Returns (histograms, histograms_var): parallel dicts, same keys.
@@ -943,7 +1063,7 @@ def write_root_file(histograms, histograms_var, output_dir,
     zero quantiles produced). Fixed here 2026-09-17.
     """
     path = os.path.join(output_dir, filename)
-    nominal_procs = ["Signal", "ggZZ", "qqZZ", "Other_Higgs"] + (["ZX"] if include_zx else [])
+    nominal_procs = CARD_MC_PROCS + (["ZX"] if include_zx else [])
     with uproot.recreate(path, compression=None) as f:
         for proc, h in histograms.items():
             if proc == "ZX" and not include_zx:
@@ -968,10 +1088,33 @@ def write_root_file(histograms, histograms_var, output_dir,
 # Write datacard
 # ---------------------------------------------------------------------------
 
+def check_jecshift_yields(histograms, max_rel=0.15):
+    """Refuse to write a card whose JES/JER template yield is >15% off nominal.
+    On 2026-09-24 an EOS listing flake silently dropped ~21% of the
+    Other_Higgs CMS_res_m Up files (43.06 vs 55.24); that card had CMS_res_m
+    as the #1 impact (126.6) and a limit of 412 instead of 342."""
+    bad = []
+    for p in CARD_MC_PROCS:
+        nom = histograms.get(p)
+        if nom is None or nom.sum() <= 0:
+            continue
+        for syst in JECSHIFTS_SYSTEMATICS:
+            for d in ("Up", "Down"):
+                h = histograms.get(f"{p}_{syst}{d}")
+                if h is not None and abs(h.sum() / nom.sum() - 1) > max_rel:
+                    bad.append(f"{p}_{syst}{d}: {h.sum():.3f} vs nominal {nom.sum():.3f}")
+    if bad:
+        raise RuntimeError("JES/JER template yield >15% off nominal (incomplete read?):\n  " + "\n  ".join(bad))
+
+
 def write_datacard(histograms, root_filename, output_dir, include_zx=True, automcstats_threshold=None):
+    check_jecshift_yields(histograms)
     dc_path = os.path.join(output_dir, "datacard_mva_with_zx.txt" if include_zx else "datacard_no_zx.txt")
 
-    procs    = ["Signal", "ggZZ", "qqZZ", "Other_Higgs"] + (["ZX"] if include_zx else [])
+    empty = [p for p in CARD_MC_PROCS if p not in histograms or histograms[p].sum() <= 0]
+    if empty:   # e.g. bbH after split_other_higgs: no scored sample (2026-10-15)
+        print(f"  NOTE: processes with no events left out of the card: {empty}")
+    procs    = [p for p in CARD_MC_PROCS if p not in empty] + (["ZX"] if include_zx else [])
     proc_idx = list(range(len(procs)))
     yields   = {p: histograms[p].sum() for p in procs}
 
@@ -1043,7 +1186,7 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
         # thesis) is a reasonable, independent methodological choice, not
         # something HIG-24-013 itself validates or contradicts. No numeric
         # change. See hczz_physicsdays_systematics_audit memory.
-        dc.write(syst_row("BR_HZZ4l",      "lnN", {"Signal": "1.02", "Other_Higgs": "1.02"}))
+        dc.write(syst_row("BR_HZZ4l",      "lnN", {"Signal": "1.02", **{p: "1.02" for p in HIGGS_BKG_PROCS}}))
         # QCDscale_qqZZ=4% CONFIRMED EXACT 2026-09-14 against the real HIG-24-013
         # text (arXiv:2501.14849, "Measurements of Higgs boson production cross
         # section in the four-lepton final state... 13.6 TeV"): "this yields an
@@ -1156,7 +1299,7 @@ def write_datacard(histograms, root_filename, output_dir, include_zx=True, autom
 # ---------------------------------------------------------------------------
 
 def print_summary(histograms, include_zx=True):
-    procs = ["Signal", "ggZZ", "qqZZ", "Other_Higgs"] + (["ZX"] if include_zx else [])
+    procs = CARD_MC_PROCS + (["ZX"] if include_zx else [])
     print(f"\n{'Process':<15} {'Yield in [{},{}] GeV'.format(*MASS_WINDOW):>20}")
     print("-" * 38)
     total_bkg = 0
@@ -1278,6 +1421,13 @@ def main():
              "may return fewer after deduping degenerate edges).",
     )
     parser.add_argument(
+        "--bin-edges", default=None,
+        help="Explicit comma-separated mva_score_Signal bin edges (must start at 0 "
+             "and end at 1, strictly increasing), e.g. the optimised binning of "
+             "Analysis/optbin_2026_10_21. Overrides --binning/--n-bins. Default: "
+             "none (quantile binning as before).",
+    )
+    parser.add_argument(
         "--merge-bin-ranges", default=None,
         help="'Surgical rebin' (2026-08-17): comma-separated inclusive bin-index "
              "ranges (0-based, into the just-computed --n-bins quantile edges) to "
@@ -1314,17 +1464,21 @@ def main():
     print("=" * 70)
 
     # 1a. True pre-selection sumw per process (for correct xs*lumi normalization)
-    print(f"\n[1a] Pre-selection sumw\n    Dir: {args.sumw_dir}")
-    sumw_by_proc = load_sumw(args.sumw_dir)
+    print(f"\n[1a] Pre-selection sumw per (era, dataset group)\n    Dir: {args.sumw_dir}")
+    sumw_by_group = load_sumw_by_group(args.sumw_dir)
 
     # 1b. MC: shapes + normalization from all scored parquets (xs × lumi scaled)
     print(f"\n[1b] MC scored parquets\n    Dir: {args.scored_dir}")
-    mc_data = load_mc_scored_parquets(args.scored_dir, sumw_by_proc)
+    mc_data = load_mc_scored_parquets(args.scored_dir, sumw_by_group)
 
     # 1c. Bin edges -- must happen after mc_data is loaded (quantile binning
     # is data-driven) and before any histogram is filled.
     global MVA_BINS
-    if args.binning == "quantile":
+    if args.bin_edges:
+        MVA_BINS = np.array([float(x) for x in args.bin_edges.split(",")])
+        if MVA_BINS[0] != 0.0 or MVA_BINS[-1] != 1.0 or np.any(np.diff(MVA_BINS) <= 0):
+            raise ValueError(f"--bin-edges must start at 0, end at 1 and increase: {MVA_BINS}")
+    elif args.binning == "quantile":
         MVA_BINS = compute_quantile_bins(mc_data, n_bins=args.n_bins)
     else:
         MVA_BINS = np.linspace(0, 1, args.n_bins + 1)
@@ -1347,7 +1501,7 @@ def main():
     # 2b. JES/JER (object-shift systematics), optional
     if args.jecshifts_dir:
         print(f"\n[2b] JES/JER object-shift systematics\n    Dir: {args.jecshifts_dir}")
-        jec_data = load_jecshifts_scored_parquets(args.jecshifts_dir, sumw_by_proc)
+        jec_data = load_jecshifts_scored_parquets(args.jecshifts_dir, sumw_by_group)
     else:
         print("\n[2b] JES/JER object-shift systematics: SKIPPED (--jecshifts-dir not set)")
         jec_data = None

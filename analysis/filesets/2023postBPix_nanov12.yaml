@@ -265,7 +265,7 @@ TTH_Hto2Z:
   query: TTH_Hto2Z_4LFilter_M-125_TuneCP5_13p6TeV_powheg-jhugenv752-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM
   process: H(125) 
   key: higgs
-  xsec: 0.00312
+  xsec: 0.0004437  # 2026-10-16: was 0.00312 (~20x/7x too high); sigma_ttH 0.5700 pb x BR(H->ZZ) 0.02641 x filter 0.029474 (4l from H, or 1 H-Z->ll + 2 leptonic tops; 36% pure 4l on GenPart; = Heyen 0.393 fb at 13 TeV)
 VBFHto2Zto4L:
   era: mc
   query: VBFHto2Zto4L_M-125_TuneCP5_13p6TeV_powheg-jhugen-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v6-v2/NANOAODSIM
@@ -290,3 +290,17 @@ ZHto2Zto4L:
   process: H(125) 
   key: higgs
   xsec: 0.000775
+# H+c 3FS (massive charm, pp -> h c c~) for the 3FS/4FS stitching, added 2026-09-27.
+# 2026-10-09: switched to the NEW production from the rebuilt gridpack ("-pythia8new"/"-v1new"),
+# as for 2022 on 2026-10-07. The July sample is retired.
+# The postBPix Nano (1 file, 329 lumis, 985,000 events) has no duplicated events (checked
+# 2026-10-09 event by event), although the RECO/MiniAOD parents had duplicated lumis.
+# Deliberately NOT named HPlusCharm*: the datacard builders map any name containing
+# "HPlusCharm" to Signal. xsec = 55.0 fb (gridpack / LHCHWG Table 3, production only)
+# x BR(H->ZZ->4l incl. tau) 2.694e-4; the stitching builder renormalises anyway.
+Stitch3FS_cH_2023postBPix:
+  era: signal
+  query: HPlusCharm_3FS_MuRFScaleDynX0p50_HToZZTo4L_M125_TuneCP5_13p6TeV_amcatnlo-JHUGen-pythia8new/snandaku-Run3Summer23BPixNanoAODv13-3FS-HToZZTo4L-JHUGen-133X_mcRun3_2023_realistic_postBPix_ForNanov13_v2-v1new-00000000000000000000000000000000/USER
+  key: smsignal
+  process: smsignal
+  xsec: 0.0000148
